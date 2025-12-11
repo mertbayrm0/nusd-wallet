@@ -1,0 +1,149 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String   // Hashed
+  name      String
+  balance   Float    @default(0.0)
+  role      String   @default("user") // "user", "admin"
+  isActive  Boolean  @default(true)
+  trxAddress String?
+  createdAt DateTime @default(now())
+
+  bankAccounts BankAccount[]
+  transactions Transaction[]
+  p2pOrders    P2POrder[]
+  p2pAsSeller  P2PTrade[] @relation("Seller")
+  p2pAsBuyer   P2PTrade[] @relation("Buyer")
+}
+
+model BankAccount {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bankName    String
+  iban        String
+  accountName String
+  addedAt     DateTime @default(now())
+}
+
+model Department {
+  id             String   @id @default(uuid())
+  name           String
+  color          String
+  category       String   @default("MERCHANT")
+  commissionType String   @default("PERCENT")
+  commissionRate Float    @default(0.0)
+  createdAt      DateTime @default(now())
+
+  vaults    Vault[]
+  merchants Merchant[]
+}
+
+model Vault {
+  id            String      @id @default(uuid())
+  departmentId  String?
+  department    Department? @relation(fields: [departmentId], references: [id])
+  name          String
+  address       String
+  privateKey    String?
+  balance       Float       @default(0.0)
+  escrowBalance Float       @default(0.0)
+
+  transactions      Transaction[]
+  vaultTransactions VaultTransaction[]
+}
+
+model Merchant {
+  id              String   @id @default(uuid())
+  slug            String   @unique
+  name            String
+  departmentId    String
+  department      Department @relation(fields: [departmentId], references: [id])
+  defaultVaultId  String?
+  logo            String?
+  primaryColor    String?  @default("#10B981")
+  isActive        Boolean  @default(true)
+  
+  // Map / Agent Fields
+  isAgent         Boolean  @default(false)
+  latitude        Float?
+  longitude       Float?
+  address         String?
+  hours           String?
+
+  createdAt       DateTime @default(now())
+}
+
+model Transaction {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  vaultId   String?
+  vault     Vault?   @relation(fields: [vaultId], references: [id])
+  type      String   // DEPOSIT, WITHDRAW
+  amount    Float
+  status    String   // PENDING, COMPLETED, FAILED
+  network   String?
+  txHash    String?
+  toAddress String?
+  timestamp DateTime @default(now())
+}
+
+model VaultTransaction {
+  id            String   @id @default(uuid())
+  vaultId       String
+  vault         Vault    @relation(fields: [vaultId], references: [id])
+  type          String
+  amount        Float
+  network       String
+  userEmail     String?
+  txHash        String?
+  timestamp     DateTime @default(now())
+}
+
+model P2POrder {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String   // SELL, BUY
+  amount    Float
+  fiatAmount Float
+  rate      Float
+  status    String
+  iban      String?
+  bankName  String?
+  accountName String?
+  createdAt DateTime @default(now())
+}
+
+model P2PTrade {
+  id              String    @id @default(uuid())
+  sellOrderId     String
+  buyOrderId      String
+  sellerId        String
+  seller          User      @relation("Seller", fields: [sellerId], references: [id])
+  buyerId         String
+  buyer           User      @relation("Buyer", fields: [buyerId], references: [id])
+  amount          Float
+  fiatAmount      Float
+  rate            Float
+  status          String
+  createdAt       DateTime  @default(now())
+}
+
+model SystemLog {
+  id          String   @id @default(uuid())
+  type        String
+  description String
+  user        String
+  timestamp   DateTime @default(now())
+}

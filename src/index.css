@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Chrome Extension Side Panel Sizing */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Mobile app layout */
+body:has(.popup-layout) {
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Admin panel uses full viewport */
+body:has(.admin-layout) {
+  width: 100vw;
+  min-height: 100vh;
+  max-height: none;
+  overflow: auto;
+}
