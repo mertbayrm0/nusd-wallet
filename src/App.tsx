@@ -86,17 +86,63 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Restore session from Supabase
     const restoreSession = async () => {
-      const savedEmail = localStorage.getItem('nusd_current_user');
-      if (savedEmail) {
-        const u = await api.getUser(savedEmail);
-        if (u) {
-          setUser(u);
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (session?.user) {
+        // Get profile data
+        let { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        // If profile doesn't exist, create one
+        if (!profile) {
+          const { data: newProfile } = await supabase
+            .from('profiles')
+            .insert({
+              id: session.user.id,
+              email: session.user.email,
+              name: session.user.user_metadata?.name || session.user.email?.split('@')[0],
+              role: 'user',
+              is_active: true,
+              balance: 0
+            })
+            .select()
+            .single();
+          profile = newProfile;
+        }
+
+        if (profile) {
+          setUser({
+            email: profile.email,
+            name: profile.name,
+            balance: profile.balance || 0,
+            role: profile.role || 'user',
+            isActive: profile.is_active,
+            createdAt: profile.created_at ? new Date(profile.created_at).getTime() : Date.now(),
+            trxAddress: profile.trx_address
+          });
         }
       }
       setIsLoading(false);
     };
+
     restoreSession();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_OUT') {
+          setUser(null);
+          localStorage.removeItem('nusd_current_user');
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const login = async (email: string, password?: string): Promise<boolean> => {
