@@ -17,14 +17,16 @@ const Login = () => {
     setError(null);
 
     try {
+      console.log('Attempting login with:', email);
       const success = await login(email, password);
+      console.log('Login result:', success);
       if (success) {
         navigate('/dashboard');
       } else {
-        setError("Giriş başarısız. Lütfen bilgileri kontrol edin.");
+        setError("Giriş başarısız. Lütfen bilgileri kontrol edin. (Supabase Auth Hatası)");
       }
     } catch (err: any) {
-      console.error(err);
+      console.error('Login exception:', err);
       setError(`Hata: ${err.message || 'Sunucu bağlantı hatası'}`);
     } finally {
       setIsLoading(false);
