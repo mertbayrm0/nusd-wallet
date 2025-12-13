@@ -1,444 +1,650 @@
-import { Transaction, UserState, WithdrawRequest, SystemState } from '../types';
-
-const USE_REAL_SERVER = true;
-
-// Use absolute URL for both Extension and Web to ensure consistency
-const API_URL = 'https://nusd-wallet-production.up.railway.app/api';
-
-const DB_KEY = 'nusd_wallet_db_v5';
-const TOKEN_KEY = 'nusd_auth_token';
-
-// Helper to get headers with JWT
-const getHeaders = () => {
-  const token = localStorage.getItem(TOKEN_KEY);
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-  };
-};
-
-// Wrapper for fetch to handle auth
-const fetchAPI = async (endpoint: string, options: RequestInit = {}) => {
-  const res = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      ...getHeaders(),
-      ...(options.headers || {})
-    }
-  });
-  return res;
-};
-
-// ... (Local DB fallback logic essentially deprecated for Admin features but kept for structure)
-const getDB = () => {
-  const stored = localStorage.getItem(DB_KEY);
-  return stored ? JSON.parse(stored) : null;
-};
+import { supabase } from './supabase';
+import { Transaction, UserState, SystemState } from '../types';
 
 export const api = {
+  // ===== AUTHENTICATION =====
   login: async (email: string, password?: string) => {
     try {
-      const res = await fetchAPI('/login', {
-        method: 'POST',
-        body: JSON.stringify({ email, password })
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password: password || 'demo123'
       });
-      if (!res.ok) {
-        const err = await res.json();
-        if (err.error === "Account suspended") alert("Account Suspended. Contact Admin.");
+
+      if (error) {
+        if (error.message.includes('Invalid login')) {
+          return null;
+        }
+        console.error('Login error:', error.message);
         return null;
       }
-      return await res.json();
+
+      if (data.user) {
+        // Get user profile from profiles table
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+
+        if (profile) {
+          return {
+            token: data.session?.access_token,
+            user: {
+              email: profile.email,
+              name: profile.name,
+              balance: profile.balance || 0,
+              role: profile.role || 'user',
+              isActive: profile.is_active,
+              createdAt: new Date(profile.created_at).getTime(),
+              trxAddress: profile.trx_address
+            }
+          };
+        }
+      }
+      return null;
     } catch (e) {
-      console.warn("Server unreachable.");
+      console.error('Login error:', e);
       return null;
     }
   },
 
   register: async (name: string, email: string, password?: string) => {
     try {
-      const res = await fetchAPI('/register', {
-        method: 'POST',
-        body: JSON.stringify({ name, email, password: password || 'demo' })
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password: password || 'demo123',
+        options: {
+          data: { name }
+        }
       });
-      if (res.ok) return await res.json();
-      const err = await res.json();
-      alert(err.error || "Registration failed");
+
+      if (error) {
+        alert(error.message || 'Registration failed');
+        return null;
+      }
+
+      if (data.user) {
+        return {
+          token: data.session?.access_token,
+          user: {
+            email: data.user.email,
+            name: name,
+            balance: 0,
+            role: 'user',
+            isActive: true
+          }
+        };
+      }
       return null;
-    } catch (e) { return null; }
+    } catch (e) {
+      console.error('Register error:', e);
+      return null;
+    }
+  },
+
+  logout: async () => {
+    await supabase.auth.signOut();
   },
 
   getUser: async (email: string) => {
     try {
-      const res = await fetchAPI(`/users/${email}`);
-      if (res.ok) return await res.json();
-    } catch (e) { }
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('email', email)
+        .single();
+
+      if (profile) {
+        return {
+          email: profile.email,
+          name: profile.name,
+          balance: profile.balance || 0,
+          role: profile.role || 'user',
+          isActive: profile.is_active,
+          createdAt: new Date(profile.created_at).getTime(),
+          trxAddress: profile.trx_address
+        };
+      }
+    } catch (e) {
+      console.error('Get user error:', e);
+    }
     return null;
   },
 
-  // --- ADMIN API ---
-  getAllUsers: async () => {
-    try { return await (await fetchAPI('/admin/users')).json(); } catch (e) { return []; }
-  },
-
-  getAllRequests: async () => {
-    try { return await (await fetch(`${API_URL}/admin/requests`)).json(); } catch (e) { return []; }
-  },
-
-  getAllTransactions: async () => { // New
-    try { return await (await fetchAPI('/admin/transactions')).json(); } catch (e) { return []; }
-  },
-
-  getSystemStats: async () => {
-    try { return await (await fetchAPI('/admin/system')).json(); } catch (e) { return {}; }
-  },
-
-  getAdminLogs: async () => { // New
-    try { return await (await fetch(`${API_URL}/admin/logs`)).json(); } catch (e) { return []; }
-  },
-
-  getAdminVaults: async () => {
-    try { return await (await fetch(`${API_URL}/admin/vaults`)).json(); } catch (e) { return { vaults: [], ledger: [] }; }
-  },
-
-  // Bank Account Management
-  addBankAccount: async (email: string, bankName: string, iban: string, accountName: string) => {
-    try {
-      const res = await fetch(`${API_URL}/users/${email}/bank-accounts`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bankName, iban, accountName })
-      });
-      return res.ok ? await res.json() : null;
-    } catch (e) { return null; }
-  },
-
-  getBankAccounts: async (email: string) => {
-    try {
-      const res = await fetchAPI(`/users/${email}/bank-accounts`);
-      return res.ok ? await res.json() : [];
-    } catch (e) { return []; }
-  },
-
-  deleteBankAccount: async (email: string, id: string) => {
-    try {
-      const res = await fetchAPI(`/users/${email}/bank-accounts/${id}`, { method: 'DELETE' });
-      return res.ok ? await res.json() : null;
-    } catch (e) { return null; }
-  },
-
-  toggleUserStatus: async (email: string) => { // New
-    try { return await (await fetchAPI(`/admin/user/${email}/toggle-status`, { method: 'POST' })).json(); } catch (e) { return { success: false }; }
-  },
-
-  resetDB: async () => {
-    try { return await fetchAPI('/admin/reset', { method: 'POST' }); } catch (e) { }
-  },
-  // ----------------
-
+  // ===== NOTIFICATIONS =====
   getNotifications: async (email: string) => {
     try {
-      const res = await fetchAPI(`/notifications/${email}`);
-      return await res.json();
-    } catch (e) { return []; }
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .single();
+
+      if (!profile) return [];
+
+      const { data } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', profile.id)
+        .order('created_at', { ascending: false });
+
+      return data || [];
+    } catch (e) {
+      return [];
+    }
   },
 
   markNotificationRead: async (id: string) => {
     try {
-      await fetchAPI('/notifications/read', {
-        method: 'POST',
-        body: JSON.stringify({ id })
-      });
-    } catch (e) { }
+      await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('id', id);
+    } catch (e) {
+      console.error('Mark notification read error:', e);
+    }
   },
 
+  // ===== TRANSACTIONS =====
   getTransactions: async (email: string) => {
-    try { return await (await fetchAPI(`/transactions/${email}`)).json(); } catch (e) { return []; }
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .single();
+
+      if (!profile) return [];
+
+      const { data } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', profile.id)
+        .order('timestamp', { ascending: false });
+
+      return (data || []).map((tx: any) => ({
+        id: tx.id,
+        type: tx.type.toLowerCase(),
+        amount: tx.amount,
+        currency: 'NUSD',
+        date: tx.timestamp,
+        status: tx.status.toLowerCase(),
+        title: `${tx.type} Transaction`,
+        network: tx.network,
+        txHash: tx.tx_hash
+      }));
+    } catch (e) {
+      return [];
+    }
   },
 
-  getPendingApprovals: async (email: string) => {
-    try { return await (await fetchAPI(`/pending-approvals/${email}`)).json(); } catch (e) { return []; }
+  // ===== BANK ACCOUNTS =====
+  getBankAccounts: async (email: string) => {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .single();
+
+      if (!profile) return [];
+
+      const { data } = await supabase
+        .from('bank_accounts')
+        .select('*')
+        .eq('user_id', profile.id);
+
+      return (data || []).map((acc: any) => ({
+        id: acc.id,
+        bankName: acc.bank_name,
+        iban: acc.iban,
+        accountName: acc.account_name,
+        addedAt: acc.added_at
+      }));
+    } catch (e) {
+      return [];
+    }
   },
 
+  addBankAccount: async (email: string, bankName: string, iban: string, accountName: string) => {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .single();
+
+      if (!profile) return null;
+
+      const { data, error } = await supabase
+        .from('bank_accounts')
+        .insert({
+          user_id: profile.id,
+          bank_name: bankName,
+          iban,
+          account_name: accountName
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Add bank account error:', error);
+        return null;
+      }
+
+      return {
+        id: data.id,
+        bankName: data.bank_name,
+        iban: data.iban,
+        accountName: data.account_name
+      };
+    } catch (e) {
+      return null;
+    }
+  },
+
+  deleteBankAccount: async (email: string, id: string) => {
+    try {
+      const { error } = await supabase
+        .from('bank_accounts')
+        .delete()
+        .eq('id', id);
+
+      return !error;
+    } catch (e) {
+      return null;
+    }
+  },
+
+  // ===== WITHDRAWAL =====
   createWithdrawal: async (email: string, amount: number, isInstant = false, type = 'withdraw', network?: string, address?: string) => {
     try {
-      const res = await fetchAPI('/withdraw', {
-        method: 'POST',
-        body: JSON.stringify({ email, amount, isInstant, type, network, address })
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        try {
-          const err = JSON.parse(text);
-          throw new Error(err.error || "Failed");
-        } catch (e) {
-          throw new Error(text || `Server Error: ${res.status}`);
-        }
-      }
-      return await res.json();
-    } catch (e) { throw e; }
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, balance')
+        .eq('email', email)
+        .single();
+
+      if (!profile) throw new Error('User not found');
+      if (profile.balance < amount) throw new Error('Insufficient balance');
+
+      // Create transaction
+      const { data: tx, error } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: profile.id,
+          type: 'WITHDRAW',
+          amount,
+          status: 'PENDING',
+          network,
+          to_address: address
+        })
+        .select()
+        .single();
+
+      if (error) throw new Error(error.message);
+
+      // Deduct from balance
+      await supabase
+        .from('profiles')
+        .update({ balance: profile.balance - amount })
+        .eq('id', profile.id);
+
+      return { success: true, transaction: tx };
+    } catch (e: any) {
+      throw new Error(e.message || 'Withdrawal failed');
+    }
   },
 
-  findMatches: async (amount: number, email: string) => {
-    try {
-      const res = await fetchAPI('/matches', { method: 'POST', body: JSON.stringify({ amount, email }) });
-      return await res.json();
-    } catch (e) { return null; }
-  },
-
-  lockMatch: async (matchId: string, email: string) => {
-    try {
-      const res = await fetchAPI('/lock-match', { method: 'POST', body: JSON.stringify({ matchId, email }) });
-      const data = await res.json();
-      return data.success;
-    } catch (e) { return false; }
-  },
-
-  markPaymentSent: async (email: string, matchId: string, amount: number, hasReceipt: boolean, isInstant = false) => {
-    try {
-      if (isInstant) {
-        // Keep legacy instant deposit logic if needed
-        await fetchAPI('/mark-sent', { method: 'POST', body: JSON.stringify({ email, matchId, amount, hasReceipt, isInstant }) });
-      } else {
-        // Use proper P2P endpoint
-        await fetchAPI(`/p2p/trade/${matchId}/payment-sent`, {
-          method: 'POST',
-          body: JSON.stringify({ userId: email, proofUrl: hasReceipt ? 'receipt_uploaded' : null })
-        });
-      }
-    } catch (e) { }
-  },
-
-  approveRelease: async (requestId: string) => {
-    try {
-      await fetchAPI('/approve', { method: 'POST', body: JSON.stringify({ requestId }) });
-    } catch (e) { }
-  },
-
-  cryptoDeposit: async (email: string, amount: number, txHash: string, network: string) => {
-    try {
-      await fetchAPI('/crypto-deposit', { method: 'POST', body: JSON.stringify({ email, amount, txHash, network }) });
-    } catch (e) { }
-  },
-
-  approveTransaction: async (txId: string) => {
-    try {
-      const res = await fetchAPI(`/admin/transaction/${txId}/approve`, { method: 'POST' });
-      return res.ok;
-    } catch (e) { return false; }
-  },
-
-  rejectTransaction: async (txId: string) => {
-    try {
-      const res = await fetchAPI(`/admin/transaction/${txId}/reject`, { method: 'POST' });
-      return res.ok;
-    } catch (e) { return false; }
-  },
-
-  manualVaultDeposit: async (vaultId: string, amount: number, userEmail?: string, network?: string, addToUserBalance?: boolean) => {
-    try {
-      const res = await fetchAPI('/admin/vault/deposit', {
-        method: 'POST',
-        body: JSON.stringify({ vaultId, amount, userEmail, network, addToUserBalance })
-      });
-      return res.ok;
-    } catch (e) { return false; }
-  },
-
-  // User deposit notification
+  // ===== DEPOSIT =====
   notifyDeposit: async (email: string, amount: number, network: string, txHash?: string, memoCode?: string) => {
     try {
-      const res = await fetchAPI('/deposit/notify', {
-        method: 'POST',
-        body: JSON.stringify({ email, amount, network, txHash, memoCode })
-      });
-      return await res.json();
-    } catch (e) { return { success: false, error: 'Connection error' }; }
-  },
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .single();
 
-  // ===== VAULT MANAGEMENT =====
-  getVaults: async () => {
-    try {
-      const res = await fetchAPI('/admin/vaults');
-      return await res.json();
-    } catch (e) { return { vaults: [] }; }
-  },
+      if (!profile) return { success: false, error: 'User not found' };
 
-  // ===== DEPARTMENT MANAGEMENT =====
-  getDepartments: async () => {
-    try {
-      const res = await fetchAPI('/admin/departments');
-      return await res.json();
-    } catch (e) { return []; }
-  },
+      const { error } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: profile.id,
+          type: 'DEPOSIT',
+          amount,
+          status: 'PENDING',
+          network,
+          tx_hash: txHash
+        });
 
+      if (error) return { success: false, error: error.message };
 
-
-  createDepartment: async (data: { name: string; color: string; category?: string; commissionType?: string; commissionRate?: number }) => {
-    try {
-      const res = await fetchAPI('/admin/departments', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      });
-      return await res.json();
-    } catch (e) { return null; }
-  },
-
-  updateDepartment: async (id: string, data: { name?: string; color?: string; assignVaultId?: string; unassignVaultId?: string; category?: string; commissionType?: string; commissionRate?: number }) => {
-    try {
-      const res = await fetchAPI(`/admin/departments/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data)
-      });
-      return await res.json();
-    } catch (e) { return null; }
-  },
-
-  deleteDepartment: async (id: string) => {
-    try {
-      const res = await fetchAPI(`/admin/departments/${id}`, { method: 'DELETE' });
-      return res.ok;
-    } catch (e) { return false; }
-  },
-
-  getDepartmentDetail: async (id: string) => {
-    try {
-      const res = await fetchAPI(`/admin/departments/${id}`);
-      return await res.json();
-    } catch (e) { return null; }
-  },
-
-  // ===== P2P API METHODS =====
-
-  createP2POrder: async (type: 'BUY' | 'SELL', amount: number, email: string, iban?: string, bankName?: string, accountName?: string) => {
-    try {
-      const res = await fetchAPI('/p2p/order/create', {
-        method: 'POST',
-        body: JSON.stringify({ type, amount, email, iban, bankName, accountName })
-      });
-      return await res.json();
+      return { success: true };
     } catch (e) {
-      console.error('P2P order creation error:', e);
       return { success: false, error: 'Connection error' };
     }
   },
 
-  // Get P2P Order Status (for polling)
-  getP2POrderStatus: async (orderId: string) => {
+  // ===== PENDING APPROVALS (for P2P) =====
+  getPendingApprovals: async (email: string) => {
     try {
-      const res = await fetchAPI(`/p2p/order/${orderId}/status`);
-      return await res.json();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .single();
+
+      if (!profile) return [];
+
+      // Get pending transactions where user is counterparty
+      return [];
     } catch (e) {
-      console.error('P2P status check error:', e);
-      return null;
+      return [];
     }
   },
 
-  // Mark Payment Sent (Buyer confirms payment)
-  markP2PPaymentSent: async (tradeId: string, userId: string, proofUrl?: string) => {
-    try {
-      const res = await fetchAPI(`/p2p/trade/${tradeId}/payment-sent`, {
-        method: 'POST',
-        body: JSON.stringify({ userId, proofUrl })
-      });
-      return await res.json();
-    } catch (e) {
-      console.error('Payment confirmation error:', e);
-      return { success: false };
-    }
-  },
-
-  // Confirm Payment Received (Seller confirms)
-  confirmP2PPaymentReceived: async (tradeId: string, userId: string) => {
-    try {
-      const res = await fetchAPI(`/p2p/trade/${tradeId}/confirm-received`, {
-        method: 'POST',
-        body: JSON.stringify({ userId })
-      });
-      return await res.json();
-    } catch (e) {
-      console.error('Seller confirmation error:', e);
-      return { success: false };
-    }
-  },
-
-  // Get My P2P Activity (orders and trades)
-  getMyP2PActivity: async (email: string) => {
-    try {
-      const res = await fetchAPI(`/p2p/my-activity/${email}`);
-      return await res.json();
-    } catch (e) {
-      console.error('Activity fetch error:', e);
-      return { orders: [], trades: [] };
-    }
-  },
-
-  // ===== MERCHANT API METHODS =====
-
-  // Get Public Agents (Map)
+  // ===== PUBLIC ENDPOINTS =====
   getPublicAgents: async () => {
     try {
-      const res = await fetchAPI('/public/agents');
-      if (res.ok) return await res.json();
-    } catch (e) { }
-    return [];
+      const { data } = await supabase
+        .from('merchants')
+        .select('*')
+        .eq('is_agent', true)
+        .eq('is_active', true);
+
+      return data || [];
+    } catch (e) {
+      return [];
+    }
   },
 
-  // Get merchant by slug (public)
   getMerchantBySlug: async (slug: string) => {
     try {
-      // NOTE: Public endpoint, fetchAPI is fine (token optional)
-      const res = await fetchAPI(`/merchant/${slug}`);
-      if (!res.ok) return null;
-      return await res.json();
+      const { data } = await supabase
+        .from('merchants')
+        .select('*, departments(*)')
+        .eq('slug', slug)
+        .single();
+
+      return data;
     } catch (e) {
-      console.error('Merchant fetch error:', e);
       return null;
     }
   },
 
-  // Get all merchants (admin)
-  getAllMerchants: async () => {
+  // ===== ADMIN API (simplified) =====
+  getAllUsers: async () => {
     try {
-      const res = await fetchAPI('/admin/merchants');
-      return await res.json();
-    } catch (e) { return []; }
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      return (data || []).map((p: any) => ({
+        email: p.email,
+        name: p.name,
+        balance: p.balance,
+        role: p.role,
+        isActive: p.is_active,
+        createdAt: new Date(p.created_at).getTime()
+      }));
+    } catch (e) {
+      return [];
+    }
   },
 
-  // Create merchant (admin)
-  createMerchant: async (data: { name: string; slug: string; departmentId: string; defaultVaultId?: string; primaryColor?: string; logo?: string }) => {
+  getAllTransactions: async () => {
     try {
-      const res = await fetchAPI('/admin/merchant', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      });
-      return await res.json();
-    } catch (e) { return { success: false }; }
+      const { data } = await supabase
+        .from('transactions')
+        .select('*, profiles(email, name)')
+        .order('timestamp', { ascending: false });
+
+      return (data || []).map((tx: any) => ({
+        id: tx.id,
+        type: tx.type,
+        amount: tx.amount,
+        status: tx.status,
+        network: tx.network,
+        txHash: tx.tx_hash,
+        timestamp: tx.timestamp,
+        userEmail: tx.profiles?.email,
+        userName: tx.profiles?.name
+      }));
+    } catch (e) {
+      return [];
+    }
   },
 
-  // Update merchant (admin)
-  updateMerchant: async (id: string, data: { name?: string; slug?: string; departmentId?: string; defaultVaultId?: string; primaryColor?: string; logo?: string; isActive?: boolean }) => {
+  getSystemStats: async () => {
     try {
-      const res = await fetchAPI(`/admin/merchant/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data)
-      });
-      return await res.json();
-    } catch (e) { return { success: false }; }
+      const { data: users } = await supabase
+        .from('profiles')
+        .select('balance');
+
+      const { data: transactions } = await supabase
+        .from('transactions')
+        .select('amount, status')
+        .eq('status', 'COMPLETED');
+
+      const totalUsers = users?.length || 0;
+      const totalVolume = transactions?.reduce((sum: number, tx: any) => sum + tx.amount, 0) || 0;
+
+      return {
+        totalUsers,
+        totalVolume,
+        totalRevenue: 0
+      };
+    } catch (e) {
+      return {};
+    }
   },
 
-  // Delete merchant (admin)
-  deleteMerchant: async (id: string) => {
+  toggleUserStatus: async (email: string) => {
     try {
-      const res = await fetchAPI(`/admin/merchant/${id}`, { method: 'DELETE' });
-      return res.ok;
-    } catch (e) { return false; }
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, is_active')
+        .eq('email', email)
+        .single();
+
+      if (!profile) return { success: false };
+
+      await supabase
+        .from('profiles')
+        .update({ is_active: !profile.is_active })
+        .eq('id', profile.id);
+
+      return { success: true };
+    } catch (e) {
+      return { success: false };
+    }
   },
 
-  // Get merchant for department (admin)
-  getDepartmentMerchant: async (deptId: string) => {
+  approveTransaction: async (txId: string) => {
     try {
-      const res = await fetchAPI(`/admin/department/${deptId}/merchant`);
-      return await res.json();
-    } catch (e) { return null; }
-  }
+      const { data: tx } = await supabase
+        .from('transactions')
+        .select('*, profiles(id, balance)')
+        .eq('id', txId)
+        .single();
+
+      if (!tx) return false;
+
+      // Update transaction status
+      await supabase
+        .from('transactions')
+        .update({ status: 'COMPLETED' })
+        .eq('id', txId);
+
+      // If deposit, add to user balance
+      if (tx.type === 'DEPOSIT') {
+        await supabase
+          .from('profiles')
+          .update({ balance: (tx.profiles.balance || 0) + tx.amount })
+          .eq('id', tx.profiles.id);
+      }
+
+      return true;
+    } catch (e) {
+      return false;
+    }
+  },
+
+  rejectTransaction: async (txId: string) => {
+    try {
+      const { data: tx } = await supabase
+        .from('transactions')
+        .select('*, profiles(id, balance)')
+        .eq('id', txId)
+        .single();
+
+      if (!tx) return false;
+
+      // Update transaction status
+      await supabase
+        .from('transactions')
+        .update({ status: 'FAILED' })
+        .eq('id', txId);
+
+      // If withdrawal, refund user
+      if (tx.type === 'WITHDRAW') {
+        await supabase
+          .from('profiles')
+          .update({ balance: (tx.profiles.balance || 0) + tx.amount })
+          .eq('id', tx.profiles.id);
+      }
+
+      return true;
+    } catch (e) {
+      return false;
+    }
+  },
+
+  // ===== DEPARTMENTS =====
+  getDepartments: async () => {
+    try {
+      const { data } = await supabase
+        .from('departments')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      return data || [];
+    } catch (e) {
+      return [];
+    }
+  },
+
+  createDepartment: async (data: { name: string; color: string; category?: string; commissionType?: string; commissionRate?: number }) => {
+    try {
+      const { data: dept, error } = await supabase
+        .from('departments')
+        .insert({
+          name: data.name,
+          color: data.color,
+          category: data.category || 'MERCHANT',
+          commission_type: data.commissionType || 'PERCENT',
+          commission_rate: data.commissionRate || 0
+        })
+        .select()
+        .single();
+
+      if (error) return null;
+      return dept;
+    } catch (e) {
+      return null;
+    }
+  },
+
+  updateDepartment: async (id: string, data: any) => {
+    try {
+      const { data: dept, error } = await supabase
+        .from('departments')
+        .update({
+          name: data.name,
+          color: data.color,
+          category: data.category,
+          commission_type: data.commissionType,
+          commission_rate: data.commissionRate
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) return null;
+      return dept;
+    } catch (e) {
+      return null;
+    }
+  },
+
+  deleteDepartment: async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('departments')
+        .delete()
+        .eq('id', id);
+      return !error;
+    } catch (e) {
+      return false;
+    }
+  },
+
+  getDepartmentDetail: async (id: string) => {
+    try {
+      const { data } = await supabase
+        .from('departments')
+        .select('*')
+        .eq('id', id)
+        .single();
+      return data;
+    } catch (e) {
+      return null;
+    }
+  },
+
+  // ===== VAULTS (simplified) =====
+  getVaults: async () => {
+    try {
+      const { data } = await supabase
+        .from('vaults')
+        .select('*, departments(name, color)');
+      return { vaults: data || [] };
+    } catch (e) {
+      return { vaults: [] };
+    }
+  },
+
+  getAdminVaults: async () => {
+    try {
+      const { data } = await supabase
+        .from('vaults')
+        .select('*, departments(name, color)');
+      return { vaults: data || [], ledger: [] };
+    } catch (e) {
+      return { vaults: [], ledger: [] };
+    }
+  },
+
+  // ===== STUBS for unused features =====
+  getAllRequests: async () => [],
+  getAdminLogs: async () => [],
+  resetDB: async () => { },
+  cryptoDeposit: async () => { },
+  findMatches: async () => null,
+  lockMatch: async () => false,
+  markPaymentSent: async () => { },
+  approveRelease: async () => { },
+  manualVaultDeposit: async () => false,
+  createP2POrder: async () => ({ success: false }),
+  getP2POrderStatus: async () => null,
+  markP2PPaymentSent: async () => ({ success: false }),
+  confirmP2PPaymentReceived: async () => ({ success: false }),
+  getMyP2PActivity: async () => ({ orders: [], trades: [] }),
+  getAllMerchants: async () => [],
+  createMerchant: async () => ({ success: false }),
+  updateMerchant: async () => ({ success: false }),
+  deleteMerchant: async () => false,
+  getDepartmentMerchant: async () => null
 };

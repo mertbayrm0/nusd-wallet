@@ -28,6 +28,7 @@ import AutoLogin from './screens/AutoLogin';
 import BottomNav from './components/BottomNav';
 import { UserState } from './types';
 import { api } from './services/api';
+import { supabase } from './services/supabase';
 
 interface AppContextType {
   user: UserState | null;
@@ -109,7 +110,8 @@ const App: React.FC = () => {
     return false;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await api.logout();
     setUser(null);
     localStorage.removeItem('nusd_current_user');
     localStorage.removeItem('nusd_auth_token'); // Clear token
