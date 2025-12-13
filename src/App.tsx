@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { Session, User } from '@supabase/supabase-js';
 import Welcome from './screens/Welcome';
 import Login from './screens/Login';
 import Register from './screens/Register';
@@ -27,13 +28,14 @@ import FindAgent from './screens/FindAgent';
 import AutoLogin from './screens/AutoLogin';
 import BottomNav from './components/BottomNav';
 import { UserState } from './types';
-import { api } from './services/api';
 import { supabase } from './services/supabase';
 
+// ===== TYPES =====
 interface AppContextType {
   user: UserState | null;
-  login: (email: string, password?: string) => Promise<boolean>;
-  logout: () => void;
+  session: Session | null;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   isLoading: boolean;
 }
@@ -43,6 +45,67 @@ const AppContext = createContext<AppContextType>({} as AppContextType);
 // eslint-disable-next-line react-refresh/only-export-components
 export const useApp = () => useContext(AppContext);
 
+// ===== HELPER: Fetch profile from Supabase =====
+async function fetchOrCreateProfile(authUser: User): Promise<UserState | null> {
+  try {
+    // Try to fetch existing profile
+    let { data: profile, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', authUser.id)
+      .single();
+
+    // If profile doesn't exist, create one
+    if (error && error.code === 'PGRST116') {
+      const { data: newProfile, error: insertError } = await supabase
+        .from('profiles')
+        .insert({
+          id: authUser.id,
+          email: authUser.email,
+          name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'User',
+          role: 'user',
+          is_active: true,
+          balance: 0
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Profile creation error:', insertError.message);
+        // Return minimal user data from auth
+        return {
+          email: authUser.email || '',
+          name: authUser.user_metadata?.name || 'User',
+          balance: 0,
+          role: 'user',
+          isActive: true
+        };
+      }
+      profile = newProfile;
+    } else if (error) {
+      console.error('Profile fetch error:', error.message);
+      return null;
+    }
+
+    if (profile) {
+      return {
+        email: profile.email,
+        name: profile.name || 'User',
+        balance: profile.balance || 0,
+        role: profile.role || 'user',
+        isActive: profile.is_active ?? true,
+        createdAt: profile.created_at ? new Date(profile.created_at).getTime() : Date.now(),
+        trxAddress: profile.trx_address
+      };
+    }
+    return null;
+  } catch (e) {
+    console.error('fetchOrCreateProfile error:', e);
+    return null;
+  }
+}
+
+// ===== LAYOUT COMPONENT =====
 const Layout = ({ children, showBottomNav = false }: { children?: React.ReactNode; showBottomNav?: boolean }) => {
   return (
     <div className="popup-layout flex justify-center min-h-screen bg-gray-100 dark:bg-gray-900 font-display">
@@ -54,9 +117,9 @@ const Layout = ({ children, showBottomNav = false }: { children?: React.ReactNod
   );
 };
 
-// Admin routes use their own Full-Screen Layout, so we don't wrap them in the mobile Layout component
+// ===== PROTECTED ROUTE COMPONENT =====
 const ProtectedRoute = ({ children, adminOnly = false }: { children: React.ReactNode, adminOnly?: boolean }) => {
-  const { user, isLoading } = useApp();
+  const { user, session, isLoading } = useApp();
 
   // Wait for session to be restored before redirecting
   if (isLoading) {
@@ -70,126 +133,133 @@ const ProtectedRoute = ({ children, adminOnly = false }: { children: React.React
     );
   }
 
-  if (!user) return <Navigate to="/" replace />;
+  // Check session first, then user data
+  if (!session || !user) return <Navigate to="/" replace />;
   if (adminOnly && user.role !== 'admin') return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 };
 
+// ===== SCROLL TO TOP =====
 const ScrollToTop = () => {
   const { pathname } = useLocation();
   useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
   return null;
 };
 
+// ===== MAIN APP COMPONENT =====
 const App: React.FC = () => {
+  const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<UserState | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // ===== SINGLE SOURCE OF TRUTH: Supabase Auth =====
   useEffect(() => {
-    // Restore session from Supabase
-    const restoreSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+    let mounted = true;
 
-      if (session?.user) {
-        // Get profile data
-        let { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
+    // Initial session check
+    const initializeAuth = async () => {
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
 
-        // If profile doesn't exist, create one
-        if (!profile) {
-          const { data: newProfile } = await supabase
-            .from('profiles')
-            .insert({
-              id: session.user.id,
-              email: session.user.email,
-              name: session.user.user_metadata?.name || session.user.email?.split('@')[0],
-              role: 'user',
-              is_active: true,
-              balance: 0
-            })
-            .select()
-            .single();
-          profile = newProfile;
+        if (mounted && currentSession?.user) {
+          setSession(currentSession);
+          const profile = await fetchOrCreateProfile(currentSession.user);
+          if (mounted) setUser(profile);
         }
-
-        if (profile) {
-          setUser({
-            email: profile.email,
-            name: profile.name,
-            balance: profile.balance || 0,
-            role: profile.role || 'user',
-            isActive: profile.is_active,
-            createdAt: profile.created_at ? new Date(profile.created_at).getTime() : Date.now(),
-            trxAddress: profile.trx_address
-          });
-        }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+      } finally {
+        if (mounted) setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
-    restoreSession();
+    initializeAuth();
 
-    // Listen for auth state changes
+    // Listen for auth state changes (SIGNED_IN, SIGNED_OUT, TOKEN_REFRESHED)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_OUT') {
+      async (event, newSession) => {
+        console.log('Auth event:', event);
+
+        if (event === 'SIGNED_IN' && newSession?.user) {
+          setSession(newSession);
+          const profile = await fetchOrCreateProfile(newSession.user);
+          setUser(profile);
+        } else if (event === 'SIGNED_OUT') {
+          setSession(null);
           setUser(null);
-          localStorage.removeItem('nusd_current_user');
+        } else if (event === 'TOKEN_REFRESHED' && newSession) {
+          setSession(newSession);
         }
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const login = async (email: string, password?: string): Promise<boolean> => {
-    const res = await api.login(email, password || 'demo');
-    if (res && res.token) {
-      localStorage.setItem('nusd_auth_token', res.token);
-      localStorage.setItem('nusd_current_user', res.user.email); // Ensure email is saved from response
-      setUser(res.user);
-      return true;
+  // ===== LOGIN: Only uses Supabase Auth =====
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        console.error('Login error:', error.message);
+        return false;
+      }
+
+      if (data.session && data.user) {
+        setSession(data.session);
+        const profile = await fetchOrCreateProfile(data.user);
+        setUser(profile);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error('Login exception:', e);
+      return false;
     }
-    return false;
   };
 
+  // ===== LOGOUT: Only uses Supabase Auth =====
   const logout = async () => {
-    await api.logout();
-    setUser(null);
-    localStorage.removeItem('nusd_current_user');
-    localStorage.removeItem('nusd_auth_token'); // Clear token
+    await supabase.auth.signOut();
+    // State will be cleared by onAuthStateChange listener
   };
 
+  // ===== REFRESH USER: Fetches latest profile data =====
   const refreshUser = async () => {
-    if (user) {
-      const u = await api.getUser(user.email);
-      if (u) setUser(u);
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    if (currentSession?.user) {
+      const profile = await fetchOrCreateProfile(currentSession.user);
+      setUser(profile);
     }
   };
 
-  // Auto-Logout on Inactivity
+  // ===== AUTO-LOGOUT ON INACTIVITY (5 minutes) =====
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    const TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+    const TIMEOUT_MS = 5 * 60 * 1000;
 
-    const handleLogout = () => {
+    const handleAutoLogout = () => {
       console.log("Session expired due to inactivity");
       logout();
     };
 
     const resetTimer = () => {
-      if (!user) return;
+      if (!session) return;
       clearTimeout(timer);
-      timer = setTimeout(handleLogout, TIMEOUT_MS);
+      timer = setTimeout(handleAutoLogout, TIMEOUT_MS);
     };
 
     const events = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart'];
 
-    if (user) {
-      resetTimer(); // Start timer
+    if (session) {
+      resetTimer();
       events.forEach(e => window.addEventListener(e, resetTimer));
     }
 
@@ -197,14 +267,14 @@ const App: React.FC = () => {
       clearTimeout(timer);
       events.forEach(e => window.removeEventListener(e, resetTimer));
     };
-  }, [user]);
+  }, [session]);
 
   return (
-    <AppContext.Provider value={{ user, login, logout, refreshUser, isLoading }}>
+    <AppContext.Provider value={{ user, session, login, logout, refreshUser, isLoading }}>
       <HashRouter>
         <ScrollToTop />
         <Routes>
-          {/* Admin Routes - Full Screen (MUST BE FIRST) */}
+          {/* Admin Routes - Full Screen */}
           <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/users" element={<ProtectedRoute adminOnly><AdminUsers /></ProtectedRoute>} />
           <Route path="/admin/transactions" element={<ProtectedRoute adminOnly><AdminTransactions /></ProtectedRoute>} />
@@ -212,10 +282,10 @@ const App: React.FC = () => {
           <Route path="/admin/departments" element={<ProtectedRoute adminOnly><AdminDepartments /></ProtectedRoute>} />
           <Route path="/admin/logs" element={<ProtectedRoute adminOnly><AdminLogs /></ProtectedRoute>} />
 
-          {/* Welcome Screen for First-Time Users */}
+          {/* Welcome Screen */}
           <Route path="/welcome" element={<Welcome />} />
 
-          {/* Mobile App Routes - Wrapped in Mobile Layout */}
+          {/* Mobile App Routes */}
           <Route path="/" element={<Layout><Login /></Layout>} />
           <Route path="/register" element={<Layout><Register /></Layout>} />
           <Route path="/dashboard" element={<Layout showBottomNav><ProtectedRoute><Dashboard /></ProtectedRoute></Layout>} />
@@ -229,7 +299,7 @@ const App: React.FC = () => {
           <Route path="/crypto/deposit" element={<Layout><ProtectedRoute><CryptoDeposit /></ProtectedRoute></Layout>} />
           <Route path="/bank-accounts" element={<Layout><ProtectedRoute><BankAccounts /></ProtectedRoute></Layout>} />
 
-          {/* Public Pages - No Auth Required */}
+          {/* Public Pages */}
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/pay" element={<UsdtPayment />} />
@@ -241,4 +311,5 @@ const App: React.FC = () => {
     </AppContext.Provider>
   );
 };
+
 export default App;
