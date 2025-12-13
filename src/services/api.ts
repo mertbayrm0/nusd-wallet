@@ -11,35 +11,52 @@ export const api = {
       });
 
       if (error) {
-        if (error.message.includes('Invalid login')) {
-          return null;
-        }
         console.error('Login error:', error.message);
         return null;
       }
 
       if (data.user) {
         // Get user profile from profiles table
-        const { data: profile } = await supabase
+        let { data: profile } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', data.user.id)
           .single();
 
-        if (profile) {
-          return {
-            token: data.session?.access_token,
-            user: {
-              email: profile.email,
-              name: profile.name,
-              balance: profile.balance || 0,
-              role: profile.role || 'user',
-              isActive: profile.is_active,
-              createdAt: new Date(profile.created_at).getTime(),
-              trxAddress: profile.trx_address
-            }
-          };
+        // If profile doesn't exist, create one
+        if (!profile) {
+          const { data: newProfile, error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: data.user.id,
+              email: data.user.email,
+              name: data.user.user_metadata?.name || email.split('@')[0],
+              role: 'user',
+              is_active: true,
+              balance: 0
+            })
+            .select()
+            .single();
+
+          if (insertError) {
+            console.error('Profile insert error:', insertError.message);
+          } else {
+            profile = newProfile;
+          }
         }
+
+        return {
+          token: data.session?.access_token,
+          user: {
+            email: profile?.email || data.user.email,
+            name: profile?.name || data.user.user_metadata?.name || 'User',
+            balance: profile?.balance || 0,
+            role: profile?.role || 'user',
+            isActive: profile?.is_active ?? true,
+            createdAt: profile?.created_at ? new Date(profile.created_at).getTime() : Date.now(),
+            trxAddress: profile?.trx_address
+          }
+        };
       }
       return null;
     } catch (e) {
@@ -59,11 +76,28 @@ export const api = {
       });
 
       if (error) {
+        console.error('Register error:', error.message);
         alert(error.message || 'Registration failed');
         return null;
       }
 
       if (data.user) {
+        // Create profile record
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: data.user.id,
+            email: data.user.email,
+            name: name,
+            role: 'user',
+            is_active: true,
+            balance: 0
+          });
+
+        if (profileError) {
+          console.error('Profile creation error:', profileError.message);
+        }
+
         return {
           token: data.session?.access_token,
           user: {
