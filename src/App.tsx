@@ -46,10 +46,19 @@ const AppContext = createContext<AppContextType>({} as AppContextType);
 export const useApp = () => useContext(AppContext);
 
 // ===== HELPER: Fetch profile from Supabase =====
-async function fetchOrCreateProfile(authUser: User): Promise<UserState | null> {
+async function fetchOrCreateProfile(authUser: User): Promise<UserState> {
+  // Fallback user data from auth
+  const fallbackUser: UserState = {
+    email: authUser.email || '',
+    name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'User',
+    balance: 0,
+    role: 'user',
+    isActive: true
+  };
+
   try {
     // Try to fetch existing profile
-    let { data: profile, error } = await supabase
+    const { data: profile, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', authUser.id)
@@ -72,19 +81,24 @@ async function fetchOrCreateProfile(authUser: User): Promise<UserState | null> {
 
       if (insertError) {
         console.error('Profile creation error:', insertError.message);
-        // Return minimal user data from auth
+        return fallbackUser;
+      }
+
+      if (newProfile) {
         return {
-          email: authUser.email || '',
-          name: authUser.user_metadata?.name || 'User',
-          balance: 0,
-          role: 'user',
-          isActive: true
+          email: newProfile.email,
+          name: newProfile.name || 'User',
+          balance: newProfile.balance || 0,
+          role: newProfile.role || 'user',
+          isActive: newProfile.is_active ?? true,
+          createdAt: newProfile.created_at ? new Date(newProfile.created_at).getTime() : Date.now(),
+          trxAddress: newProfile.trx_address
         };
       }
-      profile = newProfile;
+      return fallbackUser;
     } else if (error) {
       console.error('Profile fetch error:', error.message);
-      return null;
+      return fallbackUser;
     }
 
     if (profile) {
@@ -98,10 +112,10 @@ async function fetchOrCreateProfile(authUser: User): Promise<UserState | null> {
         trxAddress: profile.trx_address
       };
     }
-    return null;
+    return fallbackUser;
   } catch (e) {
-    console.error('fetchOrCreateProfile error:', e);
-    return null;
+    console.error('fetchOrCreateProfile exception:', e);
+    return fallbackUser;
   }
 }
 
