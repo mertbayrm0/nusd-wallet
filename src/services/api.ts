@@ -465,25 +465,75 @@ export const api = {
 
   getSystemStats: async () => {
     try {
-      const { data: users } = await supabase
+      // Get all profiles
+      const { data: profiles } = await supabase
         .from('profiles')
-        .select('balance');
+        .select('balance, is_active');
 
+      // Get all transactions
       const { data: transactions } = await supabase
         .from('transactions')
-        .select('amount, status')
-        .eq('status', 'COMPLETED');
+        .select('type, amount, status');
 
-      const totalUsers = users?.length || 0;
-      const totalVolume = transactions?.reduce((sum: number, tx: any) => sum + tx.amount, 0) || 0;
+      // Get departments count
+      const { data: departments } = await supabase
+        .from('departments')
+        .select('id');
+
+      // Get vaults
+      const { data: vaults } = await supabase
+        .from('vaults')
+        .select('balance');
+
+      // Calculate stats
+      const totalUserBalance = profiles?.reduce((sum: number, p: any) => sum + (p.balance || 0), 0) || 0;
+      const activeUsers = profiles?.filter((p: any) => p.is_active).length || 0;
+      const totalVaultBalance = vaults?.reduce((sum: number, v: any) => sum + (v.balance || 0), 0) || 0;
+
+      const txs = transactions || [];
+      const totalTransactions = txs.length;
+      const pendingTransactions = txs.filter((t: any) => t.status === 'PENDING').length;
+
+      // Calculate deposits (positive amounts or DEPOSIT type)
+      const deposits = txs.filter((t: any) => t.type === 'DEPOSIT' || (t.amount > 0 && t.status === 'COMPLETED'));
+      const totalDeposits = deposits.reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
+
+      // Calculate withdrawals (negative amounts or WITHDRAW type)
+      const withdrawals = txs.filter((t: any) => t.type === 'WITHDRAW' || t.type === 'P2P_SELL' || (t.amount < 0 && t.status === 'COMPLETED'));
+      const totalWithdrawals = withdrawals.reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
+
+      const totalVolume = txs.reduce((sum: number, t: any) => sum + Math.abs(t.amount || 0), 0);
 
       return {
-        totalUsers,
-        totalVolume,
-        totalRevenue: 0
+        totalUserBalance,
+        totalVaultBalance,
+        totalDeposits,
+        totalWithdrawals,
+        vaultDeposits: 0, // TODO: Track vault-specific deposits
+        vaultWithdrawals: 0, // TODO: Track vault-specific withdrawals
+        pendingTransactions,
+        totalTransactions,
+        activeUsers,
+        departmentCount: departments?.length || 0,
+        totalRevenue: 0,
+        totalVolume
       };
     } catch (e) {
-      return {};
+      console.error('getSystemStats error:', e);
+      return {
+        totalUserBalance: 0,
+        totalVaultBalance: 0,
+        totalDeposits: 0,
+        totalWithdrawals: 0,
+        vaultDeposits: 0,
+        vaultWithdrawals: 0,
+        pendingTransactions: 0,
+        totalTransactions: 0,
+        activeUsers: 0,
+        departmentCount: 0,
+        totalRevenue: 0,
+        totalVolume: 0
+      };
     }
   },
 
