@@ -240,10 +240,47 @@ const AdminTransactions = () => {
                                             </tr>
                                         )}
 
-                                        {/* Audit Logs Row */}
+                                        {/* Audit Logs & Metadata Row */}
                                         {isExpanded && (
                                             <tr>
                                                 <td colSpan={7} className="p-4 bg-slate-50 border-b border-gray-100">
+                                                    {/* Payment Panel Metadata Section */}
+                                                    {t.metadata && t.metadata.source === 'payment_panel' && (
+                                                        <div className="mb-4 bg-white p-4 rounded-lg border border-blue-100 shadow-sm">
+                                                            <h4 className="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                                                                <span className="material-symbols-outlined text-blue-500 text-base">payments</span>
+                                                                Payment Panel Details
+                                                            </h4>
+                                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                                                <div>
+                                                                    <div className="text-xs text-gray-500">Panel Name</div>
+                                                                    <div className="font-bold">{t.metadata.panel_name || 'Unknown Panel'}</div>
+                                                                </div>
+                                                                <div>
+                                                                    <div className="text-xs text-gray-500">Source Slug</div>
+                                                                    <a href={`/#/pay/${t.metadata.public_slug}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-mono text-xs">
+                                                                        {t.metadata.public_slug}
+                                                                    </a>
+                                                                </div>
+                                                                <div>
+                                                                    <div className="text-xs text-gray-500">Commission</div>
+                                                                    <div className="font-bold text-red-500">
+                                                                        -{t.metadata.commission} {t.asset_type}
+                                                                        <span className="text-xs text-gray-400 font-normal ml-1">
+                                                                            ({t.metadata.commission_type === 'percentage' ? `%${t.metadata.commission_val}` : 'Fixed'})
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                                <div>
+                                                                    <div className="text-xs text-gray-500">Net Amount to User</div>
+                                                                    <div className="font-bold text-green-600 text-lg">
+                                                                        {t.metadata.net_amount} {t.asset_type}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
                                                     <AdminTransactionAuditLogs transactionId={t.id} />
                                                 </td>
                                             </tr>

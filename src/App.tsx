@@ -22,8 +22,10 @@ import AdminTransactions from './screens/AdminTransactions';
 import AdminLogs from './screens/AdminLogs';
 import AdminVaults from './screens/AdminVaults';
 import AdminDepartments from './screens/AdminDepartments';
+import AdminDepartmentDetail from './screens/AdminDepartmentDetail';
 import FindAgent from './screens/FindAgent';
 import AutoLogin from './screens/AutoLogin';
+import PaymentPanel from './screens/PaymentPanel';
 import BottomNav from './components/BottomNav';
 import { UserState } from './types';
 import { supabase } from './services/supabase';
@@ -332,6 +334,7 @@ const App: React.FC = () => {
           <Route path="/admin/transactions" element={<ProtectedRoute adminOnly><AdminTransactions /></ProtectedRoute>} />
           <Route path="/admin/vaults" element={<ProtectedRoute adminOnly><AdminVaults /></ProtectedRoute>} />
           <Route path="/admin/departments" element={<ProtectedRoute adminOnly><AdminDepartments /></ProtectedRoute>} />
+          <Route path="/admin/departments/:id" element={<ProtectedRoute adminOnly><AdminDepartmentDetail /></ProtectedRoute>} />
           <Route path="/admin/logs" element={<ProtectedRoute adminOnly><AdminLogs /></ProtectedRoute>} />
 
           {/* Welcome Screen */}
@@ -356,6 +359,7 @@ const App: React.FC = () => {
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/find-agent" element={<FindAgent />} />
           <Route path="/autologin" element={<AutoLogin />} />
+          <Route path="/pay/:slug" element={<PaymentPanel />} />
         </Routes>
       </HashRouter>
     </AppContext.Provider>

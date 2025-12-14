@@ -611,37 +611,39 @@ export const api = {
   },
 
   // ===== DEPARTMENTS =====
+  // ===== DEPARTMENTS =====
   getDepartments: async () => {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('departments')
-        .select('*')
+        .select(`
+          *,
+          members:department_members(count)
+        `)
         .order('created_at', { ascending: false });
 
+      if (error) {
+        console.error('getDepartments error:', error);
+        return [];
+      }
       return data || [];
     } catch (e) {
+      console.error('getDepartments exception:', e);
       return [];
     }
   },
 
-  createDepartment: async (data: { name: string; color: string; category?: string; commissionType?: string; commissionRate?: number }) => {
+  createDepartment: async (deptData: any) => {
     try {
-      const { data: dept, error } = await supabase
-        .from('departments')
-        .insert({
-          name: data.name,
-          color: data.color,
-          category: data.category || 'MERCHANT',
-          commission_type: data.commissionType || 'PERCENT',
-          commission_rate: data.commissionRate || 0
-        })
-        .select()
-        .single();
+      const { data, error } = await supabase.functions.invoke('create-department', {
+        body: deptData
+      });
 
-      if (error) return null;
-      return dept;
+      if (error) throw error;
+      return data;
     } catch (e) {
-      return null;
+      console.error('createDepartment error:', e);
+      return { success: false, error: e };
     }
   },
 
@@ -679,16 +681,66 @@ export const api = {
     }
   },
 
-  getDepartmentDetail: async (id: string) => {
+  getDepartment: async (id: string) => {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('departments')
-        .select('*')
+        .select(`
+          *,
+          panels:payment_panels(*)
+        `)
         .eq('id', id)
         .single();
+      if (error) throw error;
       return data;
     } catch (e) {
+      console.error('getDepartment error:', e);
       return null;
+    }
+  },
+
+  createPaymentPanel: async (panelData: any) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('create-payment-panel', {
+        body: panelData
+      });
+      if (error) throw error;
+      return data;
+    } catch (e) {
+      console.error('createPaymentPanel error:', e);
+      return { success: false, error: e };
+    }
+  },
+
+  // ===== PAYMENT PANELS (PUBLIC) =====
+  getPanelBySlug: async (slug: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('payment_panels')
+        .select(`
+                *,
+                department:departments(name)
+            `)
+        .eq('public_slug', slug)
+        .single();
+      if (error) throw error;
+      return data;
+    } catch (e) {
+      console.error('getPanelBySlug error:', e);
+      return null;
+    }
+  },
+
+  payViaPanel: async (slug: string, amount: number) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('create-transaction-from-panel', {
+        body: { slug, amount }
+      });
+      if (error) throw error;
+      return data;
+    } catch (e) {
+      console.error('payViaPanel error:', e);
+      return { success: false, error: e };
     }
   },
 
