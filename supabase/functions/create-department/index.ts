@@ -41,7 +41,9 @@ serve(async (req) => {
         }
 
         // 2. Parse Body
-        const { name, category, commission_mode, commission_value, is_active } = await req.json()
+        // Kullanıcı isteği: Departman açılışında komisyon sorma, panele bırak.
+        // O yüzden commission_mode ve value'yu opsiyonel/default yapıyoruz.
+        const { name, category, color, is_active } = await req.json()
 
         if (!name) throw new Error('Name is required')
 
@@ -51,8 +53,7 @@ serve(async (req) => {
             .insert({
                 name,
                 category,
-                commission_mode,
-                commission_value: commission_value || 0,
+                color: color || '#10B981', // Yeni kolon
                 is_active: is_active ?? true
             })
             .select()

@@ -29,8 +29,6 @@ const AdminDepartments = () => {
     const [newItem, setNewItem] = useState({
         name: '',
         category: 'Kobi',
-        commission_mode: 'percentage',
-        commission_value: 2.0,
         color: '#10B981',
         is_active: true
     });
@@ -56,8 +54,6 @@ const AdminDepartments = () => {
             setNewItem({
                 name: '',
                 category: 'Kobi',
-                commission_mode: 'percentage',
-                commission_value: 2.0,
                 color: '#10B981',
                 is_active: true
             });
@@ -172,8 +168,8 @@ const AdminDepartments = () => {
                                             type="button"
                                             onClick={() => setNewItem({ ...newItem, category: cat.id })}
                                             className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-colors ${newItem.category === cat.id
-                                                    ? 'bg-white border-green-500 text-green-600 shadow-sm ring-1 ring-green-500'
-                                                    : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
+                                                ? 'bg-white border-green-500 text-green-600 shadow-sm ring-1 ring-green-500'
+                                                : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
                                                 }`}
                                         >
                                             {cat.label}
