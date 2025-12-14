@@ -83,6 +83,8 @@ const AdminDepartmentDetail = () => {
             setIsAssignModalOpen(false);
             fetchDetail(); // Refresh dept to get updated vaults
             fetchVaults(); // Refresh available list
+        } else {
+            alert('Atama başarısız oldu. Lütfen yetkilerinizi kontrol edin veya Step 4 SQL dosyasını çalıştırdığınızdan emin olun.');
         }
     };
 
@@ -167,8 +169,8 @@ const AdminDepartmentDetail = () => {
                             key={t}
                             onClick={() => setActiveTab(t as any)}
                             className={`pb-3 text-sm font-bold capitalize transition-colors ${activeTab === t
-                                    ? 'text-green-600 border-b-2 border-green-500'
-                                    : 'text-gray-400 hover:text-gray-600'
+                                ? 'text-green-600 border-b-2 border-green-500'
+                                : 'text-gray-400 hover:text-gray-600'
                                 }`}
                         >
                             {t === 'transactions' ? 'İşlemler' :
