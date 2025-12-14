@@ -860,10 +860,9 @@ export const api = {
 
   assignVault: async (vaultId: string, departmentId: string) => {
     try {
-      const { error } = await supabase
-        .from('vaults')
-        .update({ department_id: departmentId })
-        .eq('id', vaultId);
+      const { data, error } = await supabase.functions.invoke('manage-vault', {
+        body: { action: 'assign', vault_id: vaultId, department_id: departmentId }
+      });
       if (error) throw error;
       return true;
     } catch (e) {
@@ -874,10 +873,9 @@ export const api = {
 
   unassignVault: async (vaultId: string) => {
     try {
-      const { error } = await supabase
-        .from('vaults')
-        .update({ department_id: null, is_primary: false })
-        .eq('id', vaultId);
+      const { data, error } = await supabase.functions.invoke('manage-vault', {
+        body: { action: 'unassign', vault_id: vaultId }
+      });
       if (error) throw error;
       return true;
     } catch (e) {
@@ -888,18 +886,9 @@ export const api = {
 
   setPrimaryVault: async (vaultId: string, departmentId: string) => {
     try {
-      // 1. Reset all in dept
-      await supabase
-        .from('vaults')
-        .update({ is_primary: false })
-        .eq('department_id', departmentId);
-
-      // 2. Set new primary
-      const { error } = await supabase
-        .from('vaults')
-        .update({ is_primary: true })
-        .eq('id', vaultId);
-
+      const { data, error } = await supabase.functions.invoke('manage-vault', {
+        body: { action: 'set_primary', vault_id: vaultId, department_id: departmentId }
+      });
       if (error) throw error;
       return true;
     } catch (e) {
