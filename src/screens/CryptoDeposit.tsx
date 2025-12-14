@@ -42,8 +42,8 @@ const CryptoDeposit = () => {
             const { data, error } = await supabase.functions.invoke('deposit-request', {
                 body: {
                     amount: parseFloat(amount),
-                    network,
-                    txHash: txHash || null
+                    asset: network, // TRC20, ERC20, BEP20
+                    tx_hash: txHash || null
                 }
             });
 
