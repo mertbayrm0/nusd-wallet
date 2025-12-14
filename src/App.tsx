@@ -46,7 +46,7 @@ const AppContext = createContext<AppContextType>({} as AppContextType);
 export const useApp = () => useContext(AppContext);
 
 // ===== HELPER: Fetch profile from Supabase with timeout =====
-async function fetchOrCreateProfileWithTimeout(authUser: User, timeoutMs: number = 3000): Promise<UserState> {
+async function fetchOrCreateProfileWithTimeout(authUser: User, timeoutMs: number = 8000): Promise<UserState> {
   // Fallback user data from auth
   const fallbackUser: UserState = {
     email: authUser.email || '',
@@ -77,14 +77,34 @@ async function fetchOrCreateProfileWithTimeout(authUser: User, timeoutMs: number
 
 async function fetchProfileFromSupabase(authUser: User, fallbackUser: UserState): Promise<UserState> {
   try {
-    // Try to fetch existing profile
-    const { data: profile, error } = await supabase
+    // Try to fetch existing profile by ID first
+    let { data: profile, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', authUser.id)
       .single();
 
-    // If profile doesn't exist, create one
+    // If not found by ID, try by email (for legacy profiles)
+    if (error && error.code === 'PGRST116' && authUser.email) {
+      const { data: emailProfile, error: emailError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('email', authUser.email)
+        .single();
+
+      if (!emailError && emailProfile) {
+        profile = emailProfile;
+        error = null;
+
+        // Update the profile ID to match auth user ID
+        await supabase
+          .from('profiles')
+          .update({ id: authUser.id })
+          .eq('email', authUser.email);
+      }
+    }
+
+    // If profile still doesn't exist, create one
     if (error && error.code === 'PGRST116') {
       const { data: newProfile, error: insertError } = await supabase
         .from('profiles')
