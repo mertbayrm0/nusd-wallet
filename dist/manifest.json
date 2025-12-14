@@ -22,7 +22,8 @@
         "sidePanel"
     ],
     "host_permissions": [
-        "https://nusd-wallet-production.up.railway.app/*"
+        "https://nusd-wallet.vercel.app/*",
+        "https://*.supabase.co/*"
     ],
     "background": {
         "service_worker": "background.js"

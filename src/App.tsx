@@ -22,8 +22,6 @@ import AdminTransactions from './screens/AdminTransactions';
 import AdminLogs from './screens/AdminLogs';
 import AdminVaults from './screens/AdminVaults';
 import AdminDepartments from './screens/AdminDepartments';
-import UsdtPayment from './screens/UsdtPayment';
-import MerchantPayment from './screens/MerchantPayment';
 import FindAgent from './screens/FindAgent';
 import AutoLogin from './screens/AutoLogin';
 import BottomNav from './components/BottomNav';
@@ -356,8 +354,6 @@ const App: React.FC = () => {
           {/* Public Pages */}
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
-          <Route path="/pay" element={<UsdtPayment />} />
-          <Route path="/pay/:slug" element={<MerchantPayment />} />
           <Route path="/find-agent" element={<FindAgent />} />
           <Route path="/autologin" element={<AutoLogin />} />
         </Routes>
