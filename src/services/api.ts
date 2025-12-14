@@ -641,8 +641,11 @@ export const api = {
 
       if (error) throw error;
       return data;
-    } catch (e) {
-      console.error('createDepartment error:', e);
+    } catch (e: any) {
+      console.error('createDepartment fully detailed error:', e);
+      if (e.context && e.context.json) {
+        e.context.json().then((errBody: any) => console.error('Edge Function Error Body:', errBody));
+      }
       return { success: false, error: e };
     }
   },
