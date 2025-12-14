@@ -190,29 +190,7 @@ const AdminDepartments = () => {
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Komisyon Tipi</label>
-                                    <select
-                                        className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white font-medium"
-                                        value={newItem.commission_mode}
-                                        onChange={e => setNewItem({ ...newItem, commission_mode: e.target.value })}
-                                    >
-                                        <option value="percentage">Yüzde (%)</option>
-                                        <option value="fixed">Sabit ($)</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Değer</label>
-                                    <input
-                                        type="number"
-                                        step="0.1"
-                                        className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 font-bold"
-                                        value={newItem.commission_value}
-                                        onChange={e => setNewItem({ ...newItem, commission_value: parseFloat(e.target.value) })}
-                                    />
-                                </div>
-                            </div>
+
 
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Renk Etiketi</label>
