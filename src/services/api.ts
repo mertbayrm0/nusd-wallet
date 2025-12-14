@@ -182,19 +182,30 @@ export const api = {
   // ===== TRANSACTIONS =====
   getTransactions: async (email: string) => {
     try {
-      const { data: profile } = await supabase
+      if (!email) return [];
+
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('id')
         .eq('email', email)
         .single();
 
+      if (profileError) {
+        console.error('getTransactions profile error:', profileError.message);
+        return [];
+      }
       if (!profile) return [];
 
-      const { data } = await supabase
+      const { data, error: txError } = await supabase
         .from('transactions')
         .select('*')
         .eq('user_id', profile.id)
         .order('created_at', { ascending: false });
+
+      if (txError) {
+        console.error('getTransactions tx error:', txError.message);
+        return [];
+      }
 
       return (data || []).map((tx: any) => ({
         id: tx.id,
@@ -207,7 +218,8 @@ export const api = {
         network: tx.network,
         txHash: tx.tx_hash
       }));
-    } catch (e) {
+    } catch (e: any) {
+      console.error('getTransactions exception:', e.message);
       return [];
     }
   },
