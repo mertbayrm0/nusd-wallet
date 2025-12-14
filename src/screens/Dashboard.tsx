@@ -184,12 +184,7 @@ const Dashboard = () => {
         {/* Admin Panel Button */}
         {user.role === 'admin' && (
           <button
-            onClick={() => {
-              const token = localStorage.getItem('nusd_auth_token');
-              // Use Vanilla JS page for 100% reliable auth injection
-              const magicLink = `https://nusd-wallet-production.up.railway.app/admin-login.html?token=${token}&email=${user.email}`;
-              window.open(magicLink, '_blank');
-            }}
+            onClick={() => navigate('/admin')}
             className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 active:scale-[0.98] transition-all text-white py-4 rounded-2xl font-bold text-sm shadow-xl shadow-purple-500/30 mb-6"
           >
             <span className="material-symbols-outlined text-lg">admin_panel_settings</span>
