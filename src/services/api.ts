@@ -716,11 +716,18 @@ export const api = {
 
   getAdminVaults: async () => {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('vaults')
-        .select('*, departments(name, color)');
+        .select('*');
+
+      if (error) {
+        console.error('Vaults fetch error:', error);
+        return { vaults: [], ledger: [] };
+      }
+
       return { vaults: data || [], ledger: [] };
     } catch (e) {
+      console.error('Vaults exception:', e);
       return { vaults: [], ledger: [] };
     }
   },
