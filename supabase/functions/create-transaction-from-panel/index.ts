@@ -72,7 +72,7 @@ serve(async (req) => {
                 type: 'DEPOSIT',
                 amount: amount, // Gross amount stored in main column
                 status: 'PENDING',
-                asset_type: panel.asset || 'TRX',
+                currency: panel.asset || 'TRX', // Changed from asset_type to currency
                 metadata: {
                     source: 'payment_panel',
                     panel_id: panel.id,

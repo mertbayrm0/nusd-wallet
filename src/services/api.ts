@@ -687,7 +687,8 @@ export const api = {
         .from('departments')
         .select(`
           *,
-          panels:payment_panels(*)
+          panels:payment_panels(*),
+          vaults(*)
         `)
         .eq('id', id)
         .single();
@@ -838,6 +839,71 @@ export const api = {
       return true;
     } catch (e) {
       console.error('manualVaultDeposit error:', e);
+      return false;
+    }
+  },
+
+  // ===== VAULT LINKING (STEP 4) =====
+  getAvailableVaults: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('vaults')
+        .select('*')
+        .is('department_id', null);
+      if (error) throw error;
+      return data || [];
+    } catch (e) {
+      console.error('getAvailableVaults error:', e);
+      return [];
+    }
+  },
+
+  assignVault: async (vaultId: string, departmentId: string) => {
+    try {
+      const { error } = await supabase
+        .from('vaults')
+        .update({ department_id: departmentId })
+        .eq('id', vaultId);
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.error('assignVault error:', e);
+      return false;
+    }
+  },
+
+  unassignVault: async (vaultId: string) => {
+    try {
+      const { error } = await supabase
+        .from('vaults')
+        .update({ department_id: null, is_primary: false })
+        .eq('id', vaultId);
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.error('unassignVault error:', e);
+      return false;
+    }
+  },
+
+  setPrimaryVault: async (vaultId: string, departmentId: string) => {
+    try {
+      // 1. Reset all in dept
+      await supabase
+        .from('vaults')
+        .update({ is_primary: false })
+        .eq('department_id', departmentId);
+
+      // 2. Set new primary
+      const { error } = await supabase
+        .from('vaults')
+        .update({ is_primary: true })
+        .eq('id', vaultId);
+
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.error('setPrimaryVault error:', e);
       return false;
     }
   },
