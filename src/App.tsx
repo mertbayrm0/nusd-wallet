@@ -46,7 +46,7 @@ const AppContext = createContext<AppContextType>({} as AppContextType);
 export const useApp = () => useContext(AppContext);
 
 // ===== HELPER: Fetch profile from Supabase with timeout =====
-async function fetchOrCreateProfileWithTimeout(authUser: User, timeoutMs: number = 5000): Promise<UserState> {
+async function fetchOrCreateProfileWithTimeout(authUser: User, timeoutMs: number = 3000): Promise<UserState> {
   // Fallback user data from auth
   const fallbackUser: UserState = {
     email: authUser.email || '',

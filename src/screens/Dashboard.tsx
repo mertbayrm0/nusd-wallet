@@ -17,7 +17,7 @@ const Dashboard = () => {
       loadData();
 
       // Poll every 3 seconds
-      const interval = setInterval(loadData, 3000);
+      const interval = setInterval(loadData, 10000);
       return () => clearInterval(interval);
     }
   }, [user]);
