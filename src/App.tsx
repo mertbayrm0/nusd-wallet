@@ -45,8 +45,8 @@ const AppContext = createContext<AppContextType>({} as AppContextType);
 // eslint-disable-next-line react-refresh/only-export-components
 export const useApp = () => useContext(AppContext);
 
-// ===== HELPER: Fetch profile from Supabase =====
-async function fetchOrCreateProfile(authUser: User): Promise<UserState> {
+// ===== HELPER: Fetch profile from Supabase with timeout =====
+async function fetchOrCreateProfileWithTimeout(authUser: User, timeoutMs: number = 5000): Promise<UserState> {
   // Fallback user data from auth
   const fallbackUser: UserState = {
     email: authUser.email || '',
@@ -56,6 +56,26 @@ async function fetchOrCreateProfile(authUser: User): Promise<UserState> {
     isActive: true
   };
 
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      console.warn('Profile fetch timeout - using fallback user');
+      resolve(fallbackUser);
+    }, timeoutMs);
+
+    fetchProfileFromSupabase(authUser, fallbackUser)
+      .then((profile) => {
+        clearTimeout(timeout);
+        resolve(profile);
+      })
+      .catch((error) => {
+        clearTimeout(timeout);
+        console.error('Profile fetch error:', error);
+        resolve(fallbackUser);
+      });
+  });
+}
+
+async function fetchProfileFromSupabase(authUser: User, fallbackUser: UserState): Promise<UserState> {
   try {
     // Try to fetch existing profile
     const { data: profile, error } = await supabase
@@ -114,7 +134,7 @@ async function fetchOrCreateProfile(authUser: User): Promise<UserState> {
     }
     return fallbackUser;
   } catch (e) {
-    console.error('fetchOrCreateProfile exception:', e);
+    console.error('fetchProfileFromSupabase exception:', e);
     return fallbackUser;
   }
 }
@@ -177,7 +197,7 @@ const App: React.FC = () => {
 
         if (mounted && currentSession?.user) {
           setSession(currentSession);
-          const profile = await fetchOrCreateProfile(currentSession.user);
+          const profile = await fetchOrCreateProfileWithTimeout(currentSession.user);
           if (mounted) setUser(profile);
         }
       } catch (error) {
@@ -196,7 +216,7 @@ const App: React.FC = () => {
 
         if (event === 'SIGNED_IN' && newSession?.user) {
           setSession(newSession);
-          const profile = await fetchOrCreateProfile(newSession.user);
+          const profile = await fetchOrCreateProfileWithTimeout(newSession.user);
           setUser(profile);
         } else if (event === 'SIGNED_OUT') {
           setSession(null);
@@ -228,7 +248,7 @@ const App: React.FC = () => {
 
       if (data.session && data.user) {
         setSession(data.session);
-        const profile = await fetchOrCreateProfile(data.user);
+        const profile = await fetchOrCreateProfileWithTimeout(data.user);
         setUser(profile);
         return true;
       }
@@ -249,7 +269,7 @@ const App: React.FC = () => {
   const refreshUser = async () => {
     const { data: { session: currentSession } } = await supabase.auth.getSession();
     if (currentSession?.user) {
-      const profile = await fetchOrCreateProfile(currentSession.user);
+      const profile = await fetchOrCreateProfileWithTimeout(currentSession.user);
       setUser(profile);
     }
   };
