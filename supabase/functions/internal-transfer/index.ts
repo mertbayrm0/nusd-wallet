@@ -80,6 +80,22 @@ serve(async (req) => {
 
         // RPC returns JSON with success/error
         if (data?.success) {
+            // AUDIT LOG: Internal transfer kaydı
+            await supabase.from('transaction_audit_logs').insert({
+                transaction_id: data.sender_transaction_id,
+                action: 'INTERNAL_TRANSFER',
+                actor_role: 'edge',
+                actor_id: user.id,
+                metadata: {
+                    type: 'internal-transfer',
+                    amount,
+                    recipient_code,
+                    recipient_id: data.recipient_id,
+                    sender_new_balance: data.sender_new_balance,
+                    recipient_new_balance: data.recipient_new_balance
+                }
+            })
+
             return new Response(
                 JSON.stringify(data),
                 { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

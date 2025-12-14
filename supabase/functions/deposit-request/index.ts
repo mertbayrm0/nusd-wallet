@@ -83,6 +83,15 @@ serve(async (req) => {
         )
     }
 
+    // AUDIT LOG: Deposit oluşturma kaydı
+    await supabase.from('transaction_audit_logs').insert({
+        transaction_id: transaction.id,
+        action: 'CREATE',
+        actor_role: 'edge',
+        actor_id: user.id,
+        metadata: { type: 'deposit-request', amount, asset }
+    })
+
     return new Response(
         JSON.stringify({ success: true, transaction }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

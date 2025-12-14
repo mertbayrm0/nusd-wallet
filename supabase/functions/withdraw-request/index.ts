@@ -117,6 +117,21 @@ serve(async (req) => {
         )
     }
 
+    // AUDIT LOG: Withdraw oluşturma kaydı
+    await supabase.from('transaction_audit_logs').insert({
+        transaction_id: transaction.id,
+        action: 'CREATE',
+        actor_role: 'edge',
+        actor_id: user.id,
+        metadata: {
+            type: 'withdraw-request',
+            amount,
+            asset: asset ?? 'TRX',
+            previous_balance: profile.balance,
+            new_balance: newBalance
+        }
+    })
+
     return new Response(
         JSON.stringify({ success: true, transaction, newBalance }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

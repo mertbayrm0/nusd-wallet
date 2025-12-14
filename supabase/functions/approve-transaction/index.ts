@@ -121,6 +121,20 @@ serve(async (req) => {
                     .eq('id', tx.user_id)
             }
 
+            // AUDIT LOG: Onay kaydı
+            await supabaseAdmin.from('transaction_audit_logs').insert({
+                transaction_id: tx.id,
+                action: 'APPROVE',
+                actor_role: 'admin',
+                actor_id: user.id,
+                metadata: {
+                    previous_status: 'PENDING',
+                    new_status: 'COMPLETED',
+                    tx_type: tx.type,
+                    amount: tx.amount
+                }
+            })
+
             return new Response(
                 JSON.stringify({
                     success: true,
@@ -143,6 +157,21 @@ serve(async (req) => {
                     .update({ balance: userProfile.balance + tx.amount })
                     .eq('id', tx.user_id)
             }
+
+            // AUDIT LOG: Red kaydı
+            await supabaseAdmin.from('transaction_audit_logs').insert({
+                transaction_id: tx.id,
+                action: 'REJECT',
+                actor_role: 'admin',
+                actor_id: user.id,
+                metadata: {
+                    previous_status: 'PENDING',
+                    new_status: 'CANCELLED',
+                    tx_type: tx.type,
+                    amount: tx.amount,
+                    refunded: tx.type === 'WITHDRAW'
+                }
+            })
 
             return new Response(
                 JSON.stringify({

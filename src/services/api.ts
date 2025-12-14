@@ -594,6 +594,22 @@ export const api = {
     }
   },
 
+  getTransactionLogs: async (txId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('transaction_audit_logs')
+        .select('*')
+        .eq('transaction_id', txId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (e) {
+      console.error('Audit log fetch error:', e);
+      return [];
+    }
+  },
+
   // ===== DEPARTMENTS =====
   getDepartments: async () => {
     try {
