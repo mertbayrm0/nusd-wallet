@@ -1,6 +1,6 @@
 // Supabase Edge Function: internal-transfer
-// Platform içi anında transfer
-// NUSD-XXXX kodu ile kullanıcılar arası transfer
+// Platform içi anında transfer - ATOMIC VERSION
+// PostgreSQL RPC ile race condition önleme
 
 import { serve } from 'https://deno.land/std/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js'
@@ -44,7 +44,7 @@ serve(async (req) => {
     // Parse body
     const { amount, recipient_code } = await req.json()
 
-    // Validation
+    // Basic validation
     if (!amount || amount <= 0) {
         return new Response(
             JSON.stringify({ error: 'Invalid amount' }),
@@ -59,108 +59,33 @@ serve(async (req) => {
         )
     }
 
-    // 1️⃣ Get sender profile
-    const { data: sender, error: senderError } = await supabase
-        .from('profiles')
-        .select('id, email, balance, transfer_code')
-        .eq('id', user.id)
-        .single()
+    // 🔒 ATOMIC TRANSFER via PostgreSQL RPC
+    // Bu fonksiyon SELECT FOR UPDATE ile row locking yapar
+    // Race condition / double-spend imkansız
+    const { data, error } = await supabase.rpc('execute_internal_transfer', {
+        sender_id: user.id,
+        recipient_code: recipient_code,
+        transfer_amount: amount
+    })
 
-    if (senderError || !sender) {
+    if (error) {
+        console.error('RPC error:', error)
         return new Response(
-            JSON.stringify({ error: 'Sender not found' }),
-            { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-    }
-
-    // Can't send to yourself
-    if (sender.transfer_code === recipient_code) {
-        return new Response(
-            JSON.stringify({ error: 'Cannot transfer to yourself' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-    }
-
-    // Check balance
-    if (sender.balance < amount) {
-        return new Response(
-            JSON.stringify({ error: 'Insufficient balance', balance: sender.balance }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-    }
-
-    // 2️⃣ Get recipient by transfer_code
-    const { data: recipient, error: recipientError } = await supabase
-        .from('profiles')
-        .select('id, email, balance, transfer_code')
-        .eq('transfer_code', recipient_code)
-        .single()
-
-    if (recipientError || !recipient) {
-        return new Response(
-            JSON.stringify({ error: 'Recipient not found' }),
-            { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-    }
-
-    // 3️⃣ ATOMIC: Deduct from sender
-    const { error: senderUpdateError } = await supabase
-        .from('profiles')
-        .update({ balance: sender.balance - amount })
-        .eq('id', sender.id)
-
-    if (senderUpdateError) {
-        return new Response(
-            JSON.stringify({ error: 'Failed to deduct balance' }),
+            JSON.stringify({ error: 'Transfer failed', details: error.message }),
             { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
     }
 
-    // 4️⃣ Add to recipient
-    const { error: recipientUpdateError } = await supabase
-        .from('profiles')
-        .update({ balance: recipient.balance + amount })
-        .eq('id', recipient.id)
-
-    if (recipientUpdateError) {
-        // Rollback sender
-        await supabase
-            .from('profiles')
-            .update({ balance: sender.balance })
-            .eq('id', sender.id)
-
+    // RPC returns JSON with success/error
+    if (data?.success) {
         return new Response(
-            JSON.stringify({ error: 'Failed to credit recipient' }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            JSON.stringify(data),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+    } else {
+        return new Response(
+            JSON.stringify({ error: data?.error || 'Transfer failed' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
     }
-
-    // 5️⃣ Create COMPLETED transaction for sender (SEND)
-    await supabase.from('transactions').insert({
-        user_id: sender.id,
-        type: 'TRANSFER_OUT',
-        amount: amount,
-        status: 'COMPLETED',
-        network: 'INTERNAL',
-        to_address: recipient_code
-    })
-
-    // 6️⃣ Create COMPLETED transaction for recipient (RECEIVE)
-    await supabase.from('transactions').insert({
-        user_id: recipient.id,
-        type: 'TRANSFER_IN',
-        amount: amount,
-        status: 'COMPLETED',
-        network: 'INTERNAL',
-        tx_hash: sender.transfer_code // From code
-    })
-
-    return new Response(
-        JSON.stringify({
-            success: true,
-            message: `${amount} USDT transferred to ${recipient_code}`,
-            newBalance: sender.balance - amount
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
 })
