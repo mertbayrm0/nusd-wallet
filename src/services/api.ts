@@ -734,7 +734,64 @@ export const api = {
   lockMatch: async () => false,
   markPaymentSent: async () => { },
   approveRelease: async () => { },
-  manualVaultDeposit: async () => false,
+  manualVaultDeposit: async (vaultId: string, amount: number, userEmail: string, network: string, addToUser: boolean) => {
+    try {
+      // Get current vault balance
+      const { data: vault, error: vaultError } = await supabase
+        .from('vaults')
+        .select('balance')
+        .eq('id', vaultId)
+        .single();
+
+      if (vaultError || !vault) {
+        console.error('Vault not found:', vaultError);
+        return false;
+      }
+
+      // Update vault balance
+      const { error: updateError } = await supabase
+        .from('vaults')
+        .update({ balance: (vault.balance || 0) + amount })
+        .eq('id', vaultId);
+
+      if (updateError) {
+        console.error('Failed to update vault balance:', updateError);
+        return false;
+      }
+
+      // If addToUser is true and userEmail is provided, credit user balance
+      if (addToUser && userEmail && userEmail !== 'External Transfer') {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id, balance')
+          .eq('email', userEmail)
+          .single();
+
+        if (profile) {
+          await supabase
+            .from('profiles')
+            .update({ balance: (profile.balance || 0) + amount })
+            .eq('id', profile.id);
+
+          // Create a deposit transaction record
+          await supabase
+            .from('transactions')
+            .insert({
+              user_id: profile.id,
+              type: 'DEPOSIT',
+              amount: amount,
+              status: 'COMPLETED',
+              network: network
+            });
+        }
+      }
+
+      return true;
+    } catch (e) {
+      console.error('manualVaultDeposit error:', e);
+      return false;
+    }
+  },
   createP2POrder: async (type: string, amount: number, email: string, iban: string, bankName: string, accountName: string) => {
     try {
       // Get user profile
