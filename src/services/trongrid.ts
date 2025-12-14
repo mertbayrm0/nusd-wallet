@@ -20,13 +20,19 @@ export const getTRXBalance = async (address: string): Promise<number> => {
                 'TRON-PRO-API-KEY': TRONGRID_API_KEY
             }
         });
+
+        // 404 = hesap henüz aktive edilmemiş (0 bakiye)
+        if (!response.ok) {
+            return 0;
+        }
+
         const data = await response.json();
         if (data.data && data.data.length > 0) {
             return (data.data[0].balance || 0) / 1e6; // sun -> TRX
         }
         return 0;
     } catch (error) {
-        console.error('TRX balance error:', error);
+        // Hata durumunda sessizce 0 döndür
         return 0;
     }
 };
@@ -42,6 +48,12 @@ export const getUSDTBalance = async (address: string): Promise<number> => {
                 }
             }
         );
+
+        // 404 = hesap henüz aktive edilmemiş
+        if (!response.ok) {
+            return 0;
+        }
+
         const data = await response.json();
         if (data.data && data.data.length > 0) {
             // USDT has 6 decimals
@@ -49,7 +61,7 @@ export const getUSDTBalance = async (address: string): Promise<number> => {
         }
         return 0;
     } catch (error) {
-        console.error('USDT balance error:', error);
+        // Hata durumunda sessizce 0 döndür
         return 0;
     }
 };
