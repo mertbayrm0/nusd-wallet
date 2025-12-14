@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../App';
-import { api } from '../services/api';
+import { supabase } from '../services/supabase';
 
 const CryptoDeposit = () => {
     const navigate = useNavigate();
@@ -38,9 +38,22 @@ const CryptoDeposit = () => {
         }
         setSubmitting(true);
         try {
-            const result = await api.notifyDeposit(user?.email || '', parseFloat(amount), network, txHash, memoCode);
-            if (result.success) setSuccess(true);
-            else alert(result.error || 'Failed to submit deposit notification');
+            // Call Edge Function instead of direct DB write
+            const { data, error } = await supabase.functions.invoke('deposit-request', {
+                body: {
+                    amount: parseFloat(amount),
+                    network,
+                    txHash: txHash || null
+                }
+            });
+
+            if (error) {
+                alert(error.message || 'Failed to submit deposit notification');
+            } else if (data?.success) {
+                setSuccess(true);
+            } else {
+                alert(data?.error || 'Failed to submit deposit notification');
+            }
         } catch (err) {
             alert('Connection error');
         }

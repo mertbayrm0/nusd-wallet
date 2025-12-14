@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
+import { supabase } from '../services/supabase';
 import { useApp } from '../App';
 
 interface BankAccount {
@@ -68,10 +69,25 @@ const Withdraw = () => {
         setLoading(true);
         try {
             if (!user) return;
-            await api.createWithdrawal(user.email, parseFloat(amount), true);
-            alert('Çekim talebiniz oluşturuldu. Onay bekliyor.');
-            refreshUser();
-            navigate('/dashboard');
+
+            // Call Edge Function instead of direct DB write
+            const { data, error } = await supabase.functions.invoke('withdraw-request', {
+                body: {
+                    amount: parseFloat(amount),
+                    network: 'instant',
+                    address: null
+                }
+            });
+
+            if (error) {
+                alert(error.message || 'Hata oluştu');
+            } else if (data?.success) {
+                alert('Çekim talebiniz oluşturuldu. Onay bekliyor.');
+                refreshUser();
+                navigate('/dashboard');
+            } else {
+                alert(data?.error || 'Hata oluştu');
+            }
         } catch (e: any) {
             alert(e.message || 'Hata oluştu');
         }

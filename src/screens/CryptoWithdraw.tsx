@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../App';
-import { api } from '../services/api';
+import { supabase } from '../services/supabase';
 
 const CryptoWithdraw = () => {
     const navigate = useNavigate();
-    const { user } = useApp();
+    const { user, refreshUser } = useApp();
     const [amount, setAmount] = useState('');
     const [address, setAddress] = useState('');
     const [network, setNetwork] = useState('Tron (TRC20)');
@@ -22,9 +22,24 @@ const CryptoWithdraw = () => {
     const submit = async () => {
         if (!isValid) return;
         try {
-            await api.createWithdrawal(user?.email || '', val, false, 'crypto_withdraw', network, address);
-            alert("Withdrawal Request Submitted");
-            navigate('/dashboard');
+            // Call Edge Function instead of direct DB write
+            const { data, error } = await supabase.functions.invoke('withdraw-request', {
+                body: {
+                    amount: val,
+                    network,
+                    address
+                }
+            });
+
+            if (error) {
+                alert(error.message || "Withdrawal failed");
+            } else if (data?.success) {
+                alert("Withdrawal Request Submitted");
+                refreshUser();
+                navigate('/dashboard');
+            } else {
+                alert(data?.error || "Withdrawal failed");
+            }
         } catch (e: any) {
             alert(e.message || "Withdrawal failed");
         }
