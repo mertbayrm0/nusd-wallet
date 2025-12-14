@@ -671,8 +671,61 @@ export const api = {
   markPaymentSent: async () => { },
   approveRelease: async () => { },
   manualVaultDeposit: async () => false,
-  createP2POrder: async () => ({ success: false }),
-  getP2POrderStatus: async () => null,
+  createP2POrder: async (type: string, amount: number, email: string, iban: string, bankName: string, accountName: string) => {
+    try {
+      // Get user profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, balance')
+        .eq('email', email)
+        .single();
+
+      if (!profile) return { success: false, error: 'User not found' };
+      if (type === 'SELL' && profile.balance < amount) return { success: false, error: 'Insufficient balance' };
+
+      // Create P2P withdrawal transaction
+      const { data: tx, error } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: profile.id,
+          type: 'P2P_SELL',
+          amount: -amount,
+          status: 'PENDING',
+          memo_code: `${bankName} - ${iban}`
+        })
+        .select()
+        .single();
+
+      if (error) return { success: false, error: error.message };
+
+      // Deduct from balance immediately for P2P sell
+      await supabase
+        .from('profiles')
+        .update({ balance: profile.balance - amount })
+        .eq('id', profile.id);
+
+      return {
+        success: true,
+        orderId: tx.id,
+        message: 'P2P order created successfully'
+      };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  },
+  getP2POrderStatus: async (orderId: string) => {
+    try {
+      const { data } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('id', orderId)
+        .single();
+
+      return data ? { status: data.status, match: null } : null;
+    } catch (e) {
+      return null;
+    }
+  },
   markP2PPaymentSent: async () => ({ success: false }),
   confirmP2PPaymentReceived: async () => ({ success: false }),
   getMyP2PActivity: async () => ({ orders: [], trades: [] }),
