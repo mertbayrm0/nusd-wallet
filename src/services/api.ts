@@ -795,5 +795,89 @@ export const api = {
   createMerchant: async () => ({ success: false }),
   updateMerchant: async () => ({ success: false }),
   deleteMerchant: async () => false,
-  getDepartmentMerchant: async () => null
+  getDepartmentMerchant: async () => null,
+
+  // ===== ADMIN TRANSACTION ACTIONS =====
+  approveTransaction: async (txId: string) => {
+    try {
+      // Get the transaction
+      const { data: tx, error: txError } = await supabase
+        .from('transactions')
+        .select('*, profiles(id, balance)')
+        .eq('id', txId)
+        .single();
+
+      if (txError || !tx) {
+        console.error('Transaction not found:', txError);
+        return false;
+      }
+
+      // Update transaction status to COMPLETED
+      const { error: updateError } = await supabase
+        .from('transactions')
+        .update({ status: 'COMPLETED' })
+        .eq('id', txId);
+
+      if (updateError) {
+        console.error('Failed to update transaction:', updateError);
+        return false;
+      }
+
+      // If it's a deposit type, credit the user's balance
+      if (tx.type === 'DEPOSIT' && tx.amount > 0) {
+        const newBalance = (tx.profiles?.balance || 0) + tx.amount;
+        await supabase
+          .from('profiles')
+          .update({ balance: newBalance })
+          .eq('id', tx.user_id);
+      }
+
+      return true;
+    } catch (e) {
+      console.error('approveTransaction error:', e);
+      return false;
+    }
+  },
+
+  rejectTransaction: async (txId: string) => {
+    try {
+      // Get the transaction
+      const { data: tx, error: txError } = await supabase
+        .from('transactions')
+        .select('*, profiles(id, balance)')
+        .eq('id', txId)
+        .single();
+
+      if (txError || !tx) {
+        console.error('Transaction not found:', txError);
+        return false;
+      }
+
+      // Update transaction status to CANCELLED
+      const { error: updateError } = await supabase
+        .from('transactions')
+        .update({ status: 'CANCELLED' })
+        .eq('id', txId);
+
+      if (updateError) {
+        console.error('Failed to update transaction:', updateError);
+        return false;
+      }
+
+      // If it was a withdrawal (money was already deducted), refund the user
+      if ((tx.type === 'WITHDRAW' || tx.type === 'P2P_SELL') && tx.amount < 0) {
+        const refundAmount = Math.abs(tx.amount);
+        const newBalance = (tx.profiles?.balance || 0) + refundAmount;
+        await supabase
+          .from('profiles')
+          .update({ balance: newBalance })
+          .eq('id', tx.user_id);
+      }
+
+      return true;
+    } catch (e) {
+      console.error('rejectTransaction error:', e);
+      return false;
+    }
+  }
 };
