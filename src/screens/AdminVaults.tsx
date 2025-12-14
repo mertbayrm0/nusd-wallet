@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
+import { getWalletBalance } from '../services/trongrid';
 import AdminLayout from '../components/AdminLayout';
 
 interface Vault {
@@ -20,9 +21,17 @@ interface VaultEntry {
     timestamp: string;
 }
 
+interface BlockchainBalance {
+    trx: number;
+    usdt: number;
+    loading: boolean;
+}
+
 const AdminVaults = () => {
     const [data, setData] = useState<{ vaults: Vault[], ledger: VaultEntry[] }>({ vaults: [], ledger: [] });
     const [loading, setLoading] = useState(true);
+    const [blockchainBalances, setBlockchainBalances] = useState<Record<string, BlockchainBalance>>({});
+
     // Modal State
     const [showModal, setShowModal] = useState(false);
     const [selectedVault, setSelectedVault] = useState<Vault | null>(null);
@@ -40,6 +49,37 @@ const AdminVaults = () => {
         const interval = setInterval(load, 5000);
         return () => clearInterval(interval);
     }, []);
+
+    // Blockchain bakiyelerini yükle
+    useEffect(() => {
+        const loadBlockchainBalances = async () => {
+            for (const vault of data.vaults) {
+                if (vault.address && vault.address.startsWith('T')) {
+                    setBlockchainBalances(prev => ({
+                        ...prev,
+                        [vault.id]: { trx: 0, usdt: 0, loading: true }
+                    }));
+
+                    try {
+                        const balance = await getWalletBalance(vault.address);
+                        setBlockchainBalances(prev => ({
+                            ...prev,
+                            [vault.id]: { ...balance, loading: false }
+                        }));
+                    } catch (e) {
+                        setBlockchainBalances(prev => ({
+                            ...prev,
+                            [vault.id]: { trx: 0, usdt: 0, loading: false }
+                        }));
+                    }
+                }
+            }
+        };
+
+        if (data.vaults.length > 0) {
+            loadBlockchainBalances();
+        }
+    }, [data.vaults]);
 
     const copy = (text: string) => {
         navigator.clipboard.writeText(text);
@@ -64,7 +104,6 @@ const AdminVaults = () => {
             setDepositEmail('');
             setAddToUser(false);
             setProcessing(false);
-            // Refresh data immediately
             api.getAdminVaults().then(setData);
         } else {
             alert('Failed to deposit');
@@ -146,42 +185,70 @@ const AdminVaults = () => {
                         <span className="text-xs font-bold text-gray-500 bg-gray-200 px-2 py-1 rounded-full">{data.vaults.length} Active</span>
                     </div>
                     <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                        {data.vaults.map(vault => (
-                            <div key={vault.id} className="bg-white p-4 rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all group relative">
-                                <div className="flex justify-between items-start mb-2">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center">
-                                            <span className="material-symbols-outlined text-sm">account_balance_wallet</span>
+                        {data.vaults.map(vault => {
+                            const bcBalance = blockchainBalances[vault.id];
+                            return (
+                                <div key={vault.id} className="bg-white p-4 rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all group relative">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center">
+                                                <span className="material-symbols-outlined text-sm">account_balance_wallet</span>
+                                            </div>
+                                            <h3 className="font-bold text-gray-700 text-sm">{vault.name}</h3>
                                         </div>
-                                        <h3 className="font-bold text-gray-700 text-sm">{vault.name}</h3>
+                                        <div className="flex items-center gap-3">
+                                            <div className="text-right">
+                                                <span className="text-lg font-extrabold text-[#111827]">
+                                                    ${vault.balance.toLocaleString()}
+                                                </span>
+                                                <p className="text-[10px] text-gray-400">Platform Balance</p>
+                                            </div>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedVault(vault);
+                                                    setShowModal(true);
+                                                }}
+                                                className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors"
+                                                title="Add Funds Manually"
+                                            >
+                                                <span className="material-symbols-outlined text-xs">add</span>
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-lg font-extrabold text-[#111827]">
-                                            ${vault.balance.toLocaleString()}
-                                        </span>
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setSelectedVault(vault);
-                                                setShowModal(true);
-                                            }}
-                                            className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors"
-                                            title="Add Funds Manually"
-                                        >
-                                            <span className="material-symbols-outlined text-xs">add</span>
-                                        </button>
+
+                                    {/* Blockchain Balance */}
+                                    {vault.address && vault.address.startsWith('T') && (
+                                        <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-2 mb-2 border border-green-100">
+                                            <p className="text-[10px] text-gray-500 font-bold mb-1">⛓️ Blockchain Balance</p>
+                                            {bcBalance?.loading ? (
+                                                <p className="text-xs text-gray-400 animate-pulse">Loading...</p>
+                                            ) : bcBalance ? (
+                                                <div className="flex gap-4">
+                                                    <span className="text-sm font-bold text-green-600">
+                                                        {bcBalance.usdt.toLocaleString()} USDT
+                                                    </span>
+                                                    <span className="text-sm font-bold text-blue-600">
+                                                        {bcBalance.trx.toFixed(2)} TRX
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <p className="text-xs text-gray-400">-</p>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <div
+                                        className="bg-gray-50 rounded-lg p-2 flex justify-between items-center cursor-pointer hover:bg-gray-100 group-hover:bg-blue-50 transition-colors"
+                                        onClick={() => copy(vault.address)}
+                                        title="Click to copy"
+                                    >
+                                        <p className="font-mono text-xs text-gray-500 truncate w-48">{vault.address}</p>
+                                        <span className="material-symbols-outlined text-gray-400 text-xs group-hover:text-blue-500">content_copy</span>
                                     </div>
                                 </div>
-                                <div
-                                    className="bg-gray-50 rounded-lg p-2 flex justify-between items-center cursor-pointer hover:bg-gray-100 group-hover:bg-blue-50 transition-colors"
-                                    onClick={() => copy(vault.address)}
-                                    title="Click to copy"
-                                >
-                                    <p className="font-mono text-xs text-gray-500 truncate w-48">{vault.address}</p>
-                                    <span className="material-symbols-outlined text-gray-400 text-xs group-hover:text-blue-500">content_copy</span>
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
 
