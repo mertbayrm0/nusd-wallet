@@ -560,62 +560,36 @@ export const api = {
 
   approveTransaction: async (txId: string) => {
     try {
-      const { data: tx } = await supabase
-        .from('transactions')
-        .select('*, profiles(id, balance)')
-        .eq('id', txId)
-        .single();
+      const { data, error } = await supabase.functions.invoke('approve-transaction', {
+        body: { transactionId: txId, action: 'approve' }
+      });
 
-      if (!tx) return false;
-
-      // Update transaction status
-      await supabase
-        .from('transactions')
-        .update({ status: 'COMPLETED' })
-        .eq('id', txId);
-
-      // If deposit, add to user balance
-      if (tx.type === 'DEPOSIT') {
-        await supabase
-          .from('profiles')
-          .update({ balance: (tx.profiles.balance || 0) + tx.amount })
-          .eq('id', tx.profiles.id);
+      if (error) {
+        console.error('Approve error:', error);
+        return false;
       }
 
-      return true;
+      return data?.success || false;
     } catch (e) {
+      console.error('Approve exception:', e);
       return false;
     }
   },
 
   rejectTransaction: async (txId: string) => {
     try {
-      const { data: tx } = await supabase
-        .from('transactions')
-        .select('*, profiles(id, balance)')
-        .eq('id', txId)
-        .single();
+      const { data, error } = await supabase.functions.invoke('approve-transaction', {
+        body: { transactionId: txId, action: 'reject' }
+      });
 
-      if (!tx) return false;
-
-      // Update transaction status to CANCELLED
-      await supabase
-        .from('transactions')
-        .update({ status: 'CANCELLED' })
-        .eq('id', txId);
-
-      // If withdrawal or P2P sell (money was already deducted), refund user
-      if ((tx.type === 'WITHDRAW' || tx.type === 'P2P_SELL') && tx.amount < 0) {
-        const refundAmount = Math.abs(tx.amount);
-        await supabase
-          .from('profiles')
-          .update({ balance: (tx.profiles.balance || 0) + refundAmount })
-          .eq('id', tx.profiles.id);
+      if (error) {
+        console.error('Reject error:', error);
+        return false;
       }
 
-      return true;
+      return data?.success || false;
     } catch (e) {
-      console.error('rejectTransaction error:', e);
+      console.error('Reject exception:', e);
       return false;
     }
   },
