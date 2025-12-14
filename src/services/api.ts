@@ -194,16 +194,16 @@ export const api = {
         .from('transactions')
         .select('*')
         .eq('user_id', profile.id)
-        .order('timestamp', { ascending: false });
+        .order('created_at', { ascending: false });
 
       return (data || []).map((tx: any) => ({
         id: tx.id,
-        type: tx.type.toLowerCase(),
+        type: tx.type?.toLowerCase() || 'unknown',
         amount: tx.amount,
         currency: 'NUSD',
-        date: tx.timestamp,
-        status: tx.status.toLowerCase(),
-        title: `${tx.type} Transaction`,
+        date: tx.created_at,
+        status: tx.status?.toLowerCase() || 'pending',
+        title: `${tx.type || 'Unknown'} Transaction`,
         network: tx.network,
         txHash: tx.tx_hash
       }));
@@ -433,7 +433,7 @@ export const api = {
       const { data } = await supabase
         .from('transactions')
         .select('*, profiles(email, name)')
-        .order('timestamp', { ascending: false });
+        .order('created_at', { ascending: false });
 
       return (data || []).map((tx: any) => ({
         id: tx.id,
@@ -442,7 +442,7 @@ export const api = {
         status: tx.status,
         network: tx.network,
         txHash: tx.tx_hash,
-        timestamp: tx.timestamp,
+        timestamp: tx.created_at,
         userEmail: tx.profiles?.email,
         userName: tx.profiles?.name
       }));
