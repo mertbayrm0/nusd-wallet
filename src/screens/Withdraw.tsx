@@ -74,8 +74,7 @@ const Withdraw = () => {
             const { data, error } = await supabase.functions.invoke('withdraw-request', {
                 body: {
                     amount: parseFloat(amount),
-                    network: 'instant',
-                    address: null
+                    asset: 'TRY' // Fiat instant withdraw
                 }
             });
 

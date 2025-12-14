@@ -26,8 +26,7 @@ const CryptoWithdraw = () => {
             const { data, error } = await supabase.functions.invoke('withdraw-request', {
                 body: {
                     amount: val,
-                    network,
-                    address
+                    asset: network // TRC20, ERC20, BEP20 → asset olarak gönder
                 }
             });
 
