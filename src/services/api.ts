@@ -903,7 +903,12 @@ export const api = {
     } catch (e: any) {
       console.error('createP2POrder error:', e);
       if (e.context && e.context.json) {
-        e.context.json().then((errBody: any) => console.error('Edge Function Error Body:', JSON.stringify(errBody, null, 2)));
+        e.context.json().then((errBody: any) => {
+          console.error('Edge Function Error Body:', JSON.stringify(errBody, null, 2))
+          alert(`Sistem Hatası: ${errBody.error || 'Bilinmeyen Hata'} (Stage: ${errBody.stage || 'Unknown'})`)
+        });
+      } else {
+        alert(`İşlem Başarısız: ${e.message}`)
       }
       return { success: false, error: e.message };
     }

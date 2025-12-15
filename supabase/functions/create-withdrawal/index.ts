@@ -73,9 +73,8 @@ serve(async (req) => {
                 .insert({
                     id: user.id,
                     email: user.email,
-                    balance: 0,
-                    is_active: true,
-                    role: 'user'
+                    balance: 0
+                    // Removed potential non-existent columns (is_active, role) to be safe
                 })
                 .select('id, balance, email, full_name, iban, bank_name')
                 .single()
