@@ -67,10 +67,10 @@ serve(async (req) => {
             )
         }
 
-        // 4️⃣ Yetki: Sadece SELLER mark-paid yapabilir
-        if (order.seller_id !== user.id) {
+        // 4️⃣ Yetki: Sadece BUYER mark-paid yapabilir (para gönderen taraf)
+        if (order.buyer_id !== user.id) {
             return new Response(
-                JSON.stringify({ error: 'Only seller can mark as paid' }),
+                JSON.stringify({ error: 'Only buyer can mark as paid' }),
                 { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             )
         }
@@ -106,7 +106,7 @@ serve(async (req) => {
         await supabase.from('p2p_events').insert({
             order_id: orderId,
             actor_id: user.id,
-            actor_role: 'seller',
+            actor_role: 'buyer',
             event_type: 'MARK_PAID',
             metadata: { marked_at: new Date().toISOString() }
         })

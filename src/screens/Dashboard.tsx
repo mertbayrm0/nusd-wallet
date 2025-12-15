@@ -107,6 +107,18 @@ const Dashboard = () => {
     }
   };
 
+  // P2P: Seller confirms they received the payment
+  const handleSellerConfirm = async (orderId: string) => {
+    const result = await api.buyerConfirmP2P(orderId, true);
+    if (result?.success) {
+      alert('Transfer onaylandı! Bakiye alıcıya aktarıldı.');
+      loadData();
+      refreshUser();
+    } else {
+      alert('Hata: ' + (result?.error || 'İşlem başarısız'));
+    }
+  };
+
   const handleNotificationClick = async () => {
     if (notification) {
       await api.markNotificationRead(notification.id);
@@ -183,69 +195,56 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* P2P Pending Actions */}
-        {p2pPending.length > 0 && (
-          <div className="bg-lime-500/10 border border-lime-500/30 p-4 rounded-2xl mb-6 backdrop-blur-sm">
-            <h3 className="font-bold text-lime-400 flex items-center gap-2 mb-3 text-sm">
-              <span className="material-symbols-outlined text-lg">swap_horiz</span>
-              P2P İşlem Bekliyor
-            </h3>
-            {p2pPending.map((order: any) => {
-              // Determine user role based on order data
-              // After match, both buyer_id and seller_id exist
-              const hasBothParties = order.buyer_id && order.seller_id;
-
-              // MATCHED: Buyer needs to click "Ödedim" (I transferred)
-              // PAID: Seller needs to click "Onayladım" (I received)
-              const isBuyOrder = order.buyer_id !== null;
-              const isSellOrder = order.seller_id !== null;
-
-              // Show label based on original order type
-              let orderLabel = 'P2P';
-              if (hasBothParties) {
-                // This could be either side after match
-                orderLabel = 'MATCHED';
-              } else if (isBuyOrder) {
-                orderLabel = 'BUY';
-              } else if (isSellOrder) {
-                orderLabel = 'SELL';
-              }
-
-              // MATCHED status: Buyer should mark as paid
-              const showBuyerMarkPaid = order.status === 'MATCHED';
-
-              // PAID status: Seller should confirm receipt
-              const showSellerConfirm = order.status === 'PAID';
-
-              return (
-                <div key={order.id} className="flex justify-between items-center bg-[#1a1a1a] p-3 rounded-xl mb-2 last:mb-0">
-                  <div className="flex flex-col">
-                    <span className="text-xs text-gray-500 font-medium">
-                      {orderLabel} • ${order.amount_usd}
-                    </span>
-                    <span className="text-sm font-bold text-white">
-                      Status: <span className="text-amber-400">{order.status}</span>
-                    </span>
-                  </div>
-                  {showBuyerMarkPaid && (
-                    <button
-                      onClick={() => handleMarkPaid(order.id)}
-                      className="bg-lime-500 text-black px-4 py-2 rounded-lg text-xs font-bold hover:bg-lime-400 transition-colors"
-                    >
-                      Ödedim ✓
-                    </button>
-                  )}
-                  {showSellerConfirm && (
-                    <button
-                      onClick={() => handleBuyerConfirm(order.id)}
-                      className="bg-lime-500 text-black px-4 py-2 rounded-lg text-xs font-bold hover:bg-lime-400 transition-colors"
-                    >
-                      Onayladım ✓
-                    </button>
-                  )}
+        {/* P2P Transfer Notification Popup - Only for Seller when order is PAID */}
+        {p2pPending.filter((o: any) => o.status === 'PAID').length > 0 && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-[#1a1a1a] rounded-3xl p-6 max-w-sm w-full border border-lime-500/30 shadow-2xl shadow-lime-500/10">
+              {/* Success Icon */}
+              <div className="flex justify-center mb-4">
+                <div className="w-16 h-16 rounded-full bg-lime-500/20 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-lime-400 text-3xl">payments</span>
                 </div>
-              );
-            })}
+              </div>
+
+              {/* Title */}
+              <h2 className="text-xl font-bold text-white text-center mb-2">
+                Hesabınıza Transfer Gerçekleşti!
+              </h2>
+
+              {/* Amount */}
+              {p2pPending.filter((o: any) => o.status === 'PAID').map((order: any) => (
+                <div key={order.id} className="bg-[#111] rounded-xl p-4 mb-4">
+                  <p className="text-gray-400 text-sm text-center mb-1">Transfer Tutarı</p>
+                  <p className="text-2xl font-bold text-lime-400 text-center">
+                    ${order.amount_usd.toLocaleString()}
+                  </p>
+                </div>
+              ))}
+
+              {/* Description */}
+              <p className="text-gray-400 text-sm text-center mb-6">
+                Alıcı ödemeyi gönderdiğini bildirdi. Lütfen banka hesabınızı kontrol edin ve transfer geldi ise onaylayın.
+              </p>
+
+              {/* Confirm Button */}
+              <button
+                onClick={() => {
+                  const paidOrder = p2pPending.find((o: any) => o.status === 'PAID');
+                  if (paidOrder) handleSellerConfirm(paidOrder.id);
+                }}
+                className="w-full bg-lime-500 hover:bg-lime-400 text-black py-4 rounded-xl font-bold text-lg transition-colors"
+              >
+                Onaylıyorum ✓
+              </button>
+
+              {/* Cancel/Later Option */}
+              <button
+                onClick={() => setP2pPending(p2pPending.filter((o: any) => o.status !== 'PAID'))}
+                className="w-full text-gray-500 hover:text-gray-300 py-3 text-sm font-medium transition-colors"
+              >
+                Daha Sonra
+              </button>
+            </div>
           </div>
         )}
 
