@@ -195,54 +195,21 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* P2P Transfer Notification Popup - Only for Seller when order is PAID */}
+        {/* P2P Transfer Notification Popup - Minimal */}
         {p2pPending.filter((o: any) => o.status === 'PAID').length > 0 && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-[#1a1a1a] rounded-3xl p-6 max-w-sm w-full border border-lime-500/30 shadow-2xl shadow-lime-500/10">
-              {/* Success Icon */}
-              <div className="flex justify-center mb-4">
-                <div className="w-16 h-16 rounded-full bg-lime-500/20 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-lime-400 text-3xl">payments</span>
-                </div>
-              </div>
-
-              {/* Title */}
-              <h2 className="text-xl font-bold text-white text-center mb-2">
-                Hesabınıza Transfer Gerçekleşti!
-              </h2>
-
-              {/* Amount */}
-              {p2pPending.filter((o: any) => o.status === 'PAID').map((order: any) => (
-                <div key={order.id} className="bg-[#111] rounded-xl p-4 mb-4">
-                  <p className="text-gray-400 text-sm text-center mb-1">Transfer Tutarı</p>
-                  <p className="text-2xl font-bold text-lime-400 text-center">
-                    ${order.amount_usd.toLocaleString()}
-                  </p>
-                </div>
-              ))}
-
-              {/* Description */}
-              <p className="text-gray-400 text-sm text-center mb-6">
-                Alıcı ödemeyi gönderdiğini bildirdi. Lütfen banka hesabınızı kontrol edin ve transfer geldi ise onaylayın.
+          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+            <div className="bg-[#1a1a1a] rounded-2xl p-6 max-w-xs w-full text-center">
+              <p className="text-white text-lg font-bold mb-4">
+                Hesabınıza Transfer Gerçekleşti
               </p>
-
-              {/* Confirm Button */}
               <button
                 onClick={() => {
                   const paidOrder = p2pPending.find((o: any) => o.status === 'PAID');
                   if (paidOrder) handleSellerConfirm(paidOrder.id);
                 }}
-                className="w-full bg-lime-500 hover:bg-lime-400 text-black py-4 rounded-xl font-bold text-lg transition-colors"
+                className="w-full bg-lime-500 hover:bg-lime-400 text-black py-3 rounded-xl font-bold transition-colors"
               >
-                Onaylıyorum ✓
-              </button>
-
-              {/* Cancel/Later Option */}
-              <button
-                onClick={() => setP2pPending(p2pPending.filter((o: any) => o.status !== 'PAID'))}
-                className="w-full text-gray-500 hover:text-gray-300 py-3 text-sm font-medium transition-colors"
-              >
-                Daha Sonra
+                Onaylıyorum
               </button>
             </div>
           </div>
