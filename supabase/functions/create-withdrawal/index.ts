@@ -51,6 +51,12 @@ serve(async (req) => {
         const isBuy = txType === 'P2P_BUY'
 
         // 3. User & Balance Logic
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('id, balance, email, full_name, iban, bank_name')
+            .eq('id', user.id)
+            .single()
+
         if (profileError || !profile) {
             return new Response(
                 JSON.stringify({ error: 'Profile not found' }),
