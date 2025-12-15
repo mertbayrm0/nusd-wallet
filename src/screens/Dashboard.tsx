@@ -39,17 +39,20 @@ const Dashboard = () => {
     const p2pOrders = await api.getMyP2POrders();
 
     // Convert P2P orders to transaction format for display
-    const p2pAsTxs = (p2pOrders || []).map((order: any) => {
-      const isSeller = order.seller_id !== null && order.buyer_id === null;
-      return {
-        id: order.id,
-        title: isSeller ? 'P2P SELL Order' : 'P2P BUY Order',
-        amount: isSeller ? -order.amount_usd : order.amount_usd,
-        status: order.status,
-        date: order.created_at,
-        type: isSeller ? 'P2P_SELL' : 'P2P_BUY'
-      };
-    });
+    // Only show OPEN (pending) and COMPLETED, not MATCHED/PAID (intermediate states)
+    const p2pAsTxs = (p2pOrders || [])
+      .filter((order: any) => order.status === 'OPEN' || order.status === 'COMPLETED')
+      .map((order: any) => {
+        const isSeller = order.seller_id !== null && order.buyer_id === null;
+        return {
+          id: order.id,
+          title: isSeller ? 'P2P SELL Order' : 'P2P BUY Order',
+          amount: isSeller ? -order.amount_usd : order.amount_usd,
+          status: order.status === 'OPEN' ? 'PENDING' : order.status,
+          date: order.created_at,
+          type: isSeller ? 'P2P_SELL' : 'P2P_BUY'
+        };
+      });
 
     // Merge and sort by date
     const allTxs = [...transactions, ...p2pAsTxs]
