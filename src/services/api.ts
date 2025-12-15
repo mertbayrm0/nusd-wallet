@@ -877,43 +877,25 @@ export const api = {
   },
   createP2POrder: async (type: string, amount: number, email: string, iban: string, bankName: string, accountName: string) => {
     try {
-      // Get user profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id, balance')
-        .eq('email', email)
-        .single();
-
-      if (!profile) return { success: false, error: 'User not found' };
-      if (type === 'SELL' && profile.balance < amount) return { success: false, error: 'Insufficient balance' };
-
-      // Create P2P withdrawal transaction
-      const { data: tx, error } = await supabase
-        .from('transactions')
-        .insert({
-          user_id: profile.id,
+      // Use secure Edge Function (reusing create-withdrawal for P2P)
+      const { data, error } = await supabase.functions.invoke('create-withdrawal', {
+        body: {
+          amount,
           type: 'P2P_SELL',
-          amount: -amount,
-          status: 'PENDING',
-          memo_code: `${bankName} - ${iban}`
-        })
-        .select()
-        .single();
+          memo_code: `${bankName} - ${iban}`,
+          network: 'P2P'
+        }
+      });
 
-      if (error) return { success: false, error: error.message };
-
-      // Deduct from balance immediately for P2P sell
-      await supabase
-        .from('profiles')
-        .update({ balance: profile.balance - amount })
-        .eq('id', profile.id);
+      if (error) throw new Error(error.message || 'P2P Order failed');
 
       return {
         success: true,
-        orderId: tx.id,
+        orderId: data.id,
         message: 'P2P order created successfully'
       };
     } catch (e: any) {
+      console.error('createP2POrder error:', e);
       return { success: false, error: e.message };
     }
   },

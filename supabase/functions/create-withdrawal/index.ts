@@ -26,16 +26,13 @@ serve(async (req) => {
         if (userError || !user) throw new Error('Invalid user token')
 
         // 2. Parse Body
-        const { amount, network, address } = await req.json()
+        const { amount, network, address, type, memo_code } = await req.json()
 
         if (!amount || amount <= 0) throw new Error('Invalid amount')
-        if (!network) throw new Error('Network is required')
-        if (!address) throw new Error('Address is required')
+        // Network is optional for P2P, address is optional for P2P
+        // if (!network) throw new Error('Network is required') 
 
-        // 3. Check Balance (LOCK not typically needed for single user if we trust atomic update returns, but race condition is possible. 
-        // Ideally we use a stored procedure or careful checks. For now, strict check + update.)
-
-        // Fetch profile
+        // 3. Check Balance
         const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('balance')
@@ -48,10 +45,7 @@ serve(async (req) => {
             throw new Error('Insufficient balance')
         }
 
-        // 4. ATOMIC OPERATION: Create Transaction & Deduct Balance
-        // Note: In a perfect world, we'd use a Postgres Function for true atomicity.
-        // But here we do: Deduct first (safer for platform), then create Transaction. 
-        // If Tx creation fails, we refund.
+        // 4. ATOMIC OPERATION
 
         // Step A: Deduct
         const { data: updatedProfile, error: deductError } = await supabase
@@ -63,7 +57,7 @@ serve(async (req) => {
             .single()
 
         if (deductError || !updatedProfile) {
-            throw new Error('Balance update failed (potential race condition). Please try again.')
+            throw new Error('Balance update failed. Please try again.')
         }
 
         // Step B: Create Transaction
@@ -71,11 +65,12 @@ serve(async (req) => {
             .from('transactions')
             .insert({
                 user_id: user.id,
-                type: 'WITHDRAW',
-                amount: amount,
+                type: type || 'WITHDRAW', // Default to WITHDRAW, allow P2P_SELL
+                amount: amount, // Store as positive (logic handles absolute) or consistent with previous
                 status: 'PENDING',
-                network: network,
+                network: network || 'P2P',
                 to_address: address,
+                memo_code: memo_code,
                 created_at: new Date().toISOString()
             })
             .select()
