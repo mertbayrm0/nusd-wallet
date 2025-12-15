@@ -191,21 +191,43 @@ const Dashboard = () => {
               P2P İşlem Bekliyor
             </h3>
             {p2pPending.map((order: any) => {
-              const isSeller = order.seller_id && !order.buyer_id;
-              const needsMarkPaid = order.status === 'MATCHED';
-              const needsBuyerConfirm = order.status === 'PAID' && !order.buyer_confirmed_at;
+              // Determine user role based on order data
+              // After match, both buyer_id and seller_id exist
+              const hasBothParties = order.buyer_id && order.seller_id;
+
+              // MATCHED: Buyer needs to click "Ödedim" (I transferred)
+              // PAID: Seller needs to click "Onayladım" (I received)
+              const isBuyOrder = order.buyer_id !== null;
+              const isSellOrder = order.seller_id !== null;
+
+              // Show label based on original order type
+              let orderLabel = 'P2P';
+              if (hasBothParties) {
+                // This could be either side after match
+                orderLabel = 'MATCHED';
+              } else if (isBuyOrder) {
+                orderLabel = 'BUY';
+              } else if (isSellOrder) {
+                orderLabel = 'SELL';
+              }
+
+              // MATCHED status: Buyer should mark as paid
+              const showBuyerMarkPaid = order.status === 'MATCHED';
+
+              // PAID status: Seller should confirm receipt
+              const showSellerConfirm = order.status === 'PAID';
 
               return (
                 <div key={order.id} className="flex justify-between items-center bg-[#1a1a1a] p-3 rounded-xl mb-2 last:mb-0">
                   <div className="flex flex-col">
                     <span className="text-xs text-gray-500 font-medium">
-                      {isSeller ? 'SELL' : 'BUY'} • ${order.amount_usd}
+                      {orderLabel} • ${order.amount_usd}
                     </span>
                     <span className="text-sm font-bold text-white">
                       Status: <span className="text-amber-400">{order.status}</span>
                     </span>
                   </div>
-                  {needsMarkPaid && (
+                  {showBuyerMarkPaid && (
                     <button
                       onClick={() => handleMarkPaid(order.id)}
                       className="bg-lime-500 text-black px-4 py-2 rounded-lg text-xs font-bold hover:bg-lime-400 transition-colors"
@@ -213,12 +235,12 @@ const Dashboard = () => {
                       Ödedim ✓
                     </button>
                   )}
-                  {needsBuyerConfirm && (
+                  {showSellerConfirm && (
                     <button
                       onClick={() => handleBuyerConfirm(order.id)}
                       className="bg-lime-500 text-black px-4 py-2 rounded-lg text-xs font-bold hover:bg-lime-400 transition-colors"
                     >
-                      Onayla ✓
+                      Onayladım ✓
                     </button>
                   )}
                 </div>
