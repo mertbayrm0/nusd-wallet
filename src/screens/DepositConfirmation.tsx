@@ -72,9 +72,23 @@ const DepositConfirmation = () => {
         if (receiptFile) {
             console.log('Receipt file selected:', receiptFile.name);
         }
-        await api.markPaymentSent(user?.email || '', state?.matchId, state?.amount, true);
-        alert("Ödeme bildiriminiz alındı! Satıcı onayladığında bakiyeniz hesabınıza geçecektir.");
-        navigate('/dashboard');
+
+        // Call new P2P API to mark order as PAID
+        const orderId = state?.orderId || state?.matchId;
+        if (orderId) {
+            const result = await api.markP2PPaid(orderId);
+            if (result?.success) {
+                alert("Ödeme bildiriminiz alındı! Satıcı onayladığında bakiyeniz hesabınıza geçecektir.");
+                navigate('/dashboard');
+            } else {
+                alert("Hata: " + (result?.error || "İşlem başarısız"));
+            }
+        } else {
+            // Fallback for old flow
+            await api.markPaymentSent(user?.email || '', state?.matchId, state?.amount, true);
+            alert("Ödeme bildiriminiz alındı! Satıcı onayladığında bakiyeniz hesabınıza geçecektir.");
+            navigate('/dashboard');
+        }
     }
 
     const amount = state?.amount || 1000;

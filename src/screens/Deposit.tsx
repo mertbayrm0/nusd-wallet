@@ -137,6 +137,7 @@ const Deposit = () => {
             state: {
                 amount: parseFloat(amount),
                 matchId: match?.id,
+                orderId: pending, // P2P order ID for markP2PPaid
                 matchedInvestorEmail: match?.userId,
                 bankAccount: selectedBank,
                 matchDetails: match // Pass full match details including IBAN/Name
