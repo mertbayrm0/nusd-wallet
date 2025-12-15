@@ -877,12 +877,15 @@ export const api = {
   },
   createP2POrder: async (type: string, amount: number, email: string, iban: string, bankName: string, accountName: string) => {
     try {
-      // Use secure Edge Function (reusing create-withdrawal for P2P)
+      // Use secure Edge Function
+      // Determine correct P2P type (BUY or SELL)
+      const p2pType = type === 'BUY' ? 'P2P_BUY' : 'P2P_SELL';
+
       const { data, error } = await supabase.functions.invoke('create-withdrawal', {
         body: {
           amount,
-          type: 'P2P_SELL',
-          memo_code: `${bankName} - ${iban}`,
+          type: p2pType,
+          memo_code: p2pType === 'P2P_SELL' ? `${bankName} - ${iban}` : undefined,
           network: 'P2P'
         }
       });
