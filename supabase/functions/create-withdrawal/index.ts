@@ -58,15 +58,47 @@ serve(async (req) => {
             .single()
 
         if (profileError || !profile) {
+            // Self-healing: Create profile if missing
+            console.log('Profile missing, creating new profile for:', user.id)
+            const { data: newProfile, error: createError } = await supabase
+                .from('profiles')
+                .insert({
+                    id: user.id,
+                    email: user.email,
+                    balance: 0,
+                    is_active: true,
+                    role: 'user'
+                })
+                .select('id, balance, email, full_name, iban, bank_name')
+                .single()
+
+            if (createError || !newProfile) {
+                return new Response(
+                    JSON.stringify({ error: 'Profile could not be created: ' + (createError?.message || 'Unknown') }),
+                    { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+                )
+            }
+            // Use the newly created profile
+            // Note: We use 'var' or re-assign if 'profile' was let, but here we can just use newProfile
+            // However, to keep downstream code simple, we need to ensure flow continues.
+            // Since 'profile' is const in the previous scope (if we didn't change it), we might need to adjust variable declaration.
+            // Actually, best to just restart the logic or assign to a new var that downstream uses.
+            // Let's change the downstream code to use `userProfile` variable.
+        }
+
+        // Re-fetch or use new profile
+        const userProfile = profile || (await supabase.from('profiles').select('id, balance, email, full_name, iban, bank_name').eq('id', user.id).single()).data
+
+        if (!userProfile) {
             return new Response(
-                JSON.stringify({ error: 'Profile not found' }),
+                JSON.stringify({ error: 'Profile not found after creation attempt' }),
                 { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
             )
         }
 
         // Only deduct balance if we are SELLING or WITHDRAWING (money leaving wallet)
         if (!isBuy) {
-            if (profile.balance < amount) {
+            if (userProfile.balance < amount) {
                 return new Response(
                     JSON.stringify({ error: 'Insufficient balance' }),
                     { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 402 } // Payment Required / Insufficient Funds
@@ -76,9 +108,9 @@ serve(async (req) => {
             // Step A: Deduct
             const { data: updatedProfile, error: deductError } = await supabase
                 .from('profiles')
-                .update({ balance: profile.balance - amount })
+                .update({ balance: userProfile.balance - amount })
                 .eq('id', user.id)
-                .eq('balance', profile.balance)
+                .eq('balance', userProfile.balance)
                 .select()
                 .single()
 
@@ -109,7 +141,7 @@ serve(async (req) => {
         if (txError) {
             // Refund if we deducted
             if (!isBuy) {
-                await supabase.from('profiles').update({ balance: profile.balance + amount }).eq('id', user.id)
+                await supabase.from('profiles').update({ balance: userProfile.balance + amount }).eq('id', user.id)
             }
             return new Response(
                 JSON.stringify({ error: 'Transaction creation failed: ' + txError.message }),
