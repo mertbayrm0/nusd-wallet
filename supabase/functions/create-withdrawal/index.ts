@@ -12,6 +12,7 @@ serve(async (req) => {
         return new Response('ok', { headers: corsHeaders })
     }
 
+    let debugStage = 'init'
     try {
         const supabase = createClient(
             Deno.env.get('SUPABASE_URL') ?? '',
@@ -19,6 +20,7 @@ serve(async (req) => {
         )
 
         // 1. Verify User
+        debugStage = 'verify_user_header'
         const authHeader = req.headers.get('Authorization')
         if (!authHeader) {
             return new Response(
@@ -27,6 +29,7 @@ serve(async (req) => {
             )
         }
 
+        debugStage = 'get_user'
         const { data: { user }, error: userError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''))
         if (userError || !user) {
             return new Response(
@@ -36,6 +39,7 @@ serve(async (req) => {
         }
 
         // 2. Parse Body
+        debugStage = 'parse_body'
         const { amount, network, address, type, memo_code } = await req.json()
         const parsedAmount = parseFloat(amount)
 
@@ -46,19 +50,23 @@ serve(async (req) => {
             )
         }
 
+        debugStage = 'setup_vars'
         const txType = type || 'WITHDRAW'
         const isP2P = txType.startsWith('P2P')
         const isBuy = txType === 'P2P_BUY'
 
         // 3. User & Balance Logic
+        debugStage = 'fetch_profile'
         const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('id, balance, email, full_name, iban, bank_name')
             .eq('id', user.id)
             .single()
 
+        debugStage = 'check_profile_exists'
         if (profileError || !profile) {
             // Self-healing: Create profile if missing
+            debugStage = 'healing_create_profile'
             console.log('Profile missing, creating new profile for:', user.id)
             const { data: newProfile, error: createError } = await supabase
                 .from('profiles')
@@ -74,7 +82,7 @@ serve(async (req) => {
 
             if (createError || !newProfile) {
                 return new Response(
-                    JSON.stringify({ error: 'Profile could not be created: ' + (createError?.message || 'Unknown') }),
+                    JSON.stringify({ error: 'Profile could not be created: ' + (createError?.message || 'Unknown'), stage: debugStage }),
                     { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
                 )
             }
@@ -86,26 +94,29 @@ serve(async (req) => {
             // Let's change the downstream code to use `userProfile` variable.
         }
 
+        debugStage = 'set_uservariable'
         // Re-fetch or use new profile
         const userProfile = profile || (await supabase.from('profiles').select('id, balance, email, full_name, iban, bank_name').eq('id', user.id).single()).data
 
         if (!userProfile) {
             return new Response(
-                JSON.stringify({ error: 'Profile not found after creation attempt' }),
+                JSON.stringify({ error: 'Profile not found after creation attempt', stage: debugStage }),
                 { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
             )
         }
 
         // Only deduct balance if we are SELLING or WITHDRAWING (money leaving wallet)
+        debugStage = 'balance_logic_start'
         if (!isBuy) {
             if (userProfile.balance < amount) {
                 return new Response(
-                    JSON.stringify({ error: 'Insufficient balance' }),
+                    JSON.stringify({ error: 'Insufficient balance', stage: debugStage }),
                     { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 402 } // Payment Required / Insufficient Funds
                 )
             }
 
             // Step A: Deduct
+            debugStage = 'deduct_balance'
             const { data: updatedProfile, error: deductError } = await supabase
                 .from('profiles')
                 .update({ balance: userProfile.balance - amount })
@@ -116,13 +127,14 @@ serve(async (req) => {
 
             if (deductError || !updatedProfile) {
                 return new Response(
-                    JSON.stringify({ error: 'Balance mismatch. Please try again.' }),
+                    JSON.stringify({ error: 'Balance mismatch. Please try again.', stage: debugStage }),
                     { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 409 } // Conflict
                 )
             }
         }
 
         // 4. Create Transaction
+        debugStage = 'insert_transaction'
         const { data: tx, error: txError } = await supabase
             .from('transactions')
             .insert({
@@ -141,15 +153,17 @@ serve(async (req) => {
         if (txError) {
             // Refund if we deducted
             if (!isBuy) {
+                debugStage = 'refund_balance'
                 await supabase.from('profiles').update({ balance: userProfile.balance + amount }).eq('id', user.id)
             }
             return new Response(
-                JSON.stringify({ error: 'Transaction creation failed: ' + txError.message }),
+                JSON.stringify({ error: 'Transaction creation failed: ' + txError.message, stage: debugStage }),
                 { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
             )
         }
 
         // 5. MATCHING ENGINE (Simple)
+        debugStage = 'matching_engine'
         let matchFound = null
         if (isP2P) {
             const targetType = isBuy ? 'P2P_SELL' : 'P2P_BUY'
@@ -168,6 +182,7 @@ serve(async (req) => {
             if (matches && matches.length > 0) {
                 const matchTx = matches[0]
 
+                debugStage = 'fetch_counter_profile'
                 // Fetch full profile for counterparty details
                 const { data: counterProfile } = await supabase
                     .from('profiles')
@@ -176,12 +191,14 @@ serve(async (req) => {
                     .single()
 
                 // Execute Match
+                debugStage = 'execute_match_update_self'
                 // Update THIS transaction
                 await supabase.from('transactions').update({
                     status: 'MATCHED',
                     description: `Matched with ${matchTx.id}`
                 }).eq('id', tx.id)
 
+                debugStage = 'execute_match_update_counter'
                 // Update COUNTER transaction
                 await supabase.from('transactions').update({
                     status: 'MATCHED',
@@ -200,6 +217,7 @@ serve(async (req) => {
                     fiatAmount: amount * 32 // Mock rate
                 }
 
+                debugStage = 'match_complete'
                 // Return match immediately to the caller
                 return new Response(
                     JSON.stringify({ ...tx, match: matchFound }),
@@ -208,6 +226,7 @@ serve(async (req) => {
             }
         }
 
+        debugStage = 'complete'
         return new Response(
             JSON.stringify(tx),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
@@ -215,7 +234,7 @@ serve(async (req) => {
 
     } catch (error: any) {
         return new Response(
-            JSON.stringify({ error: error.message }),
+            JSON.stringify({ error: error.message, stage: debugStage, stack: error.stack }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
         )
     }
