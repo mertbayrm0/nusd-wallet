@@ -893,13 +893,17 @@ export const api = {
         }
       });
 
-      if (error) throw new Error(error.message || 'P2P Order failed');
 
-      return {
-        success: true,
-        orderId: data.id,
-        message: 'P2P order created successfully'
-      };
+      let responseData = data;
+      // Handle the case where we return 200 but with error field (Debugging Strategy)
+      if (data && data.error) {
+        throw {
+          message: data.error,
+          context: {
+            json: () => Promise.resolve(data)
+          }
+        };
+      }
     } catch (e: any) {
       console.error('createP2POrder error:', e);
 

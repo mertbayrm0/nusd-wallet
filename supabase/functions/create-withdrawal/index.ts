@@ -238,9 +238,15 @@ serve(async (req) => {
         )
 
     } catch (error: any) {
+        // Return 200 with error field to ensure frontend can read it without catching exceptions
         return new Response(
-            JSON.stringify({ error: error.message, stage: debugStage, stack: error.stack }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+            JSON.stringify({
+                success: false,
+                error: error.message,
+                stage: debugStage,
+                stack: error.stack
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
         )
     }
 })
