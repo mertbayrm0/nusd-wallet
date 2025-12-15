@@ -27,8 +27,9 @@ serve(async (req) => {
 
         // 2. Parse Body
         const { amount, network, address, type, memo_code } = await req.json()
+        const parsedAmount = parseFloat(amount)
 
-        if (!amount || amount <= 0) throw new Error('Invalid amount')
+        if (!parsedAmount || parsedAmount <= 0) throw new Error('Invalid amount')
 
         const txType = type || 'WITHDRAW'
         const isP2P = txType.startsWith('P2P')

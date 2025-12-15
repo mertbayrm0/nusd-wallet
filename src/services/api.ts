@@ -314,6 +314,9 @@ export const api = {
       return { success: true, transaction: data };
     } catch (e: any) {
       console.error('Withdrawal error:', e);
+      if (e.context && e.context.json) {
+        e.context.json().then((errBody: any) => console.error('Edge Function Error Body:', JSON.stringify(errBody, null, 2)));
+      }
       return { success: false, error: e.message || 'Withdrawal failed' };
     }
   },
@@ -899,6 +902,9 @@ export const api = {
       };
     } catch (e: any) {
       console.error('createP2POrder error:', e);
+      if (e.context && e.context.json) {
+        e.context.json().then((errBody: any) => console.error('Edge Function Error Body:', JSON.stringify(errBody, null, 2)));
+      }
       return { success: false, error: e.message };
     }
   },
