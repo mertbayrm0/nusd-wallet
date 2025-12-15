@@ -36,18 +36,20 @@ serve(async (req) => {
         const isBuy = txType === 'P2P_BUY'
 
         // 3. User & Balance Logic
-        const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('id, balance, email, full_name, iban, bank_name')
-            .eq('id', user.id)
-            .single()
-
-        if (profileError || !profile) throw new Error('Profile not found')
+        if (profileError || !profile) {
+            return new Response(
+                JSON.stringify({ error: 'Profile not found' }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+            )
+        }
 
         // Only deduct balance if we are SELLING or WITHDRAWING (money leaving wallet)
         if (!isBuy) {
             if (profile.balance < amount) {
-                throw new Error('Insufficient balance')
+                return new Response(
+                    JSON.stringify({ error: 'Insufficient balance' }),
+                    { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 402 } // Payment Required / Insufficient Funds
+                )
             }
 
             // Step A: Deduct
@@ -60,7 +62,10 @@ serve(async (req) => {
                 .single()
 
             if (deductError || !updatedProfile) {
-                throw new Error('Balance update failed. Please try again.')
+                return new Response(
+                    JSON.stringify({ error: 'Balance mismatch. Please try again.' }),
+                    { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 409 } // Conflict
+                )
             }
         }
 
@@ -85,7 +90,10 @@ serve(async (req) => {
             if (!isBuy) {
                 await supabase.from('profiles').update({ balance: profile.balance + amount }).eq('id', user.id)
             }
-            throw new Error('Transaction creation failed.')
+            return new Response(
+                JSON.stringify({ error: 'Transaction creation failed: ' + txError.message }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+            )
         }
 
         // 5. MATCHING ENGINE (Simple)
