@@ -937,19 +937,206 @@ export const api = {
       return { success: false, error: e.message };
     }
   },
+
+  // ===== NEW P2P API (Isolated) =====
+
+  // Create a new P2P order (BUY or SELL)
+  createP2POrderNew: async (side: 'BUY' | 'SELL', amount_usd: number, iban?: string, bank_name?: string, account_name?: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('p2p-create-order', {
+        body: { side, amount_usd, iban, bank_name, account_name }
+      });
+
+      if (error) {
+        console.error('P2P create order error:', error);
+        return { success: false, error: error.message || 'Edge function error' };
+      }
+
+      // data contains the response from Edge Function
+      if (data?.success === false) {
+        return { success: false, error: data.error || 'Order creation failed' };
+      }
+
+      // data.order should contain the created order
+      return { success: true, order: data?.order || data };
+    } catch (e: any) {
+      console.error('P2P create order exception:', e);
+      return { success: false, error: e.message || 'Network error' };
+    }
+  },
+
+  // Find a match for an order
+  matchP2POrder: async (orderId: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('p2p-match', {
+        body: { orderId }
+      });
+
+      if (error) {
+        console.error('P2P match error:', error);
+        return { success: false, error: error.message || 'Match error' };
+      }
+
+      // Handle Edge Function response
+      if (data?.success === false) {
+        return { success: false, error: data.error || 'No match found', waiting: data.waiting };
+      }
+
+      return { success: true, match: data?.match || data };
+    } catch (e: any) {
+      console.error('P2P match exception:', e);
+      return { success: false, error: e.message || 'Network error' };
+    }
+  },
+
+  // Seller marks payment as sent
+  markP2PPaid: async (orderId: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('p2p-mark-paid', {
+        body: { orderId }
+      });
+
+      if (error) {
+        console.error('P2P mark paid error:', error);
+        return { success: false, error: error.message };
+      }
+
+      return data;
+    } catch (e: any) {
+      console.error('P2P mark paid exception:', e);
+      return { success: false, error: e.message };
+    }
+  },
+
+  // Buyer confirms payment received
+  buyerConfirmP2P: async (orderId: string, confirm: boolean) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('p2p-buyer-confirm', {
+        body: { orderId, confirm }
+      });
+
+      if (error) {
+        console.error('P2P buyer confirm error:', error);
+        return { success: false, error: error.message };
+      }
+
+      return data;
+    } catch (e: any) {
+      console.error('P2P buyer confirm exception:', e);
+      return { success: false, error: e.message };
+    }
+  },
+
+  // Admin confirms/rejects order
+  adminConfirmP2P: async (orderId: string, confirm: boolean) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('p2p-admin-confirm', {
+        body: { orderId, confirm }
+      });
+
+      if (error) {
+        console.error('P2P admin confirm error:', error);
+        return { success: false, error: error.message };
+      }
+
+      return data;
+    } catch (e: any) {
+      console.error('P2P admin confirm exception:', e);
+      return { success: false, error: e.message };
+    }
+  },
+
+  // Get P2P order status (from new table)
   getP2POrderStatus: async (orderId: string) => {
     try {
-      const { data } = await supabase
-        .from('transactions')
+      const { data, error } = await supabase
+        .from('p2p_orders')
         .select('*')
         .eq('id', orderId)
         .single();
 
-      return data ? { status: data.status, match: null } : null;
+      if (error) {
+        console.error('P2P order status error:', error);
+        return null;
+      }
+
+      return data;
     } catch (e) {
+      console.error('P2P order status exception:', e);
       return null;
     }
   },
+
+  // Get all P2P orders for current user
+  getMyP2POrders: async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from('p2p_orders')
+        .select('*')
+        .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('My P2P orders error:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (e) {
+      console.error('My P2P orders exception:', e);
+      return [];
+    }
+  },
+
+  // Get P2P events/audit log for an order
+  getP2PEvents: async (orderId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('p2p_events')
+        .select('*')
+        .eq('order_id', orderId)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('P2P events error:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (e) {
+      console.error('P2P events exception:', e);
+      return [];
+    }
+  },
+
+  // Admin: Get all P2P orders
+  getAllP2POrders: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('p2p_orders')
+        .select(`
+          *,
+          buyer:profiles!p2p_orders_buyer_id_fkey(email, full_name),
+          seller:profiles!p2p_orders_seller_id_fkey(email, full_name)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('All P2P orders error:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (e) {
+      console.error('All P2P orders exception:', e);
+      return [];
+    }
+  },
+
+  // Legacy stubs (kept for compatibility)
   markP2PPaymentSent: async () => ({ success: false }),
   confirmP2PPaymentReceived: async () => ({ success: false }),
   getMyP2PActivity: async () => ({ orders: [], trades: [] }),

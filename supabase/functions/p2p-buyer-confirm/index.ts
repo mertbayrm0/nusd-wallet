@@ -1,0 +1,186 @@
+// =============================================
+// P2P-BUYER-CONFIRM Edge Function
+// =============================================
+// Buyer ödemeyi aldığını onaylar
+// confirm: true → buyer_confirmed_at set
+// confirm: false → CANCELLED
+// =============================================
+
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+
+const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+serve(async (req) => {
+    if (req.method === 'OPTIONS') {
+        return new Response('ok', { headers: corsHeaders })
+    }
+
+    try {
+        const supabase = createClient(
+            Deno.env.get('SUPABASE_URL')!,
+            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+        )
+
+        // 1️⃣ Auth
+        const authHeader = req.headers.get('Authorization')
+        if (!authHeader) {
+            return new Response(
+                JSON.stringify({ error: 'Unauthorized' }),
+                { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
+        const token = authHeader.replace('Bearer ', '')
+        const { data: { user }, error: userError } = await supabase.auth.getUser(token)
+
+        if (userError || !user) {
+            return new Response(
+                JSON.stringify({ error: 'Invalid token' }),
+                { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
+        // 2️⃣ Body
+        const { orderId, confirm } = await req.json()
+
+        if (!orderId) {
+            return new Response(
+                JSON.stringify({ error: 'orderId required' }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
+        if (typeof confirm !== 'boolean') {
+            return new Response(
+                JSON.stringify({ error: 'confirm must be true or false' }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
+        // 3️⃣ Order getir
+        const { data: order, error: orderError } = await supabase
+            .from('p2p_orders')
+            .select('*')
+            .eq('id', orderId)
+            .single()
+
+        if (orderError || !order) {
+            return new Response(
+                JSON.stringify({ error: 'Order not found' }),
+                { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
+        // 4️⃣ Yetki: Sadece BUYER onaylayabilir
+        if (order.buyer_id !== user.id) {
+            return new Response(
+                JSON.stringify({ error: 'Only buyer can confirm' }),
+                { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
+        // 5️⃣ Status kontrolü: PAID veya MATCHED olmalı
+        if (!['PAID', 'MATCHED'].includes(order.status)) {
+            return new Response(
+                JSON.stringify({ error: 'Order must be PAID or MATCHED to confirm', currentStatus: order.status }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
+        // 6️⃣ Confirm veya Cancel
+        const updateData: any = {
+            updated_at: new Date().toISOString()
+        }
+
+        if (confirm) {
+            updateData.buyer_confirmed_at = new Date().toISOString()
+            // Buyer onayı = işlem tamamlanır (admin onayı opsiyonel)
+            updateData.status = 'COMPLETED'
+
+            // 💰 BALANCE TRANSFER
+            // Seller: bakiyesinden düş (P2P sell = çekim)
+            // Buyer: bakiyesine ekle (P2P buy = yatırım)
+            if (order.seller_id && order.buyer_id) {
+                // Decrease seller balance
+                const { error: sellerError } = await supabase.rpc('decrease_balance', {
+                    p_user_id: order.seller_id,
+                    p_amount: order.amount_usd
+                })
+
+                if (sellerError) {
+                    console.error('Seller balance decrease error:', sellerError)
+                    // Try direct update as fallback
+                    await supabase
+                        .from('profiles')
+                        .update({ balance: supabase.raw(`balance - ${order.amount_usd}`) })
+                        .eq('id', order.seller_id)
+                }
+
+                // Increase buyer balance
+                const { error: buyerError } = await supabase.rpc('increase_balance', {
+                    p_user_id: order.buyer_id,
+                    p_amount: order.amount_usd
+                })
+
+                if (buyerError) {
+                    console.error('Buyer balance increase error:', buyerError)
+                    // Try direct update as fallback
+                    await supabase
+                        .from('profiles')
+                        .update({ balance: supabase.raw(`balance + ${order.amount_usd}`) })
+                        .eq('id', order.buyer_id)
+                }
+            }
+        } else {
+            updateData.status = 'CANCELLED'
+        }
+
+        const { data: updated, error: updateError } = await supabase
+            .from('p2p_orders')
+            .update(updateData)
+            .eq('id', orderId)
+            .select()
+            .single()
+
+        if (updateError) {
+            return new Response(
+                JSON.stringify({ error: 'Update failed' }),
+                { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
+        // 7️⃣ Event log
+        await supabase.from('p2p_events').insert({
+            order_id: orderId,
+            actor_id: user.id,
+            actor_role: 'buyer',
+            event_type: confirm ? 'BUYER_CONFIRM' : 'CANCEL',
+            metadata: { confirm, balanceTransferred: confirm }
+        })
+
+        // 8️⃣ Başarılı
+        return new Response(
+            JSON.stringify({
+                success: true,
+                message: confirm ? 'Buyer confirmed - Transaction completed!' : 'Order cancelled by buyer',
+                order: {
+                    id: updated.id,
+                    status: updated.status,
+                    buyer_confirmed_at: updated.buyer_confirmed_at
+                }
+            }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+
+    } catch (e: any) {
+        console.error('Buyer confirm error:', e)
+        return new Response(
+            JSON.stringify({ error: 'Internal error', details: e.message }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+    }
+})

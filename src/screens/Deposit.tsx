@@ -52,27 +52,44 @@ const Deposit = () => {
 
         setLoading(true);
 
-        // Create P2P BUY order using new API
-        const order = await api.createP2POrder('BUY', parseFloat(amount), user?.email || '');
+        try {
+            // NEW P2P API - calls p2p-create-order Edge Function
+            const result = await api.createP2POrderNew('BUY', parseFloat(amount));
 
-        if (order.success && order.match) {
-            // Anında eşleşti - seller IBAN'ı göster
-            // Anında eşleşti - seller IBAN'ı göster
-            setMatch({
-                id: order.match.tradeId,
-                amount: order.match.fiatAmount,
-                sellerIBAN: order.match.counterparty.iban,
-                sellerName: order.match.counterparty.name,
-                sellerBank: order.match.counterparty.bank,
-                timeRemaining: order.match.timeoutAt
-            });
-            setPending(null);
-        } else if (order.orderId) {
-            // Bekleme durumu - polling başlat
-            setPending(order.orderId);
-            startPolling(order.orderId);
-        } else {
-            alert('İstek oluşturulamadı: ' + (order.error || 'Bilinmeyen hata'));
+            if (!result) {
+                alert('Sunucu hatası: Yanıt alınamadı');
+                setLoading(false);
+                return;
+            }
+
+            if (result.success && result.order) {
+                const orderId = result.order.id;
+                setPending(orderId);
+
+                // Attempt to find a match immediately
+                const matchResult = await api.matchP2POrder(orderId);
+
+                if (matchResult?.success && matchResult?.match) {
+                    // Anında eşleşti - seller IBAN'ı göster
+                    setMatch({
+                        id: matchResult.match.matchedOrderId,
+                        amount: result.order.amount_usd * 32, // Mock TRY rate
+                        sellerIBAN: matchResult.match.counterparty?.iban || 'N/A',
+                        sellerName: matchResult.match.counterparty?.account_name || 'Satıcı',
+                        sellerBank: matchResult.match.counterparty?.bank_name || 'Banka',
+                        timeRemaining: matchResult.match.lock_expires_at
+                    });
+                    setPending(null);
+                } else {
+                    // Bekleme durumu - polling başlat
+                    startPolling(orderId);
+                }
+            } else {
+                alert('İstek oluşturulamadı: ' + (result?.error || 'Bilinmeyen hata'));
+            }
+        } catch (e: any) {
+            console.error('Search error:', e);
+            alert('Hata: ' + (e.message || 'Bağlantı hatası'));
         }
 
         setLoading(false);
@@ -80,36 +97,25 @@ const Deposit = () => {
 
     const startPolling = (orderId: string) => {
         const interval = setInterval(async () => {
-            const status = await api.getP2POrderStatus(orderId);
+            const order = await api.getP2POrderStatus(orderId);
 
-            if (status && status.match) {
-                // Match bulundu!
+            if (order && order.status === 'MATCHED') {
                 // Match bulundu!
                 setConfirmed(false);
                 setMatch({
-                    id: status.match.tradeId,
-                    amount: status.match.fiatAmount,
-                    sellerIBAN: status.match.counterparty.iban,
-                    sellerName: status.match.counterparty.name,
-                    sellerBank: status.match.counterparty.bank,
-                    platformFulfillment: status.fulfilledByPlatform
+                    id: orderId,
+                    amount: order.amount_usd * 32,
+                    sellerIBAN: order.seller_iban || 'N/A',
+                    sellerName: order.seller_account_name || 'Satıcı',
+                    sellerBank: order.seller_bank_name || 'Banka'
                 });
                 setPending(null);
                 clearInterval(interval);
                 setPollInterval(null);
-            } else if (status && status.fulfilledByPlatform) {
-                // Platform karşıladı - platform IBAN göster
-                setMatch({
-                    id: 'platform_' + Date.now(),
-                    amount: status.amount * 32, // Approximate rate
-                    sellerIBAN: 'TR98 0000 0000 0000 0000 0000 00', // Platform IBAN (placeholder)
-                    sellerName: 'NUSD Platform',
-                    sellerBank: 'Platform Vault',
-                    platformFulfillment: true
-                });
-                setPending(null);
+            } else if (order?.status === 'EXPIRED' || order?.status === 'CANCELLED') {
                 clearInterval(interval);
                 setPollInterval(null);
+                alert('Sipariş süresi doldu veya iptal edildi');
             }
         }, 5000); // Poll every 5 seconds
 
@@ -120,8 +126,7 @@ const Deposit = () => {
             clearInterval(interval);
             setPollInterval(null);
             if (pending) {
-                // If still pending after 10 min, show message
-                alert('Platform devreye alınıyor. Lütfen bekleyin...');
+                alert('Eşleşme bulunamadı. Lütfen daha sonra tekrar deneyin.');
             }
         }, 10 * 60 * 1000);
     };

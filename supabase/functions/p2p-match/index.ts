@@ -1,0 +1,248 @@
+// =============================================
+// P2P-MATCH Edge Function
+// =============================================
+// OPEN order'lar arasında eşleşme bulur
+// Atomic lock: Sadece 1 seller bağlanabilir
+// Lock süresi: 15 dakika
+// Tolerans: ±%2
+// =============================================
+
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+
+const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+const LOCK_DURATION_MINUTES = 15
+const MATCH_TOLERANCE_PERCENT = 2.0
+
+serve(async (req) => {
+    if (req.method === 'OPTIONS') {
+        return new Response('ok', { headers: corsHeaders })
+    }
+
+    try {
+        const supabase = createClient(
+            Deno.env.get('SUPABASE_URL')!,
+            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+        )
+
+        // 1️⃣ Auth
+        const authHeader = req.headers.get('Authorization')
+        if (!authHeader) {
+            return new Response(
+                JSON.stringify({ error: 'Unauthorized' }),
+                { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
+        const token = authHeader.replace('Bearer ', '')
+        const { data: { user }, error: userError } = await supabase.auth.getUser(token)
+
+        if (userError || !user) {
+            return new Response(
+                JSON.stringify({ error: 'Invalid token' }),
+                { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
+        // 2️⃣ Body - orderId (eşleştirmek istediğimiz order)
+        const { orderId } = await req.json()
+
+        if (!orderId) {
+            return new Response(
+                JSON.stringify({ error: 'orderId required' }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
+        // 3️⃣ Mevcut order'ı getir
+        const { data: myOrder, error: myOrderError } = await supabase
+            .from('p2p_orders')
+            .select('*')
+            .eq('id', orderId)
+            .single()
+
+        if (myOrderError || !myOrder) {
+            return new Response(
+                JSON.stringify({ error: 'Order not found' }),
+                { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
+        // Yetki kontrolü: Sadece order sahibi eşleşme isteyebilir
+        const isOwner = myOrder.buyer_id === user.id || myOrder.seller_id === user.id
+        if (!isOwner) {
+            return new Response(
+                JSON.stringify({ error: 'Not authorized for this order' }),
+                { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
+        // Sadece OPEN order eşleşebilir
+        if (myOrder.status !== 'OPEN') {
+            return new Response(
+                JSON.stringify({ error: 'Order is not OPEN', currentStatus: myOrder.status }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
+        // 4️⃣ Karşı tarafı bul (BUY ise SELL ara, SELL ise BUY ara)
+        const isBuyer = myOrder.buyer_id !== null
+        const targetColumn = isBuyer ? 'seller_id' : 'buyer_id'
+        const myColumn = isBuyer ? 'buyer_id' : 'seller_id'
+
+        // Tolerans hesapla
+        const minAmount = myOrder.amount_usd * (1 - MATCH_TOLERANCE_PERCENT / 100)
+        const maxAmount = myOrder.amount_usd * (1 + MATCH_TOLERANCE_PERCENT / 100)
+
+        // Uygun OPEN order bul (karşı taraf dolu, benim tarafım boş)
+        const { data: matches, error: matchError } = await supabase
+            .from('p2p_orders')
+            .select('*')
+            .eq('status', 'OPEN')
+            .not(targetColumn, 'is', null)  // Karşı taraf dolu
+            .is(myColumn, null)              // Benim tarafım boş
+            .gte('amount_usd', minAmount)
+            .lte('amount_usd', maxAmount)
+            .neq('id', orderId)              // Kendim hariç
+            .order('created_at', { ascending: true })
+            .limit(1)
+
+        if (matchError) {
+            console.error('Match query error:', matchError)
+            return new Response(
+                JSON.stringify({ error: 'Match query failed' }),
+                { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
+        if (!matches || matches.length === 0) {
+            return new Response(
+                JSON.stringify({
+                    success: false,
+                    message: 'No matching order found',
+                    waiting: true
+                }),
+                { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
+        const matchedOrder = matches[0]
+
+        // 5️⃣ ATOMIC MATCH - İki order'ı birleştir
+        const lockExpiry = new Date(Date.now() + LOCK_DURATION_MINUTES * 60 * 1000).toISOString()
+
+        // My order'ı güncelle
+        const myUpdateData: any = {
+            status: 'MATCHED',
+            lock_expires_at: lockExpiry,
+            updated_at: new Date().toISOString()
+        }
+
+        // Karşı tarafı ekle
+        if (isBuyer) {
+            myUpdateData.seller_id = matchedOrder.seller_id
+            myUpdateData.seller_iban = matchedOrder.seller_iban
+            myUpdateData.seller_bank_name = matchedOrder.seller_bank_name
+            myUpdateData.seller_account_name = matchedOrder.seller_account_name
+        } else {
+            myUpdateData.buyer_id = matchedOrder.buyer_id
+        }
+
+        // Atomic update: Sadece OPEN ise güncelle
+        const { data: updatedMyOrder, error: updateMyError } = await supabase
+            .from('p2p_orders')
+            .update(myUpdateData)
+            .eq('id', orderId)
+            .eq('status', 'OPEN')  // Race condition guard
+            .select()
+            .single()
+
+        if (updateMyError || !updatedMyOrder) {
+            return new Response(
+                JSON.stringify({ error: 'Match failed - order state changed' }),
+                { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
+        // Matched order'ı da güncelle
+        const matchUpdateData: any = {
+            status: 'MATCHED',
+            lock_expires_at: lockExpiry,
+            updated_at: new Date().toISOString()
+        }
+
+        if (isBuyer) {
+            matchUpdateData.buyer_id = user.id
+        } else {
+            matchUpdateData.seller_id = user.id
+            matchUpdateData.seller_iban = myOrder.seller_iban
+            matchUpdateData.seller_bank_name = myOrder.seller_bank_name
+            matchUpdateData.seller_account_name = myOrder.seller_account_name
+        }
+
+        const { error: updateMatchError } = await supabase
+            .from('p2p_orders')
+            .update(matchUpdateData)
+            .eq('id', matchedOrder.id)
+            .eq('status', 'OPEN')
+
+        if (updateMatchError) {
+            // Rollback my order
+            await supabase.from('p2p_orders').update({ status: 'OPEN' }).eq('id', orderId)
+            return new Response(
+                JSON.stringify({ error: 'Match failed - counter order changed' }),
+                { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
+        // 6️⃣ Event Logs
+        await supabase.from('p2p_events').insert([
+            {
+                order_id: orderId,
+                actor_id: user.id,
+                actor_role: isBuyer ? 'buyer' : 'seller',
+                event_type: 'MATCH',
+                metadata: { matched_order_id: matchedOrder.id }
+            },
+            {
+                order_id: matchedOrder.id,
+                actor_id: user.id,
+                actor_role: 'system',
+                event_type: 'MATCH',
+                metadata: { matched_order_id: orderId }
+            }
+        ])
+
+        // 7️⃣ Başarılı Yanıt
+        return new Response(
+            JSON.stringify({
+                success: true,
+                message: 'Match successful',
+                match: {
+                    myOrderId: orderId,
+                    matchedOrderId: matchedOrder.id,
+                    amount_usd: myOrder.amount_usd,
+                    status: 'MATCHED',
+                    lock_expires_at: lockExpiry,
+                    counterparty: {
+                        iban: isBuyer ? matchedOrder.seller_iban : myOrder.seller_iban,
+                        bank_name: isBuyer ? matchedOrder.seller_bank_name : myOrder.seller_bank_name,
+                        account_name: isBuyer ? matchedOrder.seller_account_name : myOrder.seller_account_name
+                    }
+                }
+            }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+
+    } catch (e: any) {
+        console.error('Match error:', e)
+        return new Response(
+            JSON.stringify({ error: 'Internal error', details: e.message }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+    }
+})

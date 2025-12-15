@@ -9,6 +9,7 @@ const Dashboard = () => {
   const [txs, setTxs] = useState([]);
   const [approvals, setApprovals] = useState([]);
   const [notification, setNotification] = useState<any>(null);
+  const [p2pPending, setP2pPending] = useState<any[]>([]); // P2P orders needing action
 
   useEffect(() => {
     refreshUser();
@@ -24,19 +25,87 @@ const Dashboard = () => {
 
   const loadData = async () => {
     if (!user) return;
-    api.getTransactions(user.email).then(t => setTxs(t.slice(0, 4)));
+
+    // Fetch regular transactions
+    const transactions = await api.getTransactions(user.email);
+
+    // Fetch P2P orders
+    const p2pOrders = await api.getMyP2POrders();
+
+    // Convert P2P orders to transaction format for display
+    const p2pAsTxs = (p2pOrders || []).map((order: any) => {
+      const isSeller = order.seller_id !== null && order.buyer_id === null;
+      return {
+        id: order.id,
+        title: isSeller ? 'P2P SELL Order' : 'P2P BUY Order',
+        amount: isSeller ? -order.amount_usd : order.amount_usd,
+        status: order.status,
+        date: order.created_at,
+        type: isSeller ? 'P2P_SELL' : 'P2P_BUY'
+      };
+    });
+
+    // Merge and sort by date
+    const allTxs = [...transactions, ...p2pAsTxs]
+      .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    setTxs(allTxs.slice(0, 4) as any);
+
+    // Filter P2P orders that need user action
+    const pendingP2P = (p2pOrders || []).filter((order: any) => {
+      const isBuyer = order.buyer_id && !order.seller_id;
+      const isSeller = order.seller_id && !order.buyer_id;
+
+      // Seller needs to mark as paid when MATCHED
+      if (isSeller && order.status === 'MATCHED') return true;
+
+      // Buyer needs to confirm when PAID
+      if (isBuyer && order.status === 'PAID' && !order.buyer_confirmed_at) return true;
+
+      // If both parties are set, check based on current user
+      if (order.buyer_id && order.seller_id) {
+        // Current user is seller and status is MATCHED
+        if (order.seller_id === user?.id && order.status === 'MATCHED') return true;
+        // Current user is buyer and status is PAID
+        if (order.buyer_id === user?.id && order.status === 'PAID' && !order.buyer_confirmed_at) return true;
+      }
+
+      return false;
+    });
+
+    setP2pPending(pendingP2P);
     api.getPendingApprovals(user.email).then(setApprovals);
 
     // Check for notifications
     const notifs = await api.getNotifications(user.email);
     const unread = notifs.filter((n: any) => !n.read);
     if (unread.length > 0) {
-      // Show the latest unread notification if not already showing
       const latest = unread[0];
-      // Only show if we haven't acknowledged it in this session (simplified: just show if unread)
-      // To prevent loop, we can mark it as read when user clicks toast, or just show it until then.
-      // Better: Only set notification if ID is different from current displayed one
       setNotification((prev: any) => (prev?.id === latest.id ? prev : latest));
+    }
+  };
+
+  // P2P: Seller marks payment as sent
+  const handleMarkPaid = async (orderId: string) => {
+    const result = await api.markP2PPaid(orderId);
+    if (result?.success) {
+      alert('Ödeme gönderildi olarak işaretlendi!');
+      loadData();
+      refreshUser();
+    } else {
+      alert('Hata: ' + (result?.error || 'İşlem başarısız'));
+    }
+  };
+
+  // P2P: Buyer confirms payment received
+  const handleBuyerConfirm = async (orderId: string) => {
+    const result = await api.buyerConfirmP2P(orderId, true);
+    if (result?.success) {
+      alert('Ödeme onaylandı! İşlem tamamlandı.');
+      loadData();
+      refreshUser();
+    } else {
+      alert('Hata: ' + (result?.error || 'İşlem başarısız'));
     }
   };
 
@@ -113,6 +182,50 @@ const Dashboard = () => {
                 <button onClick={() => handleApprove(a.id)} className="bg-lime-500 text-black px-4 py-2 rounded-lg text-xs font-bold hover:bg-lime-400 transition-colors">Approve</button>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* P2P Pending Actions */}
+        {p2pPending.length > 0 && (
+          <div className="bg-lime-500/10 border border-lime-500/30 p-4 rounded-2xl mb-6 backdrop-blur-sm">
+            <h3 className="font-bold text-lime-400 flex items-center gap-2 mb-3 text-sm">
+              <span className="material-symbols-outlined text-lg">swap_horiz</span>
+              P2P İşlem Bekliyor
+            </h3>
+            {p2pPending.map((order: any) => {
+              const isSeller = order.seller_id && !order.buyer_id;
+              const needsMarkPaid = order.status === 'MATCHED';
+              const needsBuyerConfirm = order.status === 'PAID' && !order.buyer_confirmed_at;
+
+              return (
+                <div key={order.id} className="flex justify-between items-center bg-[#1a1a1a] p-3 rounded-xl mb-2 last:mb-0">
+                  <div className="flex flex-col">
+                    <span className="text-xs text-gray-500 font-medium">
+                      {isSeller ? 'SELL' : 'BUY'} • ${order.amount_usd}
+                    </span>
+                    <span className="text-sm font-bold text-white">
+                      Status: <span className="text-amber-400">{order.status}</span>
+                    </span>
+                  </div>
+                  {needsMarkPaid && (
+                    <button
+                      onClick={() => handleMarkPaid(order.id)}
+                      className="bg-lime-500 text-black px-4 py-2 rounded-lg text-xs font-bold hover:bg-lime-400 transition-colors"
+                    >
+                      Ödedim ✓
+                    </button>
+                  )}
+                  {needsBuyerConfirm && (
+                    <button
+                      onClick={() => handleBuyerConfirm(order.id)}
+                      className="bg-lime-500 text-black px-4 py-2 rounded-lg text-xs font-bold hover:bg-lime-400 transition-colors"
+                    >
+                      Onayla ✓
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
 

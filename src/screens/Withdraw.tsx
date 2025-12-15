@@ -25,18 +25,27 @@ const Withdraw = () => {
     const [selectedBank, setSelectedBank] = useState<BankAccount | null>(null);
     const [loadingBanks, setLoadingBanks] = useState(true);
 
+    // Load bank accounts when user is available
     useEffect(() => {
-        loadBankAccounts();
+        if (user?.email) {
+            loadBankAccounts();
+        }
+    }, [user?.email]);
+
+    // Cleanup polling on unmount
+    useEffect(() => {
         return () => {
             if (pollInterval) clearInterval(pollInterval);
         };
     }, [pollInterval]);
 
     const loadBankAccounts = async () => {
+        if (!user?.email) return;
+        setLoadingBanks(true);
         try {
-            const accounts = await api.getBankAccounts(user?.email || '');
+            const accounts = await api.getBankAccounts(user.email);
             setBankAccounts(accounts || []);
-            if (accounts && accounts.length > 0) {
+            if (accounts && accounts.length > 0 && !selectedBank) {
                 setSelectedBank(accounts[0]);
             }
         } catch (e) {
@@ -98,31 +107,39 @@ const Withdraw = () => {
 
         setLoading(true);
         try {
-            const order = await api.createP2POrder(
+            // NEW P2P API - calls p2p-create-order Edge Function
+            const result = await api.createP2POrderNew(
                 'SELL',
                 parseFloat(amount),
-                user?.email || '',
                 selectedBank.iban,
                 selectedBank.bankName,
                 selectedBank.accountName
             );
 
-            if (order.success && order.match) {
-                // Anında eşleşti!
-                setMatch({
-                    tradeId: order.match.tradeId,
-                    buyer: order.match.buyer,
-                    amount: order.match.amount,
-                    fiatAmount: order.match.fiatAmount
-                });
+            if (result.success && result.order) {
+                // Order created successfully
+                const orderId = result.order.id;
+                setPending(orderId);
                 setStep(2);
-            } else if (order.orderId) {
-                // Bekleme - polling başlat
-                setPending(order.orderId);
-                setStep(2);
-                startPolling(order.orderId);
+
+                // Attempt to find a match immediately
+                const matchResult = await api.matchP2POrder(orderId);
+
+                if (matchResult.success && matchResult.match) {
+                    // Anında eşleşti!
+                    setMatch({
+                        tradeId: matchResult.match.matchedOrderId,
+                        buyer: matchResult.match.counterparty?.email,
+                        amount: result.order.amount_usd,
+                        fiatAmount: result.order.amount_usd * 32, // Mock TRY rate
+                        status: 'MATCHED'
+                    });
+                } else {
+                    // Bekleme - polling başlat
+                    startPolling(orderId);
+                }
             } else {
-                alert('Hata: ' + (order.error || 'İstek oluşturulamadı'));
+                alert('Hata: ' + (result.error || 'İstek oluşturulamadı'));
             }
         } catch (e: any) {
             alert(e.message || 'Bağlantı hatası');
@@ -132,19 +149,19 @@ const Withdraw = () => {
 
     const startPolling = (orderId: string) => {
         const interval = setInterval(async () => {
-            const status = await api.getP2POrderStatus(orderId);
+            const order = await api.getP2POrderStatus(orderId);
 
-            if (status && status.match) {
+            if (order && order.status === 'MATCHED') {
                 setMatch({
-                    tradeId: status.match.tradeId,
-                    buyer: status.match.counterparty?.email,
-                    amount: status.match.amount,
-                    fiatAmount: status.match.fiatAmount,
-                    status: status.match.status
+                    tradeId: orderId,
+                    buyer: 'Eşleşme bulundu',
+                    amount: order.amount_usd,
+                    fiatAmount: order.amount_usd * 32,
+                    status: 'MATCHED'
                 });
                 clearInterval(interval);
                 setPollInterval(null);
-            } else if (status?.status === 'EXPIRED' || status?.status === 'CANCELLED') {
+            } else if (order?.status === 'EXPIRED' || order?.status === 'CANCELLED') {
                 clearInterval(interval);
                 setPollInterval(null);
                 alert('Sipariş süresi doldu veya iptal edildi');
