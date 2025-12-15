@@ -109,11 +109,22 @@ const Dashboard = () => {
 
   // P2P: Seller confirms they received the payment
   const handleSellerConfirm = async (orderId: string) => {
-    const result = await api.buyerConfirmP2P(orderId, true);
+    const result = await api.p2pAction('confirm', { orderId });
     if (result?.success) {
       alert('Transfer onaylandı! Bakiye alıcıya aktarıldı.');
       loadData();
       refreshUser();
+    } else {
+      alert('Hata: ' + (result?.error || 'İşlem başarısız'));
+    }
+  };
+
+  // P2P: Seller rejects the payment (dispute)
+  const handleSellerReject = async (orderId: string) => {
+    const result = await api.p2pAction('reject', { orderId });
+    if (result?.success) {
+      alert('İşlem reddedildi. Eşleşme iptal edildi.');
+      loadData();
     } else {
       alert('Hata: ' + (result?.error || 'İşlem başarısız'));
     }
@@ -195,22 +206,44 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* P2P Transfer Notification Popup - Minimal */}
+        {/* P2P Ödeme Onayı Popup */}
         {p2pPending.filter((o: any) => o.status === 'PAID').length > 0 && (
           <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-            <div className="bg-[#1a1a1a] rounded-2xl p-6 max-w-xs w-full text-center">
-              <p className="text-white text-lg font-bold mb-4">
-                Hesabınıza Transfer Gerçekleşti
+            <div className="bg-[#1a1a1a] rounded-2xl p-5 max-w-xs w-full border border-gray-700">
+              {/* Icon + Title Row */}
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-full bg-lime-500/20 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-lime-400">payments</span>
+                </div>
+                <h3 className="text-white font-bold text-lg">Ödeme Onayı</h3>
+              </div>
+
+              {/* Message */}
+              <p className="text-gray-400 text-sm mb-5">
+                Hesabınıza para aktarılmıştır ödemeyi onaylıyor musunuz?
               </p>
-              <button
-                onClick={() => {
-                  const paidOrder = p2pPending.find((o: any) => o.status === 'PAID');
-                  if (paidOrder) handleSellerConfirm(paidOrder.id);
-                }}
-                className="w-full bg-lime-500 hover:bg-lime-400 text-black py-3 rounded-xl font-bold transition-colors"
-              >
-                Onaylıyorum
-              </button>
+
+              {/* Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    const paidOrder = p2pPending.find((o: any) => o.status === 'PAID');
+                    if (paidOrder) handleSellerReject(paidOrder.id);
+                  }}
+                  className="flex-1 bg-[#2a2a2a] text-gray-300 py-3 rounded-xl font-semibold hover:bg-[#333] transition-colors"
+                >
+                  Reddet
+                </button>
+                <button
+                  onClick={() => {
+                    const paidOrder = p2pPending.find((o: any) => o.status === 'PAID');
+                    if (paidOrder) handleSellerConfirm(paidOrder.id);
+                  }}
+                  className="flex-1 bg-lime-500 text-black py-3 rounded-xl font-bold hover:bg-lime-400 transition-colors"
+                >
+                  Onaylıyorum
+                </button>
+              </div>
             </div>
           </div>
         )}

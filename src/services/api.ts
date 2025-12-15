@@ -1144,5 +1144,31 @@ export const api = {
   createMerchant: async () => ({ success: false }),
   updateMerchant: async () => ({ success: false }),
   deleteMerchant: async () => false,
-  getDepartmentMerchant: async () => null
+  getDepartmentMerchant: async () => null,
+
+  // ===== NEW UNIFIED P2P API =====
+  p2pAction: async (action: 'create' | 'markPaid' | 'confirm' | 'reject', params: {
+    orderId?: string;
+    amount?: number;
+    side?: 'BUY' | 'SELL';
+    iban?: string;
+    bankName?: string;
+    accountName?: string;
+  } = {}) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('p2p-action', {
+        body: { action, ...params }
+      });
+
+      if (error) {
+        console.error('P2P action error:', error);
+        return { success: false, error: error.message || 'Edge function error' };
+      }
+
+      return data || { success: false, error: 'No response' };
+    } catch (e: any) {
+      console.error('P2P action exception:', e);
+      return { success: false, error: e.message || 'Network error' };
+    }
+  }
 };
