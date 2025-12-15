@@ -273,25 +273,44 @@ serve(async (req) => {
             }
 
             // Transfer balance: Seller loses, Buyer gains
-            const amount = order.amount_usd
+            const transferAmount = order.amount_usd
 
-            // Decrease seller balance
-            await supabase.rpc('decrease_balance', { user_id: order.seller_id, amount: amount })
-                .catch(() => {
-                    // Fallback: direct update
-                    supabase.from('profiles')
-                        .update({ balance: supabase.rpc('profiles.balance - ' + amount) })
-                        .eq('id', order.seller_id)
-                })
+            // Get seller's current balance
+            const { data: sellerProfile } = await supabase
+                .from('profiles')
+                .select('balance')
+                .eq('id', order.seller_id)
+                .single()
 
-            // Increase buyer balance
-            await supabase.rpc('increase_balance', { user_id: order.buyer_id, amount: amount })
-                .catch(() => {
-                    // Fallback: direct update
-                    supabase.from('profiles')
-                        .update({ balance: supabase.rpc('profiles.balance + ' + amount) })
-                        .eq('id', order.buyer_id)
-                })
+            // Get buyer's current balance
+            const { data: buyerProfile } = await supabase
+                .from('profiles')
+                .select('balance')
+                .eq('id', order.buyer_id)
+                .single()
+
+            if (!sellerProfile || !buyerProfile) {
+                return new Response(
+                    JSON.stringify({ success: false, error: 'Could not fetch user profiles' }),
+                    { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                )
+            }
+
+            // Calculate new balances
+            const newSellerBalance = (sellerProfile.balance || 0) - transferAmount
+            const newBuyerBalance = (buyerProfile.balance || 0) + transferAmount
+
+            // Update seller balance
+            await supabase
+                .from('profiles')
+                .update({ balance: newSellerBalance })
+                .eq('id', order.seller_id)
+
+            // Update buyer balance
+            await supabase
+                .from('profiles')
+                .update({ balance: newBuyerBalance })
+                .eq('id', order.buyer_id)
 
             return new Response(
                 JSON.stringify({ success: true, message: 'Order completed, balance transferred' }),

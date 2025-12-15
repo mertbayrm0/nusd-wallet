@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../App';
 import { api } from '../services/api';
+import { supabase } from '../services/supabase';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -10,6 +11,7 @@ const Dashboard = () => {
   const [approvals, setApprovals] = useState([]);
   const [notification, setNotification] = useState<any>(null);
   const [p2pPending, setP2pPending] = useState<any[]>([]); // P2P orders needing action
+  const [authUserId, setAuthUserId] = useState<string | null>(null); // Supabase auth user ID
 
   useEffect(() => {
     refreshUser();
@@ -25,6 +27,10 @@ const Dashboard = () => {
 
   const loadData = async () => {
     if (!user) return;
+
+    // Get current auth user ID for filtering
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (authUser) setAuthUserId(authUser.id);
 
     // Fetch regular transactions
     const transactions = await api.getTransactions(user.email);
@@ -206,8 +212,8 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* P2P Ödeme Onayı Popup */}
-        {p2pPending.filter((o: any) => o.status === 'PAID').length > 0 && (
+        {/* P2P Ödeme Onayı Popup - Only show to SELLER */}
+        {p2pPending.filter((o: any) => o.status === 'PAID' && o.seller_id === authUserId).length > 0 && (
           <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
             <div className="bg-[#1a1a1a] rounded-2xl p-5 max-w-xs w-full border border-gray-700">
               {/* Icon + Title Row */}
