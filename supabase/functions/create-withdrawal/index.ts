@@ -20,16 +20,31 @@ serve(async (req) => {
 
         // 1. Verify User
         const authHeader = req.headers.get('Authorization')
-        if (!authHeader) throw new Error('Missing Authorization header')
+        if (!authHeader) {
+            return new Response(
+                JSON.stringify({ error: 'Missing Authorization header' }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+            )
+        }
 
         const { data: { user }, error: userError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''))
-        if (userError || !user) throw new Error('Invalid user token')
+        if (userError || !user) {
+            return new Response(
+                JSON.stringify({ error: 'Invalid user token' }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+            )
+        }
 
         // 2. Parse Body
         const { amount, network, address, type, memo_code } = await req.json()
         const parsedAmount = parseFloat(amount)
 
-        if (!parsedAmount || parsedAmount <= 0) throw new Error('Invalid amount')
+        if (!parsedAmount || parsedAmount <= 0) {
+            return new Response(
+                JSON.stringify({ error: 'Invalid amount' }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 422 }
+            )
+        }
 
         const txType = type || 'WITHDRAW'
         const isP2P = txType.startsWith('P2P')
@@ -163,7 +178,7 @@ serve(async (req) => {
     } catch (error: any) {
         return new Response(
             JSON.stringify({ error: error.message }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
         )
     }
 })
