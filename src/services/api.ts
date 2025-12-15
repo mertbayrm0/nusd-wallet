@@ -305,40 +305,16 @@ export const api = {
   // ===== WITHDRAWAL =====
   createWithdrawal: async (email: string, amount: number, isInstant = false, type = 'withdraw', network?: string, address?: string) => {
     try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id, balance')
-        .eq('email', email)
-        .single();
+      // Use secure Edge Function
+      const { data, error } = await supabase.functions.invoke('create-withdrawal', {
+        body: { amount, network, address }
+      });
 
-      if (!profile) throw new Error('User not found');
-      if (profile.balance < amount) throw new Error('Insufficient balance');
-
-      // Create transaction
-      const { data: tx, error } = await supabase
-        .from('transactions')
-        .insert({
-          user_id: profile.id,
-          type: 'WITHDRAW',
-          amount,
-          status: 'PENDING',
-          network,
-          to_address: address
-        })
-        .select()
-        .single();
-
-      if (error) throw new Error(error.message);
-
-      // Deduct from balance
-      await supabase
-        .from('profiles')
-        .update({ balance: profile.balance - amount })
-        .eq('id', profile.id);
-
-      return { success: true, transaction: tx };
+      if (error) throw error;
+      return { success: true, transaction: data };
     } catch (e: any) {
-      throw new Error(e.message || 'Withdrawal failed');
+      console.error('Withdrawal error:', e);
+      return { success: false, error: e.message || 'Withdrawal failed' };
     }
   },
 
