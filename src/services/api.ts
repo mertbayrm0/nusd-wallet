@@ -644,7 +644,7 @@ export const api = {
     } catch (e: any) {
       console.error('createDepartment fully detailed error:', e);
       if (e.context && e.context.json) {
-        e.context.json().then((errBody: any) => console.error('Edge Function Error Body:', errBody));
+        e.context.json().then((errBody: any) => console.error('Edge Function Error Body:', JSON.stringify(errBody, null, 2)));
       }
       return { success: false, error: e };
     }
