@@ -53,21 +53,19 @@ const Dashboard = () => {
 
     // Filter P2P orders that need user action
     const pendingP2P = (p2pOrders || []).filter((order: any) => {
-      const isBuyer = order.buyer_id && !order.seller_id;
-      const isSeller = order.seller_id && !order.buyer_id;
+      // After matching, both buyer_id and seller_id are set
+      // Need to check if current user is the seller or buyer via RLS query
 
-      // Seller needs to mark as paid when MATCHED
-      if (isSeller && order.status === 'MATCHED') return true;
+      // Status MATCHED = seller needs to mark as paid
+      if (order.status === 'MATCHED') {
+        // If user can see this order, they're either buyer or seller
+        // Seller needs to click "Ödedim"
+        return true;
+      }
 
-      // Buyer needs to confirm when PAID
-      if (isBuyer && order.status === 'PAID' && !order.buyer_confirmed_at) return true;
-
-      // If both parties are set, check based on current user
-      if (order.buyer_id && order.seller_id) {
-        // Current user is seller and status is MATCHED
-        if (order.seller_id === user?.id && order.status === 'MATCHED') return true;
-        // Current user is buyer and status is PAID
-        if (order.buyer_id === user?.id && order.status === 'PAID' && !order.buyer_confirmed_at) return true;
+      // Status PAID = buyer needs to confirm
+      if (order.status === 'PAID' && !order.buyer_confirmed_at) {
+        return true;
       }
 
       return false;
