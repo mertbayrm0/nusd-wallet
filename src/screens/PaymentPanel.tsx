@@ -33,15 +33,11 @@ const PaymentPanel = () => {
         const p = await api.getPanelBySlug(slug!);
         if (p) {
             setPanel(p);
-            // Fetch department details to get Primary Vault
-            // Step 4.4 implementation plan said getPublicPanelContext, but we can reuse getDepartment logic
-            // providing we can call it. But panel.department_id is available.
-            // Let's use getDepartment to find the primary vault.
+            // Fetch primary vault directly for this department
             if (p.department_id) {
-                const dept = await api.getDepartment(p.department_id);
-                if (dept && dept.vaults) {
-                    const primary = dept.vaults.find((v: any) => v.is_primary);
-                    setPrimaryVault(primary);
+                const vaultResult = await api.getVaultByDepartment(p.department_id);
+                if (vaultResult) {
+                    setPrimaryVault(vaultResult);
                 }
             }
         } else {
@@ -107,8 +103,8 @@ const PaymentPanel = () => {
                     <button
                         onClick={() => { setMode('deposit'); setOrderId(null); }}
                         className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${mode === 'deposit'
-                                ? 'bg-white text-slate-900 shadow-md'
-                                : 'text-slate-400 hover:text-white'
+                            ? 'bg-white text-slate-900 shadow-md'
+                            : 'text-slate-400 hover:text-white'
                             }`}
                     >
                         Deposit (Pay)
@@ -116,8 +112,8 @@ const PaymentPanel = () => {
                     <button
                         onClick={() => { setMode('withdraw'); setOrderId(null); }}
                         className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${mode === 'withdraw'
-                                ? 'bg-white text-slate-900 shadow-md'
-                                : 'text-slate-400 hover:text-white'
+                            ? 'bg-white text-slate-900 shadow-md'
+                            : 'text-slate-400 hover:text-white'
                             }`}
                     >
                         Withdraw (Get)
@@ -199,8 +195,8 @@ const PaymentPanel = () => {
                                             key={net}
                                             onClick={() => setNetwork(net)}
                                             className={`py-2 rounded-lg text-xs font-bold border transition-colors ${network === net
-                                                    ? 'bg-indigo-600 border-indigo-600 text-white'
-                                                    : 'bg-[#0F172A] border-slate-700 text-slate-400 hover:border-slate-500'
+                                                ? 'bg-indigo-600 border-indigo-600 text-white'
+                                                : 'bg-[#0F172A] border-slate-700 text-slate-400 hover:border-slate-500'
                                                 }`}
                                         >
                                             {net}
@@ -212,8 +208,8 @@ const PaymentPanel = () => {
                             <button
                                 onClick={mode === 'deposit' ? handleDeposit : handleWithdraw}
                                 className={`w-full py-3.5 rounded-xl font-bold text-white shadow-lg transition-transform active:scale-95 mt-2 ${mode === 'deposit'
-                                        ? 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/25'
-                                        : 'bg-orange-600 hover:bg-orange-700 shadow-orange-500/25'
+                                    ? 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/25'
+                                    : 'bg-orange-600 hover:bg-orange-700 shadow-orange-500/25'
                                     }`}
                             >
                                 {mode === 'deposit' ? 'Generate Address' : 'Request Withdrawal'}

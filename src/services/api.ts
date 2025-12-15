@@ -739,6 +739,27 @@ export const api = {
     }
   },
 
+  // Get primary vault for a department
+  getVaultByDepartment: async (departmentId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('vaults')
+        .select('*')
+        .eq('department_id', departmentId)
+        .eq('is_primary', true)
+        .single();
+
+      if (error) {
+        console.error('getVaultByDepartment error:', error);
+        return null;
+      }
+      return data;
+    } catch (e) {
+      console.error('getVaultByDepartment exception:', e);
+      return null;
+    }
+  },
+
   getAdminVaults: async () => {
     try {
       const { data, error } = await supabase
