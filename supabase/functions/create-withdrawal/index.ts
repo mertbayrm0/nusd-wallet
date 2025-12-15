@@ -68,13 +68,19 @@ serve(async (req) => {
             // Self-healing: Create profile if missing
             debugStage = 'healing_create_profile'
             console.log('Profile missing, creating new profile for:', user.id)
+
+            // Extract name from metadata or email
+            const fallbackName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User'
+
             const { data: newProfile, error: createError } = await supabase
                 .from('profiles')
                 .insert({
                     id: user.id,
                     email: user.email,
-                    balance: 0
-                    // Removed potential non-existent columns (is_active, role) to be safe
+                    balance: 0,
+                    full_name: fallbackName,
+                    role: 'user',
+                    is_active: true
                 })
                 .select('id, balance, email, full_name, iban, bank_name')
                 .single()

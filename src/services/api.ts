@@ -902,14 +902,34 @@ export const api = {
       };
     } catch (e: any) {
       console.error('createP2POrder error:', e);
-      if (e.context && e.context.json) {
-        e.context.json().then((errBody: any) => {
-          console.error('Edge Function Error Body:', JSON.stringify(errBody, null, 2))
-          alert(`Sistem Hatası: ${errBody.error || 'Bilinmeyen Hata'} (Stage: ${errBody.stage || 'Unknown'})`)
-        });
-      } else {
-        alert(`İşlem Başarısız: ${e.message}`)
+
+      let errorBody: any = null;
+      let stage = 'Unknown';
+
+      // Attempt to extract body from various places
+      if (e.context && typeof e.context.json === 'function') {
+        try {
+          errorBody = await e.context.json();
+        } catch { /* ignore */ }
       }
+
+      if (!errorBody && e.response && typeof e.response.json === 'function') {
+        try {
+          errorBody = await e.response.json();
+        } catch { /* ignore */ }
+      }
+
+      if (errorBody) {
+        console.error('Edge Function Error Body:', JSON.stringify(errorBody, null, 2))
+        stage = errorBody.stage || 'Unknown';
+        alert(`Sistem Hatası: ${errorBody.error || 'Bilinmeyen Hata'} (Stage: ${stage})`);
+      } else {
+        // Fallback: Stringify the whole error to see if hidden props exist
+        const errorStr = JSON.stringify(e, Object.getOwnPropertyNames(e));
+        console.error('Raw Error Object:', errorStr);
+        alert(`İşlem Başarısız: ${e.message || 'Bilinmeyen Hata'} \n\nDetay: ${errorStr.substring(0, 200)}`);
+      }
+
       return { success: false, error: e.message };
     }
   },
