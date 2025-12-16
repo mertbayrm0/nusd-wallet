@@ -142,26 +142,26 @@ const AdminDepartmentDetail = () => {
                 <div className="grid grid-cols-4 gap-4 mb-6">
                     <div className="bg-green-50 p-4 rounded-xl border border-green-100">
                         <div className="text-center">
-                            <h3 className="text-green-600 font-bold text-2xl">$0</h3>
+                            <h3 className="text-green-600 font-bold text-2xl">${(dept.owner?.balance || 0).toLocaleString()}</h3>
                             <p className="text-green-800 text-xs font-bold uppercase mt-1">Toplam Bakiye</p>
                         </div>
                     </div>
                     <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
                         <div className="text-center">
-                            <h3 className="text-blue-600 font-bold text-2xl">$0</h3>
+                            <h3 className="text-blue-600 font-bold text-2xl">${transactions.filter(t => t.type === 'DEPOSIT' || t.amount > 0).reduce((sum, t) => sum + Math.abs(t.amount || 0), 0).toLocaleString()}</h3>
                             <p className="text-blue-800 text-xs font-bold uppercase mt-1">Yatırımlar</p>
                         </div>
                     </div>
                     <div className="bg-red-50 p-4 rounded-xl border border-red-100">
                         <div className="text-center">
-                            <h3 className="text-red-600 font-bold text-2xl">$0</h3>
+                            <h3 className="text-red-600 font-bold text-2xl">${transactions.filter(t => t.type === 'WITHDRAW' || t.amount < 0).reduce((sum, t) => sum + Math.abs(t.amount || 0), 0).toLocaleString()}</h3>
                             <p className="text-red-800 text-xs font-bold uppercase mt-1">Çekimler</p>
                         </div>
                     </div>
                     <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
                         <div className="text-center">
-                            <h3 className="text-purple-600 font-bold text-2xl">0</h3>
-                            <p className="text-purple-800 text-xs font-bold uppercase mt-1">Üyeler</p>
+                            <h3 className="text-purple-600 font-bold text-2xl">{transactions.length}</h3>
+                            <p className="text-purple-800 text-xs font-bold uppercase mt-1">İşlemler</p>
                         </div>
                     </div>
                 </div>
@@ -220,7 +220,7 @@ const AdminDepartmentDetail = () => {
                                                     {tx.amount > 0 ? '+' : ''}{Math.abs(tx.amount).toLocaleString()} USDT
                                                 </p>
                                                 <p className={`text-xs ${tx.status === 'COMPLETED' ? 'text-green-500' :
-                                                        tx.status === 'PENDING' ? 'text-amber-500' : 'text-gray-500'
+                                                    tx.status === 'PENDING' ? 'text-amber-500' : 'text-gray-500'
                                                     }`}>
                                                     {tx.status === 'COMPLETED' ? 'Tamamlandı' :
                                                         tx.status === 'PENDING' ? 'Beklemede' : tx.status}
