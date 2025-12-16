@@ -34,6 +34,7 @@ const AdminDepartmentDetail = () => {
         if (id) {
             fetchDetail();
             fetchVaults();
+            fetchTransactions();
         }
     }, [id]);
 
@@ -41,12 +42,15 @@ const AdminDepartmentDetail = () => {
         const data = await api.getDepartment(id!);
         if (data) {
             setDept(data);
-            // Mock transactions for now or fetch if API exists (using dept filter)
-            // setTransactions(...); 
         } else {
             navigate('/admin/departments');
         }
         setLoading(false);
+    };
+
+    const fetchTransactions = async () => {
+        const txs = await api.getDepartmentTransactions(id!);
+        setTransactions(txs);
     };
 
     const fetchVaults = async () => {
@@ -184,8 +188,48 @@ const AdminDepartmentDetail = () => {
 
                     {/* TRANSACTIONS TAB */}
                     {activeTab === 'transactions' && (
-                        <div className="p-8 text-center text-gray-400">
-                            Henüz işlem yok.
+                        <div className="p-6">
+                            {transactions.length === 0 ? (
+                                <div className="text-center text-gray-400 py-12">
+                                    Henüz işlem yok.
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {transactions.map((tx: any) => (
+                                        <div key={tx.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                                            <div className="flex items-center gap-4">
+                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${tx.type === 'DEPOSIT' || tx.amount > 0 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+                                                    }`}>
+                                                    <span className="material-symbols-outlined text-sm">
+                                                        {tx.type === 'DEPOSIT' || tx.amount > 0 ? 'arrow_downward' : 'arrow_upward'}
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-gray-800">
+                                                        {tx.type === 'DEPOSIT' ? 'Yatırım' :
+                                                            tx.type === 'WITHDRAW' ? 'Çekim' :
+                                                                tx.type === 'TRANSFER' ? 'Transfer' : tx.type}
+                                                    </p>
+                                                    <p className="text-xs text-gray-500">
+                                                        {new Date(tx.created_at).toLocaleString('tr-TR')}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className={`font-bold ${tx.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                    {tx.amount > 0 ? '+' : ''}{Math.abs(tx.amount).toLocaleString()} USDT
+                                                </p>
+                                                <p className={`text-xs ${tx.status === 'COMPLETED' ? 'text-green-500' :
+                                                        tx.status === 'PENDING' ? 'text-amber-500' : 'text-gray-500'
+                                                    }`}>
+                                                    {tx.status === 'COMPLETED' ? 'Tamamlandı' :
+                                                        tx.status === 'PENDING' ? 'Beklemede' : tx.status}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
 

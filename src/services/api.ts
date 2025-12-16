@@ -1259,11 +1259,23 @@ export const api = {
 
   getDepartmentTransactions: async (departmentId: string) => {
     try {
-      // Get transactions where metadata contains this department_id
+      // First get the department's owner_id
+      const { data: dept } = await supabase
+        .from('departments')
+        .select('owner_id')
+        .eq('id', departmentId)
+        .single();
+
+      if (!dept?.owner_id) {
+        console.log('No owner_id for department:', departmentId);
+        return [];
+      }
+
+      // Get owner's transactions
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
-        .contains('metadata', { department_id: departmentId })
+        .eq('user_id', dept.owner_id)
         .order('created_at', { ascending: false })
         .limit(50);
 
