@@ -11,7 +11,10 @@ const History = () => {
         const fetchTransactions = async () => {
             try {
                 const { data: { user } } = await supabase.auth.getUser();
+                console.log('[History] Current user:', user?.id, user?.email);
+
                 if (!user) {
+                    console.log('[History] No user found');
                     setLoading(false);
                     return;
                 }
@@ -22,13 +25,15 @@ const History = () => {
                     .eq('user_id', user.id)
                     .order('created_at', { ascending: false });
 
+                console.log('[History] Query result:', { data, error, count: data?.length });
+
                 if (error) {
-                    console.error('Transactions fetch error:', error);
+                    console.error('[History] Transactions fetch error:', error);
                 } else {
                     setTxs(data || []);
                 }
             } catch (e) {
-                console.error('Transactions exception:', e);
+                console.error('[History] Transactions exception:', e);
             }
             setLoading(false);
         };
@@ -93,8 +98,8 @@ const History = () => {
                         <div key={tx.id} className="bg-[#1a1a1a] p-4 rounded-2xl border border-white/5 flex items-center justify-between hover:bg-[#222] transition-colors">
                             <div className="flex items-center gap-4">
                                 <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${tx.type === 'DEPOSIT' ? 'bg-lime-500/20 text-lime-400' :
-                                        tx.type === 'WITHDRAW' ? 'bg-red-500/20 text-red-400' :
-                                            'bg-blue-500/20 text-blue-400'
+                                    tx.type === 'WITHDRAW' ? 'bg-red-500/20 text-red-400' :
+                                        'bg-blue-500/20 text-blue-400'
                                     }`}>
                                     <span className="material-symbols-outlined">
                                         {getTypeIcon(tx.type)}
