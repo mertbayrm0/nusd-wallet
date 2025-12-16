@@ -119,6 +119,37 @@ serve(async (req) => {
                     .from('profiles')
                     .update({ balance: userProfile.balance + tx.amount })
                     .eq('id', tx.user_id)
+
+                // Payment Panel deposit ise vault bakiyesini güncelle
+                if (tx.metadata?.source === 'payment_panel' && tx.metadata?.department_id) {
+                    const departmentId = tx.metadata.department_id;
+
+                    // Get primary vault for department
+                    const { data: vault } = await supabaseAdmin
+                        .from('vaults')
+                        .select('*')
+                        .eq('department_id', departmentId)
+                        .eq('is_primary', true)
+                        .single();
+
+                    if (vault) {
+                        // Update vault balance
+                        await supabaseAdmin
+                            .from('vaults')
+                            .update({ balance: (vault.balance || 0) + tx.amount })
+                            .eq('id', vault.id);
+
+                        // Create vault_ledger entry
+                        await supabaseAdmin.from('vault_ledger').insert({
+                            vault_id: vault.id,
+                            transaction_id: tx.id,
+                            type: 'DEPOSIT',
+                            amount: tx.amount,
+                            user_id: tx.user_id,
+                            network: tx.currency || 'TRC20'
+                        });
+                    }
+                }
             }
 
             // AUDIT LOG: Onay kaydı

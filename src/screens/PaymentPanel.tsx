@@ -23,6 +23,8 @@ const PaymentPanel = () => {
 
     // Result State
     const [orderId, setOrderId] = useState<string | null>(null);
+    const [newBalance, setNewBalance] = useState<number | null>(null);
+    const [transferMessage, setTransferMessage] = useState<string>('');
 
     useEffect(() => {
         if (slug) loadData();
@@ -47,26 +49,19 @@ const PaymentPanel = () => {
     };
 
     const handleDeposit = async () => {
-        if (!user && !email) {
-            alert('Please enter your email');
+        if (!amount || parseFloat(amount) <= 0) {
+            alert('Lütfen geçerli bir tutar girin');
             return;
         }
 
-        // In this new flow, Deposit means "Show Address".
-        // Use "Generate Address" button from screenshot logic.
-        // Actually, screenshot says "Generate Address".
-        // We will just show the Primary Vault address if available.
-        // But we might want to create a PENDING transaction to track this "intent".
-
-        // Let's call payViaPanel to create the transaction intent?
-        // Yes, create-transaction-from-panel.
-        // This returns a transaction ID and we show the address.
-
+        // Internal transfer: User balance → Vault balance
         const res = await api.payViaPanel(slug!, parseFloat(amount));
         if (res?.success) {
             setOrderId(res.transaction.id);
+            setNewBalance(res.newBalance);
+            setTransferMessage(res.message || 'Transfer başarılı!');
         } else {
-            alert('Failed to generate order');
+            alert(res?.error || 'Transfer başarısız');
         }
     };
 
@@ -124,25 +119,25 @@ const PaymentPanel = () => {
                 <div className="px-6 pb-6 space-y-5">
 
                     {orderId ? (
-                        // SUCCESS / ADDRESS VIEW
+                        // SUCCESS VIEW - Transfer completed
                         <div className="text-center py-6">
                             <div className="w-16 h-16 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <span className="material-symbols-outlined text-3xl">qr_code_2</span>
+                                <span className="material-symbols-outlined text-3xl">check_circle</span>
                             </div>
-                            <h3 className="text-white font-bold text-lg mb-2">Scan or Copy Address</h3>
-                            <p className="text-sm text-slate-400 mb-6">Send exactly <b className="text-white">{amount} {panel.asset}</b> to:</p>
+                            <h3 className="text-white font-bold text-lg mb-2">Transfer Başarılı!</h3>
+                            <p className="text-sm text-slate-400 mb-4">{transferMessage}</p>
 
-                            <div className="bg-[#0F172A] p-4 rounded-xl border border-slate-700 break-all font-mono text-xs text-slate-300 relative group cursor-pointer"
-                                onClick={() => navigator.clipboard.writeText(primaryVault?.address || 'Loading...')}
-                            >
-                                {primaryVault ? primaryVault.address : 'No Vault Assigned! Contact Support.'}
-                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <span className="material-symbols-outlined text-xs bg-slate-700 p-1 rounded">content_copy</span>
-                                </div>
+                            <div className="bg-[#0F172A] p-4 rounded-xl border border-green-700/50 mb-4">
+                                <p className="text-green-400 font-bold text-lg">${amount}</p>
+                                <p className="text-xs text-slate-500">Vault'a aktarıldı</p>
                             </div>
 
-                            <p className="text-[10px] text-slate-500 mt-4">Order ID: {orderId}</p>
-                            <button onClick={() => setOrderId(null)} className="mt-6 text-indigo-400 text-sm font-bold hover:text-indigo-300">Dismiss</button>
+                            {newBalance !== null && (
+                                <p className="text-sm text-slate-400">Yeni Bakiyeniz: <b className="text-white">${newBalance.toLocaleString()}</b></p>
+                            )}
+
+                            <p className="text-[10px] text-slate-500 mt-4">İşlem ID: {orderId}</p>
+                            <button onClick={() => { setOrderId(null); setAmount(''); }} className="mt-6 text-indigo-400 text-sm font-bold hover:text-indigo-300">Yeni İşlem</button>
                         </div>
                     ) : (
                         // FORM VIEW
