@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '../services/api';
 
@@ -39,6 +39,16 @@ const PaymentPanel = () => {
         setLoading(false);
     };
 
+    // Calculate NUSD address from owner email
+    const nusdAddress = useMemo(() => {
+        const email = department?.owner?.email || department?.owner_email || '';
+        if (!email) return 'Adres Bulunamadı';
+        const hash = email.split('').reduce((acc: number, char: string) => {
+            return ((acc << 5) - acc) + char.charCodeAt(0);
+        }, 0);
+        return `NUSD-${Math.abs(hash).toString(36).toUpperCase().slice(0, 6)}`;
+    }, [department]);
+
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
         alert('Kopyalandı!');
@@ -50,8 +60,6 @@ const PaymentPanel = () => {
 
     if (loading) return <div className="min-h-screen bg-[#0F172A] flex items-center justify-center text-white">Loading Portal...</div>;
     if (error || !panel) return <div className="min-h-screen bg-[#0F172A] flex items-center justify-center text-white">{error || 'Not Found'}</div>;
-
-    const nusdAddress = department?.nusd_address || 'Adres Bulunamadı';
 
     return (
         <div className="min-h-screen bg-[#0F172A] flex flex-col items-center justify-center p-4 font-sans text-slate-300">

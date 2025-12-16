@@ -206,9 +206,9 @@ const AdminDepartmentDetail = () => {
                                         <p className="text-xs text-green-600 font-bold uppercase mb-1"># NUSD Adresi</p>
                                         <p className="font-mono font-bold text-xl text-green-700">
                                             {(() => {
-                                                // Generate NUSD address from owner email
-                                                const email = dept.owner_email || dept.email || '';
-                                                if (!email) return 'NUSD-XXXX';
+                                                // Generate NUSD address from owner email (from API relation)
+                                                const email = dept.owner?.email || dept.owner_email || '';
+                                                if (!email) return 'Üye email bulunamadı';
                                                 const hash = email.split('').reduce((acc: number, char: string) => {
                                                     return ((acc << 5) - acc) + char.charCodeAt(0);
                                                 }, 0);
@@ -218,7 +218,7 @@ const AdminDepartmentDetail = () => {
                                     </div>
                                     <button
                                         onClick={() => {
-                                            const email = dept.owner_email || dept.email || '';
+                                            const email = dept.owner?.email || dept.owner_email || '';
                                             if (!email) return;
                                             const hash = email.split('').reduce((acc: number, char: string) => {
                                                 return ((acc << 5) - acc) + char.charCodeAt(0);

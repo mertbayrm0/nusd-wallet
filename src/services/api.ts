@@ -713,7 +713,8 @@ export const api = {
         .select(`
           *,
           panels:payment_panels(*),
-          vaults(*)
+          vaults(*),
+          owner:profiles!departments_owner_id_fkey(id, email, full_name, balance)
         `)
         .eq('id', id)
         .single();
