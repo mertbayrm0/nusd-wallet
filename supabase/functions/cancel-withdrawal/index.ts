@@ -1,7 +1,6 @@
-// Supabase Edge Function: withdraw-request
-// Kullanıcı çekim talebi oluşturur
-// Balance düşer, PENDING transaction oluşur
-// Atomic işlem
+// Supabase Edge Function: cancel-withdrawal
+// Kullanıcı kendi PENDING çekim talebini iptal eder
+// Balance geri yüklenir, status CANCELLED olur
 
 import { serve } from 'https://deno.land/std/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js'
@@ -43,122 +42,99 @@ serve(async (req) => {
     }
 
     // Parse body
-    const { amount, asset } = await req.json()
+    const { transactionId } = await req.json()
 
-    // Validation
-    if (!amount || amount <= 0) {
+    if (!transactionId) {
         return new Response(
-            JSON.stringify({ error: 'Invalid amount' }),
+            JSON.stringify({ error: 'Transaction ID required' }),
             { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
     }
 
-    // 🔒 SECURITY: Check for existing PENDING withdrawal
-    const { data: pendingWithdrawals } = await supabase
+    // 1️⃣ Get transaction and verify ownership
+    const { data: transaction, error: txError } = await supabase
         .from('transactions')
-        .select('id, amount, created_at')
-        .eq('user_id', user.id)
+        .select('*')
+        .eq('id', transactionId)
+        .eq('user_id', user.id) // SECURITY: Only own transactions
         .eq('type', 'WITHDRAW')
         .eq('status', 'PENDING')
-        .limit(1)
+        .single()
 
-    if (pendingWithdrawals && pendingWithdrawals.length > 0) {
-        const pending = pendingWithdrawals[0]
+    if (txError || !transaction) {
         return new Response(
-            JSON.stringify({
-                error: 'Zaten bekleyen bir çekim talebiniz var. Yeni talep oluşturmak için önce mevcut talebin tamamlanmasını bekleyin veya iptal edin.',
-                hasPendingWithdrawal: true,
-                pendingWithdrawal: {
-                    id: pending.id,
-                    amount: pending.amount,
-                    created_at: pending.created_at
-                }
-            }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            JSON.stringify({ error: 'İşlem bulunamadı veya iptal edilemez durumda' }),
+            { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
     }
 
-    // 1️⃣ Balance oku
-    const { data: profile, error: profileError } = await supabase
+    // 2️⃣ Get current balance
+    const { data: profile } = await supabase
         .from('profiles')
         .select('balance')
         .eq('id', user.id)
         .single()
 
-    if (profileError || !profile) {
+    if (!profile) {
         return new Response(
             JSON.stringify({ error: 'Profile not found' }),
             { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
     }
 
-    // Yetersiz bakiye kontrolü
-    if (profile.balance < amount) {
-        return new Response(
-            JSON.stringify({ error: 'Insufficient balance', balance: profile.balance }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-    }
-
-    // 2️⃣ Balance düş
-    const newBalance = profile.balance - amount
+    // 3️⃣ Refund balance
+    const newBalance = profile.balance + transaction.amount
     const { error: balanceError } = await supabase
         .from('profiles')
         .update({ balance: newBalance })
         .eq('id', user.id)
 
     if (balanceError) {
-        console.error('Balance update error:', balanceError)
         return new Response(
-            JSON.stringify({ error: 'Failed to update balance' }),
+            JSON.stringify({ error: 'Failed to refund balance' }),
             { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
     }
 
-    // 3️⃣ Transaction oluştur
-    const { data: transaction, error: txError } = await supabase
+    // 4️⃣ Mark transaction as CANCELLED
+    const { error: updateError } = await supabase
         .from('transactions')
-        .insert({
-            user_id: user.id,
-            type: 'WITHDRAW',
-            amount,
-            network: asset ?? 'TRX',
-            status: 'PENDING'
-        })
-        .select()
-        .single()
+        .update({ status: 'CANCELLED' })
+        .eq('id', transactionId)
 
-    if (txError) {
-        // Rollback: bakiyeyi geri yükle
+    if (updateError) {
+        // Rollback balance
         await supabase
             .from('profiles')
             .update({ balance: profile.balance })
             .eq('id', user.id)
 
-        console.error('Transaction insert error:', txError)
         return new Response(
-            JSON.stringify({ error: 'Failed to create withdrawal request' }),
+            JSON.stringify({ error: 'Failed to cancel transaction' }),
             { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
     }
 
-    // AUDIT LOG: Withdraw oluşturma kaydı
+    // AUDIT LOG
     await supabase.from('transaction_audit_logs').insert({
         transaction_id: transaction.id,
-        action: 'CREATE',
-        actor_role: 'edge',
+        action: 'USER_CANCEL',
+        actor_role: 'user',
         actor_id: user.id,
         metadata: {
-            type: 'withdraw-request',
-            amount,
-            asset: asset ?? 'TRX',
+            type: 'withdrawal-cancelled-by-user',
+            amount: transaction.amount,
             previous_balance: profile.balance,
             new_balance: newBalance
         }
     })
 
     return new Response(
-        JSON.stringify({ success: true, transaction, newBalance }),
+        JSON.stringify({
+            success: true,
+            message: 'Çekim talebi iptal edildi. Bakiyeniz iade edildi.',
+            newBalance
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 })

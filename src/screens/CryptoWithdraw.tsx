@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../App';
 import { supabase } from '../services/supabase';
@@ -10,6 +10,61 @@ const CryptoWithdraw = () => {
     const [address, setAddress] = useState('');
     const [network, setNetwork] = useState('Tron (TRC20)');
     const [loading, setLoading] = useState(false);
+
+    // Pending withdrawal state
+    const [pendingWithdrawal, setPendingWithdrawal] = useState<any>(null);
+    const [checkingPending, setCheckingPending] = useState(true);
+    const [cancelling, setCancelling] = useState(false);
+
+    // Check for pending withdrawal on mount
+    useEffect(() => {
+        const checkPending = async () => {
+            try {
+                const { data: { user: authUser } } = await supabase.auth.getUser();
+                if (!authUser) return;
+
+                const { data } = await supabase
+                    .from('transactions')
+                    .select('id, amount, created_at, network')
+                    .eq('user_id', authUser.id)
+                    .eq('type', 'WITHDRAW')
+                    .eq('status', 'PENDING')
+                    .limit(1);
+
+                if (data && data.length > 0) {
+                    setPendingWithdrawal(data[0]);
+                }
+            } catch (e) {
+                console.error('Check pending error:', e);
+            }
+            setCheckingPending(false);
+        };
+        checkPending();
+    }, []);
+
+    // Cancel pending withdrawal
+    const cancelPending = async () => {
+        if (!pendingWithdrawal) return;
+        setCancelling(true);
+        try {
+            const { data, error } = await supabase.functions.invoke('cancel-withdrawal', {
+                body: { transactionId: pendingWithdrawal.id }
+            });
+
+            if (error) {
+                alert(error.message || 'İptal başarısız');
+            } else if (data?.success) {
+                alert('✅ Çekim talebi iptal edildi. Bakiyeniz iade edildi.');
+                setPendingWithdrawal(null);
+                refreshUser();
+            } else {
+                alert(data?.error || 'İptal başarısız');
+            }
+        } catch (e: any) {
+            alert(e.message || 'İptal başarısız');
+        }
+        setCancelling(false);
+    };
 
     // Detect if it's internal transfer (NUSD-XXXX) or external (wallet address)
     const isInternalTransfer = address.toUpperCase().startsWith('NUSD-');
@@ -62,6 +117,10 @@ const CryptoWithdraw = () => {
                     alert("Withdrawal Request Submitted (Pending)");
                     refreshUser();
                     navigate('/dashboard');
+                } else if (data?.hasPendingWithdrawal) {
+                    // Server returned pending withdrawal info
+                    setPendingWithdrawal(data.pendingWithdrawal);
+                    alert(data.error);
                 } else {
                     alert(data?.error || "Withdrawal failed");
                 }
@@ -70,6 +129,60 @@ const CryptoWithdraw = () => {
             alert(e.message || "Transfer failed");
         }
         setLoading(false);
+    }
+
+    // Loading state
+    if (checkingPending) {
+        return (
+            <div className="min-h-screen bg-[#111111] flex items-center justify-center">
+                <div className="text-gray-400">Yükleniyor...</div>
+            </div>
+        );
+    }
+
+    // Show pending withdrawal if exists
+    if (pendingWithdrawal) {
+        return (
+            <div className="min-h-screen bg-[#111111] flex flex-col font-display">
+                <div className="bg-[#1a1a1a] px-4 py-4 flex items-center border-b border-white/5 sticky top-0 z-10">
+                    <button onClick={() => navigate('/dashboard')} className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors">
+                        <span className="material-symbols-outlined text-gray-400">arrow_back</span>
+                    </button>
+                    <h1 className="flex-1 text-center font-bold text-lg text-white pr-8">Send USDT</h1>
+                </div>
+
+                <div className="p-4 flex-1 flex flex-col items-center justify-center">
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-6 max-w-sm w-full text-center">
+                        <span className="material-symbols-outlined text-amber-400 text-5xl mb-4">pending</span>
+                        <h2 className="text-xl font-bold text-white mb-2">Bekleyen Çekim Talebi</h2>
+                        <p className="text-gray-400 mb-4">Zaten bir çekim talebiniz işleniyor. Yeni talep oluşturmak için mevcut talebin tamamlanmasını bekleyin veya iptal edin.</p>
+
+                        <div className="bg-[#0a0a0a] rounded-xl p-4 mb-4">
+                            <p className="text-2xl font-bold text-amber-400">${pendingWithdrawal.amount}</p>
+                            <p className="text-xs text-gray-500 mt-1">
+                                {new Date(pendingWithdrawal.created_at).toLocaleString()}
+                            </p>
+                            <p className="text-xs text-gray-500">{pendingWithdrawal.network}</p>
+                        </div>
+
+                        <button
+                            onClick={cancelPending}
+                            disabled={cancelling}
+                            className="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold disabled:opacity-50 mb-3"
+                        >
+                            {cancelling ? 'İptal Ediliyor...' : 'Talebi İptal Et'}
+                        </button>
+
+                        <button
+                            onClick={() => navigate('/dashboard')}
+                            className="w-full bg-[#1a1a1a] text-gray-400 py-3 rounded-xl font-bold border border-white/10"
+                        >
+                            Bekle, Geri Dön
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -110,8 +223,8 @@ const CryptoWithdraw = () => {
                     {/* Transfer Type Indicator */}
                     {address.length > 3 && (
                         <div className={`mt-2 px-3 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1 ${isInternalTransfer
-                                ? 'bg-lime-500/20 text-lime-400'
-                                : 'bg-blue-500/20 text-blue-400'
+                            ? 'bg-lime-500/20 text-lime-400'
+                            : 'bg-blue-500/20 text-blue-400'
                             }`}>
                             <span className="material-symbols-outlined text-sm">
                                 {isInternalTransfer ? 'bolt' : 'language'}
