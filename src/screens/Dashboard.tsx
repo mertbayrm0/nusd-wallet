@@ -326,10 +326,21 @@ const Dashboard = () => {
         {user.role === 'admin' && (
           <button
             onClick={() => navigate('/admin')}
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 active:scale-[0.98] transition-all text-white py-4 rounded-2xl font-bold text-sm shadow-xl shadow-purple-500/30 mb-6"
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 active:scale-[0.98] transition-all text-white py-4 rounded-2xl font-bold text-sm shadow-xl shadow-purple-500/30 mb-3"
           >
             <span className="material-symbols-outlined text-lg">admin_panel_settings</span>
             Admin Panel
+          </button>
+        )}
+
+        {/* Business Panel Button */}
+        {(user as any).account_type === 'business' && (
+          <button
+            onClick={() => navigate('/business')}
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-lime-600 to-green-600 hover:from-lime-500 hover:to-green-500 active:scale-[0.98] transition-all text-white py-4 rounded-2xl font-bold text-sm shadow-xl shadow-lime-500/30 mb-6"
+          >
+            <span className="material-symbols-outlined text-lg">storefront</span>
+            İşletme Paneli
           </button>
         )}
 

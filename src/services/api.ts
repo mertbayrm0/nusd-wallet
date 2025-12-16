@@ -1191,5 +1191,88 @@ export const api = {
       console.error('P2P action exception:', e);
       return { success: false, error: e.message || 'Network error' };
     }
+  },
+
+  // ===== BUSINESS ACCOUNT =====
+  getProfile: async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*, business_department_id, business_name, account_type')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (e) {
+      console.error('getProfile error:', e);
+      return null;
+    }
+  },
+
+  getDepartmentTransactions: async (departmentId: string) => {
+    try {
+      // Get transactions where metadata contains this department_id
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .contains('metadata', { department_id: departmentId })
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+      return data || [];
+    } catch (e) {
+      console.error('getDepartmentTransactions error:', e);
+      return [];
+    }
+  },
+
+  internalTransfer: async (recipientCode: string, amount: number) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('internal-transfer', {
+        body: { recipient_code: recipientCode, amount }
+      });
+
+      if (error) throw error;
+      return data || { success: false, error: 'No response' };
+    } catch (e: any) {
+      console.error('internalTransfer error:', e);
+      return { success: false, error: e.message || 'Transfer failed' };
+    }
+  },
+
+  updatePanelStatus: async (panelId: string, isActive: boolean) => {
+    try {
+      const { data, error } = await supabase
+        .from('payment_panels')
+        .update({ is_active: isActive })
+        .eq('id', panelId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { success: true, panel: data };
+    } catch (e: any) {
+      console.error('updatePanelStatus error:', e);
+      return { success: false, error: e.message };
+    }
+  },
+
+  createBusinessAccount: async (businessName: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('create-business-account', {
+        body: { businessName }
+      });
+
+      if (error) throw error;
+      return data || { success: false, error: 'No response' };
+    } catch (e: any) {
+      console.error('createBusinessAccount error:', e);
+      return { success: false, error: e.message || 'Failed to create business account' };
+    }
   }
 };

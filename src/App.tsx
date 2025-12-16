@@ -26,6 +26,7 @@ import AdminDepartmentDetail from './screens/AdminDepartmentDetail';
 import FindAgent from './screens/FindAgent';
 import AutoLogin from './screens/AutoLogin';
 import PaymentPanel from './screens/PaymentPanel';
+import BusinessDashboard from './screens/BusinessDashboard';
 import BottomNav from './components/BottomNav';
 import { UserState } from './types';
 import { supabase } from './services/supabase';
@@ -360,6 +361,7 @@ const App: React.FC = () => {
           <Route path="/find-agent" element={<FindAgent />} />
           <Route path="/autologin" element={<AutoLogin />} />
           <Route path="/pay/:slug" element={<PaymentPanel />} />
+          <Route path="/business" element={<Layout><ProtectedRoute><BusinessDashboard /></ProtectedRoute></Layout>} />
         </Routes>
       </HashRouter>
     </AppContext.Provider>
