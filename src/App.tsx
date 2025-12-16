@@ -47,14 +47,16 @@ const AppContext = createContext<AppContextType>({} as AppContextType);
 export const useApp = () => useContext(AppContext);
 
 // ===== HELPER: Fetch profile from Supabase with timeout =====
-async function fetchOrCreateProfileWithTimeout(authUser: User, timeoutMs: number = 8000): Promise<UserState> {
+async function fetchOrCreateProfileWithTimeout(authUser: User, timeoutMs: number = 15000): Promise<UserState> {
   // Fallback user data from auth
   const fallbackUser: UserState = {
     email: authUser.email || '',
     name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'User',
     balance: 0,
     role: 'user',
-    isActive: true
+    isActive: true,
+    account_type: authUser.user_metadata?.accountType || 'personal',
+    business_name: authUser.user_metadata?.businessName
   };
 
   return new Promise((resolve) => {
@@ -133,7 +135,10 @@ async function fetchProfileFromSupabase(authUser: User, fallbackUser: UserState)
           role: newProfile.role || 'user',
           isActive: newProfile.is_active ?? true,
           createdAt: newProfile.created_at ? new Date(newProfile.created_at).getTime() : Date.now(),
-          trxAddress: newProfile.trx_address
+          trxAddress: newProfile.trx_address,
+          account_type: newProfile.account_type || 'personal',
+          business_name: newProfile.business_name,
+          business_department_id: newProfile.business_department_id
         };
       }
       return fallbackUser;
@@ -150,7 +155,10 @@ async function fetchProfileFromSupabase(authUser: User, fallbackUser: UserState)
         role: profile.role || 'user',
         isActive: profile.is_active ?? true,
         createdAt: profile.created_at ? new Date(profile.created_at).getTime() : Date.now(),
-        trxAddress: profile.trx_address
+        trxAddress: profile.trx_address,
+        account_type: profile.account_type || 'personal',
+        business_name: profile.business_name,
+        business_department_id: profile.business_department_id
       };
     }
     return fallbackUser;

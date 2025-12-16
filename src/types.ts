@@ -20,6 +20,9 @@ export interface UserState {
   isActive?: boolean;
   createdAt?: number;
   trxAddress?: string;
+  account_type?: 'personal' | 'business';
+  business_name?: string;
+  business_department_id?: string;
 }
 
 export interface WithdrawRequest {

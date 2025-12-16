@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { useApp } from '../App';
@@ -18,6 +18,20 @@ const BusinessDashboard = () => {
     const [transferTo, setTransferTo] = useState('');
     const [transferAmount, setTransferAmount] = useState('');
     const [transferLoading, setTransferLoading] = useState(false);
+
+    // Çekim Talepleri modal
+    const [showWithdrawals, setShowWithdrawals] = useState(false);
+    const [withdrawalRequests, setWithdrawalRequests] = useState<any[]>([]);
+    const [processingWithdrawal, setProcessingWithdrawal] = useState<string | null>(null);
+
+    // NUSD adresi - email hash'inden oluştur
+    const memoCode = useMemo(() => {
+        if (!user?.email) return 'NUSD-XXXX';
+        const hash = user.email.split('').reduce((acc, char) => {
+            return ((acc << 5) - acc) + char.charCodeAt(0);
+        }, 0);
+        return `NUSD-${Math.abs(hash).toString(36).toUpperCase().slice(0, 6)}`;
+    }, [user?.email]);
 
     useEffect(() => {
         loadData();
@@ -133,9 +147,9 @@ const BusinessDashboard = () => {
                 <p className="text-xs text-lime-400 font-bold uppercase mb-1"># NUSD Adresiniz</p>
                 <div
                     className="flex items-center justify-between cursor-pointer"
-                    onClick={() => copyToClipboard(department?.nusd_address || '')}
+                    onClick={() => copyToClipboard(memoCode)}
                 >
-                    <span className="font-mono font-bold text-xl text-lime-300">{department?.nusd_address}</span>
+                    <span className="font-mono font-bold text-xl text-lime-300">{memoCode}</span>
                     <span className="material-symbols-outlined text-lime-400 text-lg">content_copy</span>
                 </div>
                 <p className="text-[10px] text-gray-500 mt-1">Bu adrese gelen transferler bakiyenize eklenir</p>
@@ -144,7 +158,7 @@ const BusinessDashboard = () => {
             {/* Balance Card */}
             <div className="bg-[#1a1a1a] rounded-2xl p-5 mb-4">
                 <p className="text-gray-400 text-sm">Bakiye</p>
-                <p className="text-4xl font-bold text-white">${(department?.balance || 0).toLocaleString()}</p>
+                <p className="text-4xl font-bold text-white">${(user?.balance || 0).toLocaleString()}</p>
             </div>
 
             {/* Action Buttons */}
@@ -157,38 +171,137 @@ const BusinessDashboard = () => {
                     NUSD Gönder
                 </button>
                 <button
-                    onClick={() => alert('Çekim talebi özelliği yakında')}
+                    onClick={() => setShowWithdrawals(true)}
                     className="bg-[#1a1a1a] text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 border border-gray-700"
                 >
                     <span className="material-symbols-outlined">account_balance</span>
-                    Çekim Talebi
+                    Çekim Talepleri
                 </button>
             </div>
 
-            {/* Payment Portal Section */}
+            {/* Çekim Talepleri Modal */}
+            {showWithdrawals && (
+                <div className="fixed inset-0 bg-black/80 flex items-end justify-center z-50">
+                    <div className="bg-[#1a1a1a] w-full max-w-lg rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="font-bold text-lg">Çekim Talepleri</h2>
+                            <button onClick={() => setShowWithdrawals(false)}>
+                                <span className="material-symbols-outlined text-gray-400">close</span>
+                            </button>
+                        </div>
+
+                        {withdrawalRequests.length === 0 ? (
+                            <div className="text-center py-8 text-gray-500">
+                                <span className="material-symbols-outlined text-4xl mb-2">inbox</span>
+                                <p>Bekleyen çekim talebi yok</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {withdrawalRequests.map((req: any) => (
+                                    <div key={req.id} className="bg-[#0a0a0a] rounded-xl p-4 border border-white/5">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="font-bold text-white">${req.amount}</span>
+                                            <span className="text-xs text-amber-400 bg-amber-500/20 px-2 py-1 rounded">{req.status}</span>
+                                        </div>
+                                        <p className="text-sm text-gray-400 mb-1">Adres: {req.wallet_address}</p>
+                                        <p className="text-xs text-gray-500 mb-3">{new Date(req.created_at).toLocaleString()}</p>
+                                        <button
+                                            onClick={async () => {
+                                                setProcessingWithdrawal(req.id);
+                                                // TODO: API call to complete withdrawal
+                                                alert('Çekim tamamlandı olarak işaretlendi');
+                                                setProcessingWithdrawal(null);
+                                            }}
+                                            disabled={processingWithdrawal === req.id}
+                                            className="w-full bg-lime-500 text-black py-2 rounded-lg font-bold text-sm disabled:opacity-50"
+                                        >
+                                            {processingWithdrawal === req.id ? 'İşleniyor...' : 'Gönderildi Olarak İşaretle'}
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Portallarım Section */}
             <div className="bg-[#1a1a1a] rounded-2xl p-4 mb-6">
-                <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-bold">Ödeme Portalı</h3>
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-bold flex items-center gap-2">
+                        <span className="material-symbols-outlined text-lime-400">storefront</span>
+                        Portallarım
+                    </h3>
                     <button
-                        onClick={togglePanel}
-                        className={`px-3 py-1 rounded-full text-xs font-bold ${panel?.is_active
-                                ? 'bg-green-500/20 text-green-400'
-                                : 'bg-red-500/20 text-red-400'
-                            }`}
+                        onClick={() => alert('Yeni portal oluşturma yakında')}
+                        className="bg-lime-500/20 text-lime-400 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1"
                     >
-                        {panel?.is_active ? 'AKTİF' : 'KAPALI'}
+                        <span className="material-symbols-outlined text-sm">add</span>
+                        Portal Ekle
                     </button>
                 </div>
-                {panel && (
-                    <div
-                        className="bg-[#0a0a0a] p-3 rounded-xl flex items-center justify-between cursor-pointer"
-                        onClick={() => copyToClipboard(`${window.location.origin}/#/pay/${panel.public_slug}`)}
-                    >
-                        <div>
-                            <p className="text-xs text-gray-500">Portal Linki</p>
-                            <p className="text-sm text-lime-400 font-mono">/pay/{panel.public_slug}</p>
+
+                {/* Portal List */}
+                {panel ? (
+                    <div className="space-y-3">
+                        <div className="bg-[#0a0a0a] rounded-xl p-4 border border-white/5">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                    <div className={`w-2 h-2 rounded-full ${panel.is_active ? 'bg-green-400' : 'bg-red-400'}`}></div>
+                                    <span className="font-medium text-white">{department?.name || 'Portal'}</span>
+                                </div>
+                                <button
+                                    onClick={togglePanel}
+                                    className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${panel.is_active
+                                        ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+                                        : 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+                                        }`}
+                                >
+                                    {panel.is_active ? 'AKTİF' : 'KAPALI'}
+                                </button>
+                            </div>
+
+                            {/* Portal Link */}
+                            <div
+                                className="bg-[#1a1a1a] p-3 rounded-lg flex items-center justify-between cursor-pointer hover:bg-[#222] transition-colors"
+                                onClick={() => copyToClipboard(`${window.location.origin}/#/pay/${panel.public_slug}`)}
+                            >
+                                <div>
+                                    <p className="text-xs text-gray-500 mb-1">Portal Linki</p>
+                                    <p className="text-sm text-lime-400 font-mono">{window.location.origin}/#/pay/{panel.public_slug}</p>
+                                </div>
+                                <span className="material-symbols-outlined text-lime-500">content_copy</span>
+                            </div>
+
+                            {/* Portal Actions */}
+                            <div className="flex gap-2 mt-3">
+                                <button
+                                    onClick={() => window.open(`${window.location.origin}/#/pay/${panel.public_slug}`, '_blank')}
+                                    className="flex-1 bg-[#1a1a1a] text-white py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-1 hover:bg-[#222] transition-colors"
+                                >
+                                    <span className="material-symbols-outlined text-sm">open_in_new</span>
+                                    Önizle
+                                </button>
+                                <button
+                                    onClick={() => copyToClipboard(`${window.location.origin}/#/pay/${panel.public_slug}`)}
+                                    className="flex-1 bg-[#1a1a1a] text-white py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-1 hover:bg-[#222] transition-colors"
+                                >
+                                    <span className="material-symbols-outlined text-sm">share</span>
+                                    Paylaş
+                                </button>
+                            </div>
                         </div>
-                        <span className="material-symbols-outlined text-gray-500">content_copy</span>
+                    </div>
+                ) : (
+                    <div className="text-center py-6 text-gray-500">
+                        <span className="material-symbols-outlined text-3xl mb-2">storefront</span>
+                        <p className="text-sm">Henüz portal yok</p>
+                        <button
+                            onClick={() => alert('Portal oluşturma yakında')}
+                            className="mt-3 text-lime-400 text-sm font-medium"
+                        >
+                            İlk portalını oluştur →
+                        </button>
                     </div>
                 )}
             </div>

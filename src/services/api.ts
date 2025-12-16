@@ -54,7 +54,10 @@ export const api = {
             role: profile?.role || 'user',
             isActive: profile?.is_active ?? true,
             createdAt: profile?.created_at ? new Date(profile.created_at).getTime() : Date.now(),
-            trxAddress: profile?.trx_address
+            trxAddress: profile?.trx_address,
+            account_type: profile?.account_type || 'personal',
+            business_name: profile?.business_name,
+            business_department_id: profile?.business_department_id
           }
         };
       }
@@ -65,13 +68,13 @@ export const api = {
     }
   },
 
-  register: async (name: string, email: string, password?: string) => {
+  register: async (name: string, email: string, password?: string, accountType: 'personal' | 'business' = 'personal', businessName?: string) => {
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
         password: password || 'demo123',
         options: {
-          data: { name }
+          data: { name, accountType, businessName }
         }
       });
 
@@ -82,17 +85,51 @@ export const api = {
       }
 
       if (data.user) {
+        let departmentId = null;
+
+        // If business account, create a department first
+        if (accountType === 'business' && businessName) {
+          const { data: deptData, error: deptError } = await supabase
+            .from('departments')
+            .insert({
+              name: businessName,
+              category: 'business',
+              commission_mode: 'percentage',
+              commission_value: 0,
+              is_active: true,
+              color: '#FFD700',
+              owner_id: data.user.id
+            })
+            .select()
+            .single();
+
+          if (deptError) {
+            console.error('Department creation error:', deptError.message);
+          } else {
+            departmentId = deptData?.id;
+          }
+        }
+
         // Create profile record
+        const profileData: any = {
+          id: data.user.id,
+          email: data.user.email,
+          name: accountType === 'business' ? businessName : name,
+          role: 'user',
+          is_active: true,
+          balance: 0,
+          account_type: accountType
+        };
+
+        // Add business-specific fields
+        if (accountType === 'business') {
+          profileData.business_name = businessName;
+          profileData.business_department_id = departmentId;
+        }
+
         const { error: profileError } = await supabase
           .from('profiles')
-          .insert({
-            id: data.user.id,
-            email: data.user.email,
-            name: name,
-            role: 'user',
-            is_active: true,
-            balance: 0
-          });
+          .insert(profileData);
 
         if (profileError) {
           console.error('Profile creation error:', profileError.message);
@@ -102,10 +139,12 @@ export const api = {
           token: data.session?.access_token,
           user: {
             email: data.user.email,
-            name: name,
+            name: accountType === 'business' ? businessName : name,
             balance: 0,
             role: 'user',
-            isActive: true
+            isActive: true,
+            accountType,
+            businessName: accountType === 'business' ? businessName : undefined
           }
         };
       }
@@ -115,6 +154,7 @@ export const api = {
       return null;
     }
   },
+
 
   logout: async () => {
     await supabase.auth.signOut();
@@ -136,7 +176,10 @@ export const api = {
           role: profile.role || 'user',
           isActive: profile.is_active,
           createdAt: new Date(profile.created_at).getTime(),
-          trxAddress: profile.trx_address
+          trxAddress: profile.trx_address,
+          account_type: profile.account_type || 'personal',
+          business_name: profile.business_name,
+          business_department_id: profile.business_department_id
         };
       }
     } catch (e) {

@@ -263,6 +263,17 @@ const Dashboard = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-lime-500/10 via-transparent to-purple-500/10 rounded-3xl blur-xl"></div>
 
           <div className="relative bg-[#1a1a1a]/80 backdrop-blur-xl p-6 rounded-3xl border border-white/5">
+            {/* İŞLETME PANELİ BUTONU - Sadece business hesaplar için */}
+            {user.account_type === 'business' && (
+              <button
+                onClick={() => navigate('/business')}
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 active:scale-[0.98] transition-all text-black py-3 rounded-xl font-bold text-sm shadow-lg shadow-amber-500/30 mb-4"
+              >
+                <span className="material-symbols-outlined text-lg">storefront</span>
+                İşletme Paneli
+              </button>
+            )}
+
             <p className="text-gray-500 font-medium text-sm mb-2">Your balance</p>
             <h2 className="text-5xl font-extrabold text-white tracking-tight mb-6">
               ${user.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -330,17 +341,6 @@ const Dashboard = () => {
           >
             <span className="material-symbols-outlined text-lg">admin_panel_settings</span>
             Admin Panel
-          </button>
-        )}
-
-        {/* Business Panel Button */}
-        {(user as any).account_type === 'business' && (
-          <button
-            onClick={() => navigate('/business')}
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-lime-600 to-green-600 hover:from-lime-500 hover:to-green-500 active:scale-[0.98] transition-all text-white py-4 rounded-2xl font-bold text-sm shadow-xl shadow-lime-500/30 mb-6"
-          >
-            <span className="material-symbols-outlined text-lg">storefront</span>
-            İşletme Paneli
           </button>
         )}
 
