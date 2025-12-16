@@ -66,6 +66,32 @@ serve(async (req) => {
                     )
                 }
 
+                // 🔒 SECURITY: Check for existing active P2P order (OPEN, MATCHED, or PAID)
+                const { data: activeOrders } = await supabase
+                    .from('p2p_orders')
+                    .select('id, status, amount_usd, created_at')
+                    .eq('seller_id', user.id)
+                    .in('status', ['OPEN', 'MATCHED', 'PAID'])
+                    .limit(1)
+
+                if (activeOrders && activeOrders.length > 0) {
+                    const existing = activeOrders[0]
+                    return new Response(
+                        JSON.stringify({
+                            success: false,
+                            error: 'Zaten aktif bir satış emriniz var. Yeni emir oluşturmak için mevcut emrin tamamlanmasını veya iptal edilmesini bekleyin.',
+                            hasActiveOrder: true,
+                            activeOrder: {
+                                id: existing.id,
+                                status: existing.status,
+                                amount: existing.amount_usd,
+                                created_at: existing.created_at
+                            }
+                        }),
+                        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                    )
+                }
+
                 const { data: order, error: orderError } = await supabase
                     .from('p2p_orders')
                     .insert({
