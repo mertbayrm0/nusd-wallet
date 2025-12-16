@@ -296,6 +296,18 @@ serve(async (req) => {
                 )
             }
 
+            // 🔒 SECURITY: Balance check - seller must have enough balance
+            if ((sellerProfile.balance || 0) < transferAmount) {
+                return new Response(
+                    JSON.stringify({
+                        success: false,
+                        error: 'Satıcı bakiyesi yetersiz. Önce bakiyenizi yükleyin.',
+                        insufficientBalance: true
+                    }),
+                    { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                )
+            }
+
             // Calculate new balances
             const newSellerBalance = (sellerProfile.balance || 0) - transferAmount
             const newBuyerBalance = (buyerProfile.balance || 0) + transferAmount
