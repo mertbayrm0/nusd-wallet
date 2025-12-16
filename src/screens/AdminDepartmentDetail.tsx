@@ -16,7 +16,7 @@ const AdminDepartmentDetail = () => {
     const [loading, setLoading] = useState(true);
 
     // UI States
-    const [activeTab, setActiveTab] = useState<'transactions' | 'members' | 'vaults' | 'portal'>('vaults');
+    const [activeTab, setActiveTab] = useState<'transactions' | 'members' | 'portal'>('portal');
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
     const [isPanelModalOpen, setIsPanelModalOpen] = useState(false); // For creating new panel
 
@@ -164,7 +164,7 @@ const AdminDepartmentDetail = () => {
 
                 {/* Tabs */}
                 <div className="flex gap-8 border-b border-gray-100 mb-6">
-                    {['transactions', 'members', 'vaults', 'portal'].map(t => (
+                    {['transactions', 'members', 'portal'].map(t => (
                         <button
                             key={t}
                             onClick={() => setActiveTab(t as any)}
@@ -174,8 +174,7 @@ const AdminDepartmentDetail = () => {
                                 }`}
                         >
                             {t === 'transactions' ? 'İşlemler' :
-                                t === 'members' ? 'Üyeler' :
-                                    t === 'vaults' ? 'Vaults' : 'Ödeme Portalı'}
+                                t === 'members' ? 'Üyeler' : 'Ödeme Portalı'}
                         </button>
                     ))}
                 </div>
@@ -197,78 +196,45 @@ const AdminDepartmentDetail = () => {
                         </div>
                     )}
 
-                    {/* VAULTS TAB */}
-                    {activeTab === 'vaults' && (
-                        <div className="p-6">
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="font-bold text-gray-800">Atanmış Vaults</h3>
-                                {/* Only show 'Ata' if not in list - logic can vary */}
-                            </div>
-
-                            {/* Assigned Vaults List */}
-                            <div className="space-y-3 mb-8">
-                                {myVaults.length > 0 ? myVaults.map((v: any) => (
-                                    <div key={v.id} className="bg-gray-50 p-4 rounded-xl flex justify-between items-center border border-gray-100">
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <h4 className="font-bold text-gray-800">{v.name}</h4>
-                                                {v.is_primary && (
-                                                    <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Primary</span>
-                                                )}
-                                            </div>
-                                            <p className="text-xs text-gray-500 font-mono mt-1">{v.address}</p>
-                                        </div>
-                                        <div className="flex gap-2">
-                                            {!v.is_primary && (
-                                                <button
-                                                    onClick={() => handleSetPrimary(v.id)}
-                                                    className="text-xs font-bold text-blue-600 hover:bg-blue-50 px-3 py-2 rounded transition-colors"
-                                                >
-                                                    Set Primary
-                                                </button>
-                                            )}
-                                            <button
-                                                onClick={() => handleUnassign(v.id)}
-                                                className="text-gray-400 hover:text-red-500 p-2"
-                                            >
-                                                <span className="material-symbols-outlined text-lg">delete</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                )) : (
-                                    <p className="text-sm text-gray-400 italic">Bu departmana atanmış vault bulunmuyor.</p>
-                                )}
-                            </div>
-
-                            <div className="flex justify-between items-center mb-4 pt-4 border-t border-gray-100">
-                                <h3 className="font-bold text-gray-800">Boşta Olan Cüzdanlar</h3>
-                            </div>
-
-                            <div className="space-y-3">
-                                {availableVaults.map((v: any) => (
-                                    <div key={v.id} className="bg-green-50/50 p-4 rounded-xl flex justify-between items-center border border-green-100/50">
-                                        <div>
-                                            <h4 className="font-bold text-gray-700">{v.name}</h4>
-                                            <p className="text-xs text-green-600/70 font-mono mt-1">{v.address}</p>
-                                        </div>
-                                        <button
-                                            onClick={() => handleAssign(v.id)}
-                                            className="bg-green-500 hover:bg-green-600 text-white text-xs font-bold px-4 py-2 rounded-lg shadow-sm transition-colors"
-                                        >
-                                            + Ata
-                                        </button>
-                                    </div>
-                                ))}
-                                {availableVaults.length === 0 && (
-                                    <p className="text-sm text-gray-400 italic">Atanabilecek boş vault yok.</p>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
                     {/* PORTAL TAB */}
                     {activeTab === 'portal' && (
                         <div className="p-6">
+                            {/* NUSD Address Card */}
+                            <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl border border-green-200 mb-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-xs text-green-600 font-bold uppercase mb-1"># NUSD Adresi</p>
+                                        <p className="font-mono font-bold text-xl text-green-700">
+                                            {(() => {
+                                                // Generate NUSD address from owner email
+                                                const email = dept.owner_email || dept.email || '';
+                                                if (!email) return 'NUSD-XXXX';
+                                                const hash = email.split('').reduce((acc: number, char: string) => {
+                                                    return ((acc << 5) - acc) + char.charCodeAt(0);
+                                                }, 0);
+                                                return `NUSD-${Math.abs(hash).toString(36).toUpperCase().slice(0, 6)}`;
+                                            })()}
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            const email = dept.owner_email || dept.email || '';
+                                            if (!email) return;
+                                            const hash = email.split('').reduce((acc: number, char: string) => {
+                                                return ((acc << 5) - acc) + char.charCodeAt(0);
+                                            }, 0);
+                                            const code = `NUSD-${Math.abs(hash).toString(36).toUpperCase().slice(0, 6)}`;
+                                            navigator.clipboard.writeText(code);
+                                            alert('Kopyalandı!');
+                                        }}
+                                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2"
+                                    >
+                                        <span className="material-symbols-outlined text-sm">content_copy</span>
+                                        Kopyala
+                                    </button>
+                                </div>
+                            </div>
+
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="font-bold text-gray-800">Ödeme Portalları</h3>
                                 <button
