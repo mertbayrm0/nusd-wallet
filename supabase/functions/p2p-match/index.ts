@@ -139,7 +139,8 @@ serve(async (req) => {
         const myUpdateData: any = {
             status: 'MATCHED',
             lock_expires_at: lockExpiry,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
+            matched_order_id: matchedOrder.id  // 🔗 Eşleşen order ID'sini kaydet
         }
 
         // Karşı tarafı ekle
@@ -172,7 +173,8 @@ serve(async (req) => {
         const matchUpdateData: any = {
             status: 'MATCHED',
             lock_expires_at: lockExpiry,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
+            matched_order_id: orderId  // 🔗 Karşı tarafın matched_order_id'si de set edilir
         }
 
         if (isBuyer) {
