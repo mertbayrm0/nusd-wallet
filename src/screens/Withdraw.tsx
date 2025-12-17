@@ -33,12 +33,37 @@ const Withdraw = () => {
         }
     }, [user?.email]);
 
+    // Check for active P2P order on page load
+    useEffect(() => {
+        checkActiveOrder();
+    }, []);
+
     // Cleanup polling on unmount
     useEffect(() => {
         return () => {
             if (pollInterval) clearInterval(pollInterval);
         };
     }, [pollInterval]);
+
+    const checkActiveOrder = async () => {
+        const order = await api.getActiveP2POrder();
+        if (order) {
+            setActiveOrder(order);
+        }
+    };
+
+    const handleCancelOrder = async () => {
+        if (!activeOrder) return;
+        setLoading(true);
+        const result = await api.cancelP2POrder(activeOrder.id);
+        if (result.success) {
+            setActiveOrder(null);
+            alert('İşlem iptal edildi');
+        } else {
+            alert('İptal hatası: ' + result.error);
+        }
+        setLoading(false);
+    };
 
     const loadBankAccounts = async () => {
         if (!user?.email) return;
@@ -193,41 +218,53 @@ const Withdraw = () => {
             </div>
 
             <div className="p-4 space-y-6">
-                {step === 1 && (
-                    <>
-                        {/* Aktif Order Uyarısı */}
-                        {activeOrder && (
-                            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
-                                <div className="flex items-start gap-3">
-                                    <span className="material-symbols-outlined text-amber-400 text-2xl">pending</span>
-                                    <div className="flex-1">
-                                        <h3 className="font-bold text-amber-400 mb-1">Bekleyen Emir Var</h3>
-                                        <p className="text-sm text-gray-400 mb-2">
-                                            Zaten aktif bir satış emriniz var. Yeni emir oluşturmak için mevcut emrin tamamlanmasını veya iptal edilmesini bekleyin.
-                                        </p>
-                                        <div className="bg-black/20 rounded-lg p-2 text-xs space-y-1">
-                                            <div className="flex justify-between">
-                                                <span className="text-gray-500">Miktar:</span>
-                                                <span className="text-white font-bold">${activeOrder.amount} USDT</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-gray-500">Durum:</span>
-                                                <span className="text-amber-400 font-bold">{activeOrder.status}</span>
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={() => {
-                                                setActiveOrder(null);
-                                                navigate('/dashboard');
-                                            }}
-                                            className="mt-3 w-full bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 py-2 rounded-lg text-sm font-bold transition-colors"
-                                        >
-                                            Dashboard'a Dön
-                                        </button>
-                                    </div>
-                                </div>
+                {/* 🔒 Aktif Order Varsa Tam Ekran Blok */}
+                {activeOrder ? (
+                    <div className="min-h-[60vh] flex flex-col items-center justify-center text-center">
+                        <div className="w-24 h-24 rounded-full bg-amber-500/20 flex items-center justify-center mb-6">
+                            <span className="material-symbols-outlined text-5xl text-amber-400">pending</span>
+                        </div>
+                        <h2 className="text-2xl font-bold text-white mb-2">Bekleyen İşleminiz Var</h2>
+                        <p className="text-gray-400 mb-6 max-w-xs">
+                            Aktif bir {activeOrder.type === 'SELL' ? 'satış' : 'alış'} emriniz bulunuyor.
+                            Yeni işlem oluşturmak için önce mevcut işlemi tamamlamanız veya iptal etmeniz gerekiyor.
+                        </p>
+
+                        <div className="bg-[#1a1a1a] rounded-xl p-4 w-full max-w-xs mb-6">
+                            <div className="flex justify-between mb-2">
+                                <span className="text-gray-500">İşlem Tipi:</span>
+                                <span className={`font-bold ${activeOrder.type === 'SELL' ? 'text-red-400' : 'text-green-400'}`}>
+                                    {activeOrder.type === 'SELL' ? 'Çekim (Satış)' : 'Yatırım (Alış)'}
+                                </span>
                             </div>
-                        )}
+                            <div className="flex justify-between mb-2">
+                                <span className="text-gray-500">Miktar:</span>
+                                <span className="text-white font-bold">${activeOrder.amount_usd} USDT</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-500">Durum:</span>
+                                <span className="text-amber-400 font-bold">{activeOrder.status}</span>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3 w-full max-w-xs">
+                            <button
+                                onClick={handleCancelOrder}
+                                disabled={loading}
+                                className="w-full bg-red-500/20 hover:bg-red-500/30 text-red-400 py-3 rounded-xl font-bold transition-colors disabled:opacity-50"
+                            >
+                                {loading ? 'İptal Ediliyor...' : 'İşlemi İptal Et'}
+                            </button>
+                            <button
+                                onClick={() => navigate('/dashboard')}
+                                className="w-full bg-white/10 hover:bg-white/20 text-white py-3 rounded-xl font-bold transition-colors"
+                            >
+                                Dashboard'a Dön
+                            </button>
+                        </div>
+                    </div>
+                ) : step === 1 && (
+                    <>
                         {/* Balance Card */}
                         <div className="bg-[#1a1a1a] p-6 rounded-2xl border border-white/5">
                             <p className="text-gray-500 font-medium text-sm mb-1">Mevcut Bakiye</p>

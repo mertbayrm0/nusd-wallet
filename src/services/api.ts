@@ -1132,6 +1132,65 @@ export const api = {
     }
   },
 
+  // Check for any active P2P order (SELL or BUY) - for page-level blocking
+  getActiveP2POrder: async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      // Check for active SELL orders
+      const { data: sellOrders } = await supabase
+        .from('p2p_orders')
+        .select('id, status, amount_usd, created_at')
+        .eq('seller_id', user.id)
+        .in('status', ['OPEN', 'MATCHED', 'PAID'])
+        .limit(1);
+
+      if (sellOrders && sellOrders.length > 0) {
+        return { ...sellOrders[0], type: 'SELL' };
+      }
+
+      // Check for active BUY orders
+      const { data: buyOrders } = await supabase
+        .from('p2p_orders')
+        .select('id, status, amount_usd, created_at')
+        .eq('buyer_id', user.id)
+        .in('status', ['OPEN', 'MATCHED', 'PAID'])
+        .limit(1);
+
+      if (buyOrders && buyOrders.length > 0) {
+        return { ...buyOrders[0], type: 'BUY' };
+      }
+
+      return null;
+    } catch (e) {
+      console.error('getActiveP2POrder error:', e);
+      return null;
+    }
+  },
+
+  // Cancel P2P order
+  cancelP2POrder: async (orderId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('p2p_orders')
+        .update({ status: 'CANCELLED' })
+        .eq('id', orderId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Cancel P2P order error:', error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, order: data };
+    } catch (e: any) {
+      console.error('Cancel P2P order exception:', e);
+      return { success: false, error: e.message };
+    }
+  },
+
   // Get all P2P orders for current user
   getMyP2POrders: async () => {
     try {
