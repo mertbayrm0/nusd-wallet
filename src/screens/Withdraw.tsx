@@ -24,6 +24,7 @@ const Withdraw = () => {
     const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
     const [selectedBank, setSelectedBank] = useState<BankAccount | null>(null);
     const [loadingBanks, setLoadingBanks] = useState(true);
+    const [activeOrder, setActiveOrder] = useState<any>(null); // Mevcut aktif order
 
     // Load bank accounts when user is available
     useEffect(() => {
@@ -139,7 +140,12 @@ const Withdraw = () => {
                     startPolling(orderId);
                 }
             } else {
-                alert('Hata: ' + (result.error || 'İstek oluşturulamadı'));
+                // Hata - aktif order var mı kontrol et
+                if ((result as any).activeOrder) {
+                    setActiveOrder((result as any).activeOrder);
+                } else {
+                    alert('Hata: ' + (result.error || 'İstek oluşturulamadı'));
+                }
             }
         } catch (e: any) {
             alert(e.message || 'Bağlantı hatası');
@@ -189,6 +195,39 @@ const Withdraw = () => {
             <div className="p-4 space-y-6">
                 {step === 1 && (
                     <>
+                        {/* Aktif Order Uyarısı */}
+                        {activeOrder && (
+                            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
+                                <div className="flex items-start gap-3">
+                                    <span className="material-symbols-outlined text-amber-400 text-2xl">pending</span>
+                                    <div className="flex-1">
+                                        <h3 className="font-bold text-amber-400 mb-1">Bekleyen Emir Var</h3>
+                                        <p className="text-sm text-gray-400 mb-2">
+                                            Zaten aktif bir satış emriniz var. Yeni emir oluşturmak için mevcut emrin tamamlanmasını veya iptal edilmesini bekleyin.
+                                        </p>
+                                        <div className="bg-black/20 rounded-lg p-2 text-xs space-y-1">
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-500">Miktar:</span>
+                                                <span className="text-white font-bold">${activeOrder.amount} USDT</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-500">Durum:</span>
+                                                <span className="text-amber-400 font-bold">{activeOrder.status}</span>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                setActiveOrder(null);
+                                                navigate('/dashboard');
+                                            }}
+                                            className="mt-3 w-full bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 py-2 rounded-lg text-sm font-bold transition-colors"
+                                        >
+                                            Dashboard'a Dön
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                         {/* Balance Card */}
                         <div className="bg-[#1a1a1a] p-6 rounded-2xl border border-white/5">
                             <p className="text-gray-500 font-medium text-sm mb-1">Mevcut Bakiye</p>
