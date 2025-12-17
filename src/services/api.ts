@@ -829,7 +829,7 @@ export const api = {
   cryptoDeposit: async () => { },
   findMatches: async () => null,
   lockMatch: async () => false,
-  markPaymentSent: async () => { },
+  markPaymentSent: async (email: string, matchId: any, amount: any, confirmed: boolean) => { },
   approveRelease: async () => { },
   manualVaultDeposit: async (vaultId: string, amount: number, userEmail: string, network: string, addToUser: boolean) => {
     try {
@@ -1254,28 +1254,7 @@ export const api = {
   },
 
   // Admin: Get all P2P orders
-  getAllP2POrders: async () => {
-    try {
-      const { data, error } = await supabase
-        .from('p2p_orders')
-        .select(`
-          *,
-          buyer:profiles!p2p_orders_buyer_id_fkey(email, full_name),
-          seller:profiles!p2p_orders_seller_id_fkey(email, full_name)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('All P2P orders error:', error);
-        return [];
-      }
-
-      return data || [];
-    } catch (e) {
-      console.error('All P2P orders exception:', e);
-      return [];
-    }
-  },
+  // Admin: Get all P2P orders (REMOVED DUPLICATE)
 
   // Legacy stubs (kept for compatibility)
   markP2PPaymentSent: async () => ({ success: false }),

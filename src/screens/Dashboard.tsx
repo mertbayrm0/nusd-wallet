@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../App';
 import { api } from '../services/api';
 import { supabase } from '../services/supabase';
+import SuccessModal from '../components/SuccessModal';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -12,6 +13,11 @@ const Dashboard = () => {
   const [notification, setNotification] = useState<any>(null);
   const [p2pPending, setP2pPending] = useState<any[]>([]); // P2P orders needing action
   const [authUserId, setAuthUserId] = useState<string | null>(null); // Supabase auth user ID
+  const [successModal, setSuccessModal] = useState<{ isOpen: boolean; title: string; message: string }>({
+    isOpen: false,
+    title: '',
+    message: ''
+  });
 
   useEffect(() => {
     refreshUser();
@@ -108,7 +114,11 @@ const Dashboard = () => {
   const handleBuyerConfirm = async (orderId: string) => {
     const result = await api.buyerConfirmP2P(orderId, true);
     if (result?.success) {
-      alert('Ödeme onaylandı! İşlem tamamlandı.');
+      setSuccessModal({
+        isOpen: true,
+        title: 'Ödeme Onaylandı!',
+        message: 'Ödeme onaylandı! İşlem başarıyla tamamlandı.'
+      });
       loadData();
       refreshUser();
     } else {
@@ -120,7 +130,11 @@ const Dashboard = () => {
   const handleSellerConfirm = async (orderId: string) => {
     const result = await api.p2pAction('confirm', { orderId });
     if (result?.success) {
-      alert('Transfer onaylandı! Bakiye alıcıya aktarıldı.');
+      setSuccessModal({
+        isOpen: true,
+        title: 'Transfer Onaylandı!',
+        message: 'Bakiye alıcıya başarıyla aktarıldı.'
+      });
       loadData();
       refreshUser();
     } else {
@@ -151,13 +165,25 @@ const Dashboard = () => {
   const handleApprove = async (id: string) => {
     await api.approveRelease(id);
     refreshUser();
-    alert("Approved!");
+    setSuccessModal({
+      isOpen: true,
+      title: 'Approved!',
+      message: 'Transaction has been approved successfully.'
+    });
   };
 
   if (!user) return null;
 
   return (
     <div className="min-h-screen bg-[#111111] flex flex-col font-display pb-20">
+
+      <SuccessModal
+        isOpen={successModal.isOpen}
+        onClose={() => setSuccessModal({ ...successModal, isOpen: false })}
+        title={successModal.title}
+        message={successModal.message}
+      />
+
       {/* Header */}
       <div className="px-5 py-4 flex justify-between items-center">
         <div className="flex items-center gap-3">

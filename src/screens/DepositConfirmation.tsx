@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../services/api';
 import { useApp } from '../App';
+import SuccessModal from '../components/SuccessModal';
 
 interface BankAccount {
     id: string;
@@ -16,6 +17,7 @@ const DepositConfirmation = () => {
     const [timeLeft, setTimeLeft] = useState(1200); // 20 minutes
     const [investorData, setInvestorData] = useState<{ name: string; bankAccount: BankAccount | null }>({ name: '', bankAccount: null });
     const [receiptFile, setReceiptFile] = useState<File | null>(null);
+    const [showSuccess, setShowSuccess] = useState(false);
 
     const totalTime = 1200; // 20 minutes in seconds
 
@@ -78,24 +80,34 @@ const DepositConfirmation = () => {
         if (orderId) {
             const result = await api.markP2PPaid(orderId);
             if (result?.success) {
-                alert("Ödeme bildiriminiz alındı! Satıcı onayladığında bakiyeniz hesabınıza geçecektir.");
-                navigate('/dashboard');
+                setShowSuccess(true);
             } else {
                 alert("Hata: " + (result?.error || "İşlem başarısız"));
             }
         } else {
             // Fallback for old flow
             await api.markPaymentSent(user?.email || '', state?.matchId, state?.amount, true);
-            alert("Ödeme bildiriminiz alındı! Satıcı onayladığında bakiyeniz hesabınıza geçecektir.");
-            navigate('/dashboard');
+            setShowSuccess(true);
         }
     }
+
+    const handleSuccessClose = () => {
+        setShowSuccess(false);
+        navigate('/dashboard');
+    };
 
     const amount = state?.amount || 1000;
     const amountTRY = (amount * 32.5).toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
     return (
         <div className="min-h-screen bg-[#111111] flex flex-col font-display">
+            <SuccessModal
+                isOpen={showSuccess}
+                onClose={handleSuccessClose}
+                title="Ödeme Bildiriminiz Alındı!"
+                message="Ödeme bildiriminiz başarıyla iletildi. Satıcı onayladığında bakiyeniz hesabınıza geçecektir."
+            />
+
             {/* Header */}
             <div className="bg-[#1a1a1a] px-4 py-4 flex items-center border-b border-white/5 sticky top-0 z-10">
                 <button
