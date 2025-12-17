@@ -170,6 +170,12 @@ serve(async (req) => {
         }
 
         // Atomic update: Sadece OPEN ise güncelle
+        console.log('[P2P-MATCH] Updating my order with:', {
+            orderId,
+            myUpdateData,
+            currentStatus: myOrder.status
+        })
+
         const { data: updatedMyOrder, error: updateMyError } = await supabase
             .from('p2p_orders')
             .update(myUpdateData)
@@ -178,9 +184,15 @@ serve(async (req) => {
             .select()
             .single()
 
+        console.log('[P2P-MATCH] My order update result:', {
+            updateMyError,
+            updatedMyOrder: updatedMyOrder ? { id: updatedMyOrder.id, status: updatedMyOrder.status } : null
+        })
+
         if (updateMyError || !updatedMyOrder) {
+            console.error('[P2P-MATCH] My order update failed:', { updateMyError, updatedMyOrder })
             return new Response(
-                JSON.stringify({ error: 'Match failed - order state changed' }),
+                JSON.stringify({ error: 'Match failed - order state changed', details: updateMyError?.message }),
                 { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             )
         }
