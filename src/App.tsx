@@ -19,6 +19,7 @@ import TermsOfService from './screens/TermsOfService';
 import AdminDashboard from './screens/AdminDashboard';
 import AdminUsers from './screens/AdminUsers';
 import AdminTransactions from './screens/AdminTransactions';
+import AdminP2POrders from './screens/AdminP2POrders';
 import AdminLogs from './screens/AdminLogs';
 import AdminVaults from './screens/AdminVaults';
 import AdminDepartments from './screens/AdminDepartments';
@@ -334,6 +335,7 @@ const App: React.FC = () => {
           <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/users" element={<ProtectedRoute adminOnly><AdminUsers /></ProtectedRoute>} />
           <Route path="/admin/transactions" element={<ProtectedRoute adminOnly><AdminTransactions /></ProtectedRoute>} />
+          <Route path="/admin/p2p-orders" element={<ProtectedRoute adminOnly><AdminP2POrders /></ProtectedRoute>} />
           <Route path="/admin/vaults" element={<ProtectedRoute adminOnly><AdminVaults /></ProtectedRoute>} />
           <Route path="/admin/departments" element={<ProtectedRoute adminOnly><AdminDepartments /></ProtectedRoute>} />
           <Route path="/admin/departments/:id" element={<ProtectedRoute adminOnly><AdminDepartmentDetail /></ProtectedRoute>} />

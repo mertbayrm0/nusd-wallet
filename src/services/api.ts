@@ -1406,5 +1406,134 @@ export const api = {
       console.error('createBusinessAccount error:', e);
       return { success: false, error: e.message || 'Failed to create business account' };
     }
+  },
+
+  // =============================================
+  // P2P ADMIN FUNCTIONS
+  // =============================================
+
+  // Get all P2P orders for admin panel
+  getAllP2POrders: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('p2p_orders')
+        .select(`
+          *,
+          buyer:profiles!p2p_orders_buyer_id_fkey(email, name),
+          seller:profiles!p2p_orders_seller_id_fkey(email, name)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('getAllP2POrders error:', error);
+        // Fallback query without joins if foreign key issue
+        const { data: fallbackData } = await supabase
+          .from('p2p_orders')
+          .select('*')
+          .order('created_at', { ascending: false });
+        return fallbackData || [];
+      }
+
+      return data || [];
+    } catch (e) {
+      console.error('getAllP2POrders error:', e);
+      return [];
+    }
+  },
+
+  // Admin: Force complete a P2P order
+  adminForceCompleteP2POrder: async (orderId: string) => {
+    try {
+      // Get the order first
+      const { data: order, error: orderError } = await supabase
+        .from('p2p_orders')
+        .select('*')
+        .eq('id', orderId)
+        .single();
+
+      if (orderError || !order) {
+        return { success: false, error: 'Order not found' };
+      }
+
+      // Update order status to COMPLETED
+      const { error: updateError } = await supabase
+        .from('p2p_orders')
+        .update({ status: 'COMPLETED', updated_at: new Date().toISOString() })
+        .eq('id', orderId);
+
+      if (updateError) {
+        return { success: false, error: updateError.message };
+      }
+
+      // If matched_order_id exists, also update the matched order
+      if (order.matched_order_id) {
+        await supabase
+          .from('p2p_orders')
+          .update({ status: 'COMPLETED', updated_at: new Date().toISOString() })
+          .eq('id', order.matched_order_id);
+      }
+
+      // Log the admin action
+      await supabase.from('p2p_events').insert({
+        order_id: orderId,
+        actor_id: (await supabase.auth.getUser()).data.user?.id,
+        actor_role: 'admin',
+        event_type: 'ADMIN_FORCE_COMPLETE',
+        metadata: { reason: 'Admin forced completion' }
+      });
+
+      return { success: true };
+    } catch (e: any) {
+      console.error('adminForceCompleteP2POrder error:', e);
+      return { success: false, error: e.message };
+    }
+  },
+
+  // Admin: Force cancel a P2P order
+  adminForceCancelP2POrder: async (orderId: string) => {
+    try {
+      // Get the order first
+      const { data: order, error: orderError } = await supabase
+        .from('p2p_orders')
+        .select('*')
+        .eq('id', orderId)
+        .single();
+
+      if (orderError || !order) {
+        return { success: false, error: 'Order not found' };
+      }
+
+      // Update order status to CANCELLED
+      const { error: updateError } = await supabase
+        .from('p2p_orders')
+        .update({ status: 'CANCELLED', updated_at: new Date().toISOString() })
+        .eq('id', orderId);
+
+      if (updateError) {
+        return { success: false, error: updateError.message };
+      }
+
+      // If matched_order_id exists, also cancel the matched order
+      if (order.matched_order_id) {
+        await supabase
+          .from('p2p_orders')
+          .update({ status: 'CANCELLED', updated_at: new Date().toISOString() })
+          .eq('id', order.matched_order_id);
+      }
+
+      // Log the admin action
+      await supabase.from('p2p_events').insert({
+        order_id: orderId,
+        actor_id: (await supabase.auth.getUser()).data.user?.id,
+        actor_role: 'admin',
+        event_type: 'ADMIN_FORCE_CANCEL',
+        metadata: { reason: 'Admin forced cancellation' }
+      });
+
+      return { success: true };
+    } catch (e: any) {
+      console.error('adminForceCancelP2POrder error:', e);
+      return { success: false, error: e.message };
+    }
   }
 };
