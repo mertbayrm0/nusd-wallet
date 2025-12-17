@@ -111,20 +111,7 @@ const Profile = () => {
                             sublabel="Ad, soyad, doğum tarihi"
                             onClick={() => { }}
                         />
-                        <SettingsItem
-                            icon="home"
-                            iconBg="bg-purple-500/20 text-purple-400"
-                            label="Adres Bilgileri"
-                            sublabel="Fatura ve teslimat adresi"
-                            onClick={() => { }}
-                        />
-                        <SettingsItem
-                            icon="badge"
-                            iconBg="bg-cyan-500/20 text-cyan-400"
-                            label="Kullanıcı ID"
-                            sublabel="NUSD-2024-78X9K"
-                            onClick={() => { }}
-                        />
+
                     </div>
                 </div>
 
@@ -139,13 +126,7 @@ const Profile = () => {
                             sublabel="Bağlı hesapları yönet"
                             onClick={() => navigate('/bank-accounts')}
                         />
-                        <SettingsItem
-                            icon="credit_card"
-                            iconBg="bg-indigo-500/20 text-indigo-400"
-                            label="Kartlarım"
-                            sublabel="Kredi ve banka kartları"
-                            onClick={() => { }}
-                        />
+
                         <SettingsItem
                             icon="speed"
                             iconBg="bg-orange-500/20 text-orange-400"
