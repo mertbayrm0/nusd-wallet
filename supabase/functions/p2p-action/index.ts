@@ -46,6 +46,8 @@ serve(async (req) => {
         const body = await req.json()
         const { action, orderId, amount, iban, bankName, accountName, side } = body
 
+        console.log('[P2P-ACTION] Called with:', { action, side, amount, userId: user.id })
+
         // =============================================
         // ACTION: CREATE
         // =============================================
