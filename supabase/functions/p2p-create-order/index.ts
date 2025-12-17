@@ -72,44 +72,34 @@ serve(async (req) => {
             )
         }
 
-        // 🔒 SECURITY: Herhangi bir aktif P2P order kontrolü (SELL veya BUY)
-        // Bu sayede: 1) Aynı anda birden fazla order açılamaz 2) Cross-order exploit önlenir
-        const { data: activeSellOrders } = await supabase
-            .from('p2p_orders')
-            .select('id, status, amount_usd, created_at')
-            .eq('seller_id', user.id)
-            .in('status', ['OPEN', 'MATCHED', 'PAID'])
-            .limit(1)
+        // 🔒 SECURITY: SELL için bakiye kontrolü
+        // Sadece bakiyesi yeten kadar çekim talebi oluşturulabilir
+        if (side === 'SELL') {
+            // Kullanıcının bakiyesini kontrol et
+            const { data: userProfile, error: profileError } = await supabase
+                .from('profiles')
+                .select('balance')
+                .eq('id', user.id)
+                .single()
 
-        const { data: activeBuyOrders } = await supabase
-            .from('p2p_orders')
-            .select('id, status, amount_usd, created_at')
-            .eq('buyer_id', user.id)
-            .in('status', ['OPEN', 'MATCHED', 'PAID'])
-            .limit(1)
+            if (profileError || !userProfile) {
+                console.error('Profile fetch error:', profileError)
+                return new Response(
+                    JSON.stringify({ error: 'Kullanıcı profili bulunamadı', code: 'PROFILE_NOT_FOUND' }),
+                    { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                )
+            }
 
-        const hasActiveSell = activeSellOrders && activeSellOrders.length > 0
-        const hasActiveBuy = activeBuyOrders && activeBuyOrders.length > 0
-
-        if (hasActiveSell || hasActiveBuy) {
-            const existing = hasActiveSell ? activeSellOrders![0] : activeBuyOrders![0]
-            const orderType = hasActiveSell ? 'satış' : 'alış'
-            console.log(`[P2P-CREATE-ORDER] Blocking - user has active ${orderType} order:`, existing.id)
-            return new Response(
-                JSON.stringify({
-                    success: false,
-                    error: `Zaten aktif bir ${orderType} emriniz var. Yeni emir oluşturmak için mevcut emrin tamamlanmasını veya iptal edilmesini bekleyin.`,
-                    code: 'ACTIVE_ORDER_EXISTS',
-                    activeOrder: {
-                        id: existing.id,
-                        status: existing.status,
-                        amount: existing.amount_usd,
-                        created_at: existing.created_at,
-                        type: hasActiveSell ? 'SELL' : 'BUY'
-                    }
-                }),
-                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            )
+            if (userProfile.balance < parseFloat(amount_usd)) {
+                return new Response(
+                    JSON.stringify({
+                        error: 'Yetersiz bakiye. Bakiyeniz: $' + userProfile.balance.toFixed(2),
+                        code: 'INSUFFICIENT_BALANCE',
+                        balance: userProfile.balance
+                    }),
+                    { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                )
+            }
         }
 
         // 3️⃣ Order Oluştur
