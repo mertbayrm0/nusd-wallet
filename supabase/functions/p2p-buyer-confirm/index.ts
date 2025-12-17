@@ -153,6 +153,30 @@ serve(async (req) => {
             )
         }
 
+        // 🔄 ÖNEMLİ: Eşleşen order'ı da aynı duruma güncelle
+        // Bu sayede hem BUY hem SELL order aynı status'a sahip olur
+        if (order.matched_order_id && (confirm || !confirm)) {
+            const matchedUpdateData: any = {
+                status: confirm ? 'COMPLETED' : 'CANCELLED',
+                updated_at: new Date().toISOString()
+            }
+
+            if (confirm) {
+                matchedUpdateData.buyer_confirmed_at = new Date().toISOString()
+            }
+
+            const { error: matchedUpdateError } = await supabase
+                .from('p2p_orders')
+                .update(matchedUpdateData)
+                .eq('id', order.matched_order_id)
+
+            if (matchedUpdateError) {
+                console.error('Failed to update matched order:', matchedUpdateError)
+            } else {
+                console.log('[P2P-BUYER-CONFIRM] Matched order also updated:', order.matched_order_id)
+            }
+        }
+
         // 7️⃣ Event log
         await supabase.from('p2p_events').insert({
             order_id: orderId,
