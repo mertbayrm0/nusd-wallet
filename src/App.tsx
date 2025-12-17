@@ -230,6 +230,14 @@ const App: React.FC = () => {
       async (event, newSession) => {
         console.log('Auth event:', event);
 
+        // INITIAL_SESSION ve TOKEN_REFRESHED eventlerini atla - profil zaten initializeAuth'da çekildi
+        if (event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
+          if (newSession) {
+            setSession(newSession);
+          }
+          return;
+        }
+
         if (event === 'SIGNED_IN' && newSession?.user) {
           setSession(newSession);
           const profile = await fetchOrCreateProfileWithTimeout(newSession.user);
@@ -237,8 +245,6 @@ const App: React.FC = () => {
         } else if (event === 'SIGNED_OUT') {
           setSession(null);
           setUser(null);
-        } else if (event === 'TOKEN_REFRESHED' && newSession) {
-          setSession(newSession);
         }
       }
     );
