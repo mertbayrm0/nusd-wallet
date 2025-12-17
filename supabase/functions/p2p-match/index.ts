@@ -148,6 +148,20 @@ serve(async (req) => {
 
         const matchedOrder = matches[0]
 
+        // 🔒 SECURITY: Self-matching kontrolü - kendi kendine eşleşme engelle
+        const matchedUserId = isBuyer ? matchedOrder.seller_id : matchedOrder.buyer_id
+        if (matchedUserId === user.id) {
+            console.warn('[P2P-MATCH] Self-matching attempt blocked:', { userId: user.id, orderId, matchedOrderId: matchedOrder.id })
+            return new Response(
+                JSON.stringify({
+                    success: false,
+                    error: 'Kendi işleminizle eşleşemezsiniz',
+                    code: 'SELF_MATCH_NOT_ALLOWED'
+                }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
         // 5️⃣ ATOMIC MATCH - İki order'ı birleştir
         const lockExpiry = new Date(Date.now() + LOCK_DURATION_MINUTES * 60 * 1000).toISOString()
 
