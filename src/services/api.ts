@@ -1138,30 +1138,43 @@ export const api = {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
-      // Check for active SELL orders
-      const { data: sellOrders } = await supabase
+      // Check for active SELL orders (en son oluşturulana göre sırala)
+      const { data: sellOrders, error: sellError } = await supabase
         .from('p2p_orders')
         .select('id, status, amount_usd, created_at')
         .eq('seller_id', user.id)
         .in('status', ['OPEN', 'MATCHED', 'PAID'])
+        .order('created_at', { ascending: false })
         .limit(1);
 
+      if (sellError) {
+        console.error('getActiveP2POrder SELL error:', sellError);
+      }
+
       if (sellOrders && sellOrders.length > 0) {
+        console.log('Active SELL order found:', sellOrders[0]);
         return { ...sellOrders[0], type: 'SELL' };
       }
 
-      // Check for active BUY orders
-      const { data: buyOrders } = await supabase
+      // Check for active BUY orders (en son oluşturulana göre sırala)
+      const { data: buyOrders, error: buyError } = await supabase
         .from('p2p_orders')
         .select('id, status, amount_usd, created_at')
         .eq('buyer_id', user.id)
         .in('status', ['OPEN', 'MATCHED', 'PAID'])
+        .order('created_at', { ascending: false })
         .limit(1);
 
+      if (buyError) {
+        console.error('getActiveP2POrder BUY error:', buyError);
+      }
+
       if (buyOrders && buyOrders.length > 0) {
+        console.log('Active BUY order found:', buyOrders[0]);
         return { ...buyOrders[0], type: 'BUY' };
       }
 
+      console.log('No active P2P orders found');
       return null;
     } catch (e) {
       console.error('getActiveP2POrder error:', e);
