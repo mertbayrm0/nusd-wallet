@@ -79,12 +79,14 @@ serve(async (req) => {
             )
         }
 
-        // Sadece OPEN durumundaki orderlar iptal edilebilir
-        if (order.status !== 'OPEN') {
+        // OPEN ve MATCHED durumundaki orderlar iptal edilebilir
+        // PAID durumunda ödeme yapılmış olduğundan iptal edilemez
+        const cancellableStatuses = ['OPEN', 'MATCHED']
+        if (!cancellableStatuses.includes(order.status)) {
             return new Response(
                 JSON.stringify({
                     success: false,
-                    error: `Bu işlem iptal edilemez. Mevcut durum: ${order.status}`,
+                    error: `Bu işlem iptal edilemez. Ödeme yapıldığı için devam etmelisiniz. Mevcut durum: ${order.status}`,
                     currentStatus: order.status
                 }),
                 { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

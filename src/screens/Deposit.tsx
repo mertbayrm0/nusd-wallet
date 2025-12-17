@@ -218,10 +218,10 @@ const Deposit = () => {
                         <div className="space-y-3 w-full max-w-xs">
                             <button
                                 onClick={handleCancelOrder}
-                                disabled={loading || activeOrder.status !== 'OPEN'}
+                                disabled={loading || activeOrder.status === 'PAID'}
                                 className="w-full bg-red-500/20 hover:bg-red-500/30 text-red-400 py-3 rounded-xl font-bold transition-colors disabled:opacity-50"
                             >
-                                {loading ? 'İptal Ediliyor...' : activeOrder.status !== 'OPEN' ? 'İptal Edilemez' : 'İşlemi İptal Et'}
+                                {loading ? 'İptal Ediliyor...' : activeOrder.status === 'PAID' ? 'Ödeme Yapıldı - İptal Edilemez' : 'İşlemi İptal Et'}
                             </button>
                             <button
                                 onClick={() => navigate('/dashboard')}
