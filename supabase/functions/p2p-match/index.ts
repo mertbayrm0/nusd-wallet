@@ -98,6 +98,16 @@ serve(async (req) => {
         const minAmount = myOrder.amount_usd * (1 - MATCH_TOLERANCE_PERCENT / 100)
         const maxAmount = myOrder.amount_usd * (1 + MATCH_TOLERANCE_PERCENT / 100)
 
+        console.log('[P2P-MATCH] Looking for match with criteria:', {
+            myOrderId: orderId,
+            isBuyer,
+            targetColumn,
+            myColumn,
+            amount: myOrder.amount_usd,
+            minAmount,
+            maxAmount
+        })
+
         // Uygun OPEN order bul (karşı taraf dolu, benim tarafım boş)
         const { data: matches, error: matchError } = await supabase
             .from('p2p_orders')
@@ -110,6 +120,12 @@ serve(async (req) => {
             .neq('id', orderId)              // Kendim hariç
             .order('created_at', { ascending: true })
             .limit(1)
+
+        console.log('[P2P-MATCH] Match query result:', {
+            matchError,
+            matchCount: matches?.length || 0,
+            matches: matches?.map(m => ({ id: m.id, status: m.status, amount: m.amount_usd, seller_id: m.seller_id, buyer_id: m.buyer_id }))
+        })
 
         if (matchError) {
             console.error('Match query error:', matchError)
