@@ -165,13 +165,7 @@ const Profile = () => {
                             toggleValue={true}
                             onClick={() => { }}
                         />
-                        <SettingsItem
-                            icon="devices"
-                            iconBg="bg-teal-500/20 text-teal-400"
-                            label="Aktif Oturumlar"
-                            sublabel="2 cihaz bağlı"
-                            onClick={() => { }}
-                        />
+
                     </div>
                 </div>
 
