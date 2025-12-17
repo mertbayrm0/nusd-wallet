@@ -72,62 +72,44 @@ serve(async (req) => {
             )
         }
 
-        // 🔒 SECURITY: SELL için mevcut aktif order kontrolü (tek SELL sınırı)
-        if (side === 'SELL') {
-            const { data: activeOrders } = await supabase
-                .from('p2p_orders')
-                .select('id, status, amount_usd, created_at')
-                .eq('seller_id', user.id)
-                .in('status', ['OPEN', 'MATCHED', 'PAID'])
-                .limit(1)
+        // 🔒 SECURITY: Herhangi bir aktif P2P order kontrolü (SELL veya BUY)
+        // Bu sayede: 1) Aynı anda birden fazla order açılamaz 2) Cross-order exploit önlenir
+        const { data: activeSellOrders } = await supabase
+            .from('p2p_orders')
+            .select('id, status, amount_usd, created_at')
+            .eq('seller_id', user.id)
+            .in('status', ['OPEN', 'MATCHED', 'PAID'])
+            .limit(1)
 
-            if (activeOrders && activeOrders.length > 0) {
-                const existing = activeOrders[0]
-                console.log('[P2P-CREATE-ORDER] Blocking - user already has active SELL order:', existing.id)
-                return new Response(
-                    JSON.stringify({
-                        success: false,
-                        error: 'Zaten aktif bir satış emriniz var. Yeni emir oluşturmak için mevcut emrin tamamlanmasını veya iptal edilmesini bekleyin.',
-                        code: 'ACTIVE_ORDER_EXISTS',
-                        activeOrder: {
-                            id: existing.id,
-                            status: existing.status,
-                            amount: existing.amount_usd,
-                            created_at: existing.created_at
-                        }
-                    }),
-                    { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-                )
-            }
-        }
+        const { data: activeBuyOrders } = await supabase
+            .from('p2p_orders')
+            .select('id, status, amount_usd, created_at')
+            .eq('buyer_id', user.id)
+            .in('status', ['OPEN', 'MATCHED', 'PAID'])
+            .limit(1)
 
-        // 🔒 SECURITY: BUY için mevcut aktif order kontrolü (tek BUY sınırı)
-        if (side === 'BUY') {
-            const { data: activeOrders } = await supabase
-                .from('p2p_orders')
-                .select('id, status, amount_usd, created_at')
-                .eq('buyer_id', user.id)
-                .in('status', ['OPEN', 'MATCHED', 'PAID'])
-                .limit(1)
+        const hasActiveSell = activeSellOrders && activeSellOrders.length > 0
+        const hasActiveBuy = activeBuyOrders && activeBuyOrders.length > 0
 
-            if (activeOrders && activeOrders.length > 0) {
-                const existing = activeOrders[0]
-                console.log('[P2P-CREATE-ORDER] Blocking - user already has active BUY order:', existing.id)
-                return new Response(
-                    JSON.stringify({
-                        success: false,
-                        error: 'Zaten aktif bir alış emriniz var. Yeni emir oluşturmak için mevcut emrin tamamlanmasını veya iptal edilmesini bekleyin.',
-                        code: 'ACTIVE_ORDER_EXISTS',
-                        activeOrder: {
-                            id: existing.id,
-                            status: existing.status,
-                            amount: existing.amount_usd,
-                            created_at: existing.created_at
-                        }
-                    }),
-                    { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-                )
-            }
+        if (hasActiveSell || hasActiveBuy) {
+            const existing = hasActiveSell ? activeSellOrders![0] : activeBuyOrders![0]
+            const orderType = hasActiveSell ? 'satış' : 'alış'
+            console.log(`[P2P-CREATE-ORDER] Blocking - user has active ${orderType} order:`, existing.id)
+            return new Response(
+                JSON.stringify({
+                    success: false,
+                    error: `Zaten aktif bir ${orderType} emriniz var. Yeni emir oluşturmak için mevcut emrin tamamlanmasını veya iptal edilmesini bekleyin.`,
+                    code: 'ACTIVE_ORDER_EXISTS',
+                    activeOrder: {
+                        id: existing.id,
+                        status: existing.status,
+                        amount: existing.amount_usd,
+                        created_at: existing.created_at,
+                        type: hasActiveSell ? 'SELL' : 'BUY'
+                    }
+                }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
         }
 
         // 3️⃣ Order Oluştur
