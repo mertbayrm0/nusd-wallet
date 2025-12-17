@@ -21,6 +21,12 @@ const Deposit = () => {
     const [loading, setLoading] = useState(true);
     const [pending, setPending] = useState<string | null>(null); // Order ID for polling
     const [pollInterval, setPollInterval] = useState<NodeJS.Timeout | null>(null);
+    const [activeOrder, setActiveOrder] = useState<any>(null);
+
+    // Check for active P2P order on page load
+    useEffect(() => {
+        checkActiveOrder();
+    }, []);
 
     // Fetch user's bank accounts on mount
     useEffect(() => {
@@ -43,6 +49,26 @@ const Deposit = () => {
             if (pollInterval) clearInterval(pollInterval);
         };
     }, [pollInterval]);
+
+    const checkActiveOrder = async () => {
+        const order = await api.getActiveP2POrder();
+        if (order) {
+            setActiveOrder(order);
+        }
+    };
+
+    const handleCancelOrder = async () => {
+        if (!activeOrder) return;
+        setLoading(true);
+        const result = await api.cancelP2POrder(activeOrder.id);
+        if (result.success) {
+            setActiveOrder(null);
+            alert('İşlem iptal edildi');
+        } else {
+            alert('İptal hatası: ' + result.error);
+        }
+        setLoading(false);
+    };
 
     const search = async () => {
         if (!selectedBank) {
@@ -160,158 +186,205 @@ const Deposit = () => {
             </div>
 
             <div className="p-4 space-y-6">
-                {/* Info Alert */}
-                <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex gap-3">
-                    <span className="material-symbols-outlined text-blue-400 shrink-0">info</span>
-                    <div>
-                        <p className="text-sm text-blue-300">
-                            <span className="font-bold">Dekont Yükleme İsteğe Bağlı:</span> Dekont yüklerseniz işlem 20 dakika içinde otomatik onaylanır.
+                {/* 🔒 Aktif Order Varsa Tam Ekran Blok */}
+                {activeOrder ? (
+                    <div className="min-h-[60vh] flex flex-col items-center justify-center text-center">
+                        <div className="w-24 h-24 rounded-full bg-amber-500/20 flex items-center justify-center mb-6">
+                            <span className="material-symbols-outlined text-5xl text-amber-400">pending</span>
+                        </div>
+                        <h2 className="text-2xl font-bold text-white mb-2">Bekleyen İşleminiz Var</h2>
+                        <p className="text-gray-400 mb-6 max-w-xs">
+                            Aktif bir {activeOrder.type === 'SELL' ? 'satış' : 'alış'} emriniz bulunuyor.
+                            Yeni işlem oluşturmak için önce mevcut işlemi tamamlamanız veya iptal etmeniz gerekiyor.
                         </p>
-                    </div>
-                </div>
 
-                {/* Bank Account Selection */}
-                <div>
-                    <div className="flex items-center justify-between mb-2">
-                        <label className="block text-sm font-bold text-gray-400">Banka Hesabınız</label>
-                        <button
-                            onClick={() => navigate('/bank-accounts')}
-                            className="text-xs text-lime-400 font-bold hover:underline flex items-center gap-1"
-                        >
-                            <span className="material-symbols-outlined text-sm">add</span>
-                            Yeni Ekle
-                        </button>
-                    </div>
-
-                    {loading ? (
-                        <div className="bg-[#1a1a1a] rounded-xl p-4 border border-white/10 animate-pulse">
-                            <div className="h-6 bg-gray-700 rounded w-1/2"></div>
-                        </div>
-                    ) : bankAccounts.length === 0 ? (
-                        <button
-                            onClick={() => navigate('/bank-accounts')}
-                            className="w-full bg-[#1a1a1a] rounded-xl p-4 border border-dashed border-white/20 hover:border-lime-500/50 transition-colors text-center"
-                        >
-                            <span className="material-symbols-outlined text-lime-400 text-3xl mb-2">add_card</span>
-                            <p className="text-white font-bold">Banka Hesabı Ekle</p>
-                            <p className="text-gray-500 text-xs mt-1">Para yatırmak için bir banka hesabı eklemelisiniz</p>
-                        </button>
-                    ) : (
-                        <div className="space-y-2">
-                            {bankAccounts.map((account) => (
-                                <button
-                                    key={account.id}
-                                    onClick={() => setSelectedBank(account)}
-                                    className={`w-full p-4 rounded-xl border transition-all text-left flex items-center gap-3 ${selectedBank?.id === account.id
-                                        ? 'bg-lime-500/10 border-lime-500/50'
-                                        : 'bg-[#1a1a1a] border-white/10 hover:border-white/20'
-                                        }`}
-                                >
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${selectedBank?.id === account.id
-                                        ? 'bg-lime-500/20 text-lime-400'
-                                        : 'bg-blue-500/20 text-blue-400'
-                                        }`}>
-                                        <span className="material-symbols-outlined">account_balance</span>
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-white font-bold truncate">{account.bankName}</p>
-                                        <p className="text-gray-500 text-xs font-mono truncate">{account.iban}</p>
-                                    </div>
-                                    {selectedBank?.id === account.id && (
-                                        <span className="material-symbols-outlined text-lime-400">check_circle</span>
-                                    )}
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                {/* Amount Input */}
-                <div>
-                    <label className="block text-sm font-bold text-gray-400 mb-2">Yatırılacak Tutar (USDT)</label>
-                    <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-500">$</span>
-                        <input
-                            className="w-full pl-10 pr-4 py-3.5 rounded-xl border border-white/10 focus:border-lime-500 transition-all outline-none bg-[#1a1a1a] text-white font-bold text-xl placeholder:text-gray-600"
-                            type="number"
-                            placeholder="0.00"
-                            value={amount}
-                            onChange={e => setAmount(e.target.value)}
-                        />
-                    </div>
-                </div>
-
-                {/* Quick Amount Buttons */}
-                <div className="flex gap-2">
-                    {[100, 500, 1000, 5000].map((val) => (
-                        <button
-                            key={val}
-                            onClick={() => setAmount(val.toString())}
-                            className="flex-1 py-2 rounded-lg bg-[#1a1a1a] border border-white/10 text-gray-400 font-bold text-sm hover:border-lime-500/50 hover:text-lime-400 transition-colors"
-                        >
-                            ${val}
-                        </button>
-                    ))}\n                </div>
-
-                {/* Pending State - Waiting for Match */}
-                {pending && !match && (
-                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-6 mt-4 text-center">
-                        <div className="flex items-center justify-center mb-4">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-                        </div>
-                        <h3 className="text-lg font-bold text-white mb-2">
-                            En Uygun Eşleşme Aranıyor...
-                        </h3>
-                        <p className="text-gray-400 text-sm">
-                            Size uygun satıcıyı arıyoruz
-                        </p>
-                    </div>
-                )}
-
-                {/* Match Logic */}
-                {!match ? (
-                    !pending && (
-                        <button
-                            onClick={search}
-                            disabled={!selectedBank || !amount || loading}
-                            className="w-full bg-lime-500 hover:bg-lime-400 active:scale-[0.98] transition-all text-black py-4 rounded-xl font-bold text-lg shadow-xl shadow-lime-500/20 mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {loading ? 'Yükleniyor...' : 'Eşleşme Bul'}
-                        </button>
-                    )
-                ) : (
-                    <div className="bg-[#1a1a1a] p-6 rounded-2xl border border-lime-500/30 text-center animate-fade-in mt-4">
-                        <div className="w-16 h-16 rounded-full bg-lime-500/20 flex items-center justify-center mx-auto mb-4 relative">
-                            <span className="material-symbols-outlined text-lime-400 text-3xl">task_alt</span>
-                            <div className="absolute inset-0 rounded-full border border-lime-500/30 animate-ping"></div>
-                        </div>
-                        <h3 className="text-xl font-bold text-white mb-2">Uygun Eşleşme Bulundu!</h3>
-                        <p className="text-gray-400 text-sm mb-6">Yatırım tutarınız için uygun bir satıcı bulundu.</p>
-
-                        <div className="bg-black/30 p-4 rounded-2xl mb-6 border border-white/5">
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-gray-500 text-xs">Ağ</span>
-                                <span className="text-white text-xs font-bold">P2P Secure</span>
+                        <div className="bg-[#1a1a1a] rounded-xl p-4 w-full max-w-xs mb-6">
+                            <div className="flex justify-between mb-2">
+                                <span className="text-gray-500">İşlem Tipi:</span>
+                                <span className={`font-bold ${activeOrder.type === 'SELL' ? 'text-red-400' : 'text-green-400'}`}>
+                                    {activeOrder.type === 'SELL' ? 'Çekim (Satış)' : 'Yatırım (Alış)'}
+                                </span>
                             </div>
-                            <div className="border-t border-white/5 my-2"></div>
-                            <p className="text-xs text-gray-500 mb-1 mt-2">İşlem Tutarı</p>
-                            <p className="text-3xl font-bold text-white tracking-tight">₺{match.amount?.toLocaleString()}</p>
-                            <p className="text-xs text-lime-500 mt-1 font-mono">≈ {parseFloat(amount).toLocaleString()} USDT</p>
+                            <div className="flex justify-between mb-2">
+                                <span className="text-gray-500">Miktar:</span>
+                                <span className="text-white font-bold">${activeOrder.amount_usd} USDT</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-500">Durum:</span>
+                                <span className="text-amber-400 font-bold">{activeOrder.status}</span>
+                            </div>
                         </div>
 
-                        <button
-                            onClick={proceed}
-                            className="w-full bg-lime-500 hover:bg-lime-400 text-black font-bold py-4 rounded-xl text-lg transition-all shadow-lg shadow-lime-500/20 active:scale-95"
-                        >
-                            İşlemi Onayla & Bilgileri Gör
-                        </button>
-                        <p className="text-[10px] text-gray-500 mt-3">İşlemi onayladığınızda ödeme bilgileri gösterilecek ve 30 dakika süre başlayacaktır.</p>
+                        <div className="space-y-3 w-full max-w-xs">
+                            <button
+                                onClick={handleCancelOrder}
+                                disabled={loading || activeOrder.status !== 'OPEN'}
+                                className="w-full bg-red-500/20 hover:bg-red-500/30 text-red-400 py-3 rounded-xl font-bold transition-colors disabled:opacity-50"
+                            >
+                                {loading ? 'İptal Ediliyor...' : activeOrder.status !== 'OPEN' ? 'İptal Edilemez' : 'İşlemi İptal Et'}
+                            </button>
+                            <button
+                                onClick={() => navigate('/dashboard')}
+                                className="w-full bg-white/10 hover:bg-white/20 text-white py-3 rounded-xl font-bold transition-colors"
+                            >
+                                Dashboard'a Dön
+                            </button>
+                        </div>
                     </div>
+                ) : (
+                    <>
+                        {/* Info Alert */}
+                        <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex gap-3">
+                            <span className="material-symbols-outlined text-blue-400 shrink-0">info</span>
+                            <div>
+                                <p className="text-sm text-blue-300">
+                                    <span className="font-bold">Dekont Yükleme İsteğe Bağlı:</span> Dekont yüklerseniz işlem 20 dakika içinde otomatik onaylanır.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Bank Account Selection */}
+                        <div>
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="block text-sm font-bold text-gray-400">Banka Hesabınız</label>
+                                <button
+                                    onClick={() => navigate('/bank-accounts')}
+                                    className="text-xs text-lime-400 font-bold hover:underline flex items-center gap-1"
+                                >
+                                    <span className="material-symbols-outlined text-sm">add</span>
+                                    Yeni Ekle
+                                </button>
+                            </div>
+
+                            {loading ? (
+                                <div className="bg-[#1a1a1a] rounded-xl p-4 border border-white/10 animate-pulse">
+                                    <div className="h-6 bg-gray-700 rounded w-1/2"></div>
+                                </div>
+                            ) : bankAccounts.length === 0 ? (
+                                <button
+                                    onClick={() => navigate('/bank-accounts')}
+                                    className="w-full bg-[#1a1a1a] rounded-xl p-4 border border-dashed border-white/20 hover:border-lime-500/50 transition-colors text-center"
+                                >
+                                    <span className="material-symbols-outlined text-lime-400 text-3xl mb-2">add_card</span>
+                                    <p className="text-white font-bold">Banka Hesabı Ekle</p>
+                                    <p className="text-gray-500 text-xs mt-1">Para yatırmak için bir banka hesabı eklemelisiniz</p>
+                                </button>
+                            ) : (
+                                <div className="space-y-2">
+                                    {bankAccounts.map((account) => (
+                                        <button
+                                            key={account.id}
+                                            onClick={() => setSelectedBank(account)}
+                                            className={`w-full p-4 rounded-xl border transition-all text-left flex items-center gap-3 ${selectedBank?.id === account.id
+                                                ? 'bg-lime-500/10 border-lime-500/50'
+                                                : 'bg-[#1a1a1a] border-white/10 hover:border-white/20'
+                                                }`}
+                                        >
+                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${selectedBank?.id === account.id
+                                                ? 'bg-lime-500/20 text-lime-400'
+                                                : 'bg-blue-500/20 text-blue-400'
+                                                }`}>
+                                                <span className="material-symbols-outlined">account_balance</span>
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-white font-bold truncate">{account.bankName}</p>
+                                                <p className="text-gray-500 text-xs font-mono truncate">{account.iban}</p>
+                                            </div>
+                                            {selectedBank?.id === account.id && (
+                                                <span className="material-symbols-outlined text-lime-400">check_circle</span>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Amount Input */}
+                        <div>
+                            <label className="block text-sm font-bold text-gray-400 mb-2">Yatırılacak Tutar (USDT)</label>
+                            <div className="relative">
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-500">$</span>
+                                <input
+                                    className="w-full pl-10 pr-4 py-3.5 rounded-xl border border-white/10 focus:border-lime-500 transition-all outline-none bg-[#1a1a1a] text-white font-bold text-xl placeholder:text-gray-600"
+                                    type="number"
+                                    placeholder="0.00"
+                                    value={amount}
+                                    onChange={e => setAmount(e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Quick Amount Buttons */}
+                        <div className="flex gap-2">
+                            {[100, 500, 1000, 5000].map((val) => (
+                                <button
+                                    key={val}
+                                    onClick={() => setAmount(val.toString())}
+                                    className="flex-1 py-2 rounded-lg bg-[#1a1a1a] border border-white/10 text-gray-400 font-bold text-sm hover:border-lime-500/50 hover:text-lime-400 transition-colors"
+                                >
+                                    ${val}
+                                </button>
+                            ))}\n                </div>
+
+                        {/* Pending State - Waiting for Match */}
+                        {pending && !match && (
+                            <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-6 mt-4 text-center">
+                                <div className="flex items-center justify-center mb-4">
+                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                                </div>
+                                <h3 className="text-lg font-bold text-white mb-2">
+                                    En Uygun Eşleşme Aranıyor...
+                                </h3>
+                                <p className="text-gray-400 text-sm">
+                                    Size uygun satıcıyı arıyoruz
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Match Logic */}
+                        {!match ? (
+                            !pending && (
+                                <button
+                                    onClick={search}
+                                    disabled={!selectedBank || !amount || loading}
+                                    className="w-full bg-lime-500 hover:bg-lime-400 active:scale-[0.98] transition-all text-black py-4 rounded-xl font-bold text-lg shadow-xl shadow-lime-500/20 mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {loading ? 'Yükleniyor...' : 'Eşleşme Bul'}
+                                </button>
+                            )
+                        ) : (
+                            <div className="bg-[#1a1a1a] p-6 rounded-2xl border border-lime-500/30 text-center animate-fade-in mt-4">
+                                <div className="w-16 h-16 rounded-full bg-lime-500/20 flex items-center justify-center mx-auto mb-4 relative">
+                                    <span className="material-symbols-outlined text-lime-400 text-3xl">task_alt</span>
+                                    <div className="absolute inset-0 rounded-full border border-lime-500/30 animate-ping"></div>
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-2">Uygun Eşleşme Bulundu!</h3>
+                                <p className="text-gray-400 text-sm mb-6">Yatırım tutarınız için uygun bir satıcı bulundu.</p>
+
+                                <div className="bg-black/30 p-4 rounded-2xl mb-6 border border-white/5">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-gray-500 text-xs">Ağ</span>
+                                        <span className="text-white text-xs font-bold">P2P Secure</span>
+                                    </div>
+                                    <div className="border-t border-white/5 my-2"></div>
+                                    <p className="text-xs text-gray-500 mb-1 mt-2">İşlem Tutarı</p>
+                                    <p className="text-3xl font-bold text-white tracking-tight">₺{match.amount?.toLocaleString()}</p>
+                                    <p className="text-xs text-lime-500 mt-1 font-mono">≈ {parseFloat(amount).toLocaleString()} USDT</p>
+                                </div>
+
+                                <button
+                                    onClick={proceed}
+                                    className="w-full bg-lime-500 hover:bg-lime-400 text-black font-bold py-4 rounded-xl text-lg transition-all shadow-lg shadow-lime-500/20 active:scale-95"
+                                >
+                                    İşlemi Onayla & Bilgileri Gör
+                                </button>
+                                <p className="text-[10px] text-gray-500 mt-3">İşlemi onayladığınızda ödeme bilgileri gösterilecek ve 30 dakika süre başlayacaktır.</p>
+                            </div>
+                        )}
+                    </>
                 )}
-            </>
-                )}
+            </div>
         </div>
-        </div >
     );
 };
 export default Deposit;
