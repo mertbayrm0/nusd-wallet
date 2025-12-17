@@ -1169,22 +1169,24 @@ export const api = {
     }
   },
 
-  // Cancel P2P order
+  // Cancel P2P order (via Edge Function)
   cancelP2POrder: async (orderId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('p2p_orders')
-        .update({ status: 'CANCELLED' })
-        .eq('id', orderId)
-        .select()
-        .single();
+      const { data, error } = await supabase.functions.invoke('p2p-cancel-order', {
+        body: { orderId }
+      });
 
       if (error) {
         console.error('Cancel P2P order error:', error);
         return { success: false, error: error.message };
       }
 
-      return { success: true, order: data };
+      // Handle Edge Function response
+      if (data?.success === false) {
+        return { success: false, error: data.error || 'Cancel failed' };
+      }
+
+      return { success: true, order: data?.order || data };
     } catch (e: any) {
       console.error('Cancel P2P order exception:', e);
       return { success: false, error: e.message };
