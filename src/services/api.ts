@@ -1139,11 +1139,12 @@ export const api = {
       if (!user) return null;
 
       // Check for active SELL orders (en son oluşturulana göre sırala)
+      // MATCHED durumunu çıkardık - eşleşme olduktan sonra blok yok
       const { data: sellOrders, error: sellError } = await supabase
         .from('p2p_orders')
         .select('id, status, amount_usd, created_at')
         .eq('seller_id', user.id)
-        .in('status', ['OPEN', 'MATCHED', 'PAID'])
+        .in('status', ['OPEN', 'PAID'])  // MATCHED çıkarıldı
         .order('created_at', { ascending: false })
         .limit(1);
 
@@ -1157,11 +1158,12 @@ export const api = {
       }
 
       // Check for active BUY orders (en son oluşturulana göre sırala)
+      // MATCHED durumunu çıkardık - eşleşme olduktan sonra blok yok
       const { data: buyOrders, error: buyError } = await supabase
         .from('p2p_orders')
         .select('id, status, amount_usd, created_at')
         .eq('buyer_id', user.id)
-        .in('status', ['OPEN', 'MATCHED', 'PAID'])
+        .in('status', ['OPEN', 'PAID'])  // MATCHED çıkarıldı
         .order('created_at', { ascending: false })
         .limit(1);
 
