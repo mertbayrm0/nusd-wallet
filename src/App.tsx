@@ -87,24 +87,11 @@ async function fetchProfileFromSupabase(authUser: User, fallbackUser: UserState)
       .eq('id', authUser.id)
       .single();
 
-    // If not found by ID, try by email (for legacy profiles)
-    if (error && error.code === 'PGRST116' && authUser.email) {
-      const { data: emailProfile, error: emailError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('email', authUser.email)
-        .single();
-
-      if (!emailError && emailProfile) {
-        profile = emailProfile;
-        error = null;
-
-        // Update the profile ID to match auth user ID
-        await supabase
-          .from('profiles')
-          .update({ id: authUser.id })
-          .eq('email', authUser.email);
-      }
+    // If not found by ID, skip email lookup to avoid 406 errors
+    // Email lookup is problematic due to RLS policies
+    if (error && error.code === 'PGRST116') {
+      console.log('Profile not found by ID, will create new profile');
+      // Don't try email lookup - goes directly to profile creation below
     }
 
     // If profile still doesn't exist, create one
