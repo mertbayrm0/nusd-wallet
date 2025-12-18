@@ -102,6 +102,26 @@ serve(async (req) => {
             )
         }
 
+        // 🔄 ÖNEMLİ: Eşleşen order'ı da PAID yap
+        // Bu sayede seller kendi order'ında PAID görüp onay popup'ı görecek
+        if (order.matched_order_id) {
+            console.log('[P2P-MARK-PAID] Updating matched order to PAID:', order.matched_order_id)
+
+            const { error: matchedError } = await supabase
+                .from('p2p_orders')
+                .update({
+                    status: 'PAID',
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', order.matched_order_id)
+
+            if (matchedError) {
+                console.error('[P2P-MARK-PAID] Failed to update matched order:', matchedError)
+            } else {
+                console.log('[P2P-MARK-PAID] Matched order updated to PAID successfully')
+            }
+        }
+
         // 7️⃣ Event log
         await supabase.from('p2p_events').insert({
             order_id: orderId,
