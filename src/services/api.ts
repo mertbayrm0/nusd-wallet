@@ -1582,9 +1582,9 @@ export const api = {
         // Return fallback rate if no data (güncel piyasa yaklaşık değeri)
         return {
           rate: 42.50,
-          buy_rate: 42.70,
-          sell_rate: 42.30,
-          spread: 0.20,
+          buy_rate: 42.60,
+          sell_rate: 42.40,
+          spread: 0.10,
           fetched_at: new Date().toISOString(),
           is_fallback: true
         };
@@ -1602,9 +1602,9 @@ export const api = {
       console.error('getExchangeRate exception:', e);
       return {
         rate: 42.50,
-        buy_rate: 42.70,
-        sell_rate: 42.30,
-        spread: 0.20,
+        buy_rate: 42.60,
+        sell_rate: 42.40,
+        spread: 0.10,
         fetched_at: new Date().toISOString(),
         is_fallback: true
       };

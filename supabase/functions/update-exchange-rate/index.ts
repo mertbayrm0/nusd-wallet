@@ -6,7 +6,7 @@ const corsHeaders = {
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const SPREAD = 0.20; // 0.20 TRY spread (her iki yön için)
+const SPREAD = 0.10; // 0.10 TRY spread (her iki yön için)
 
 serve(async (req) => {
     // Handle CORS preflight
@@ -47,8 +47,8 @@ serve(async (req) => {
         console.log(`[UpdateExchangeRate] Market rate: ${rate} TRY`)
 
         // Calculate buy and sell rates with spread
-        const buyRate = rate + SPREAD;   // Kullanıcı USDT alırken (+0.20 TRY daha fazla öder)
-        const sellRate = rate - SPREAD;  // Kullanıcı USDT satarken (-0.20 TRY daha az alır)
+        const buyRate = rate + SPREAD;   // Kullanıcı USDT alırken (+0.10 TRY daha fazla öder)
+        const sellRate = rate - SPREAD;  // Kullanıcı USDT satarken (-0.10 TRY daha az alır)
 
         console.log(`[UpdateExchangeRate] Buy rate: ${buyRate} TRY (market + ${SPREAD})`)
         console.log(`[UpdateExchangeRate] Sell rate: ${sellRate} TRY (market - ${SPREAD})`)

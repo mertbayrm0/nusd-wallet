@@ -206,7 +206,7 @@ const AdminExchangeRate = () => {
                         </div>
                         <div className="flex justify-between items-center py-2 border-b border-white/5">
                             <span className="text-gray-400">Spread</span>
-                            <span className="text-white">₺{currentRate?.spread.toFixed(2) || '0.20'}</span>
+                            <span className="text-white">₺{currentRate?.spread.toFixed(2) || '0.10'}</span>
                         </div>
                         <div className="flex justify-between items-center py-2 border-b border-white/5">
                             <span className="text-gray-400">Veri Tipi</span>
@@ -224,11 +224,11 @@ const AdminExchangeRate = () => {
                         Spread Nasıl Çalışır?
                     </h3>
                     <p className="text-gray-300 text-sm">
-                        Her işlemde ±₺0.20 spread uygulanır:
+                        Her işlemde ±₺0.10 spread uygulanır:
                     </p>
-                    <ul className="text-gray-400 text-sm mt-2 space-y-1">
-                        <li>• <strong className="text-lime-400">Alım:</strong> Kullanıcı USDT satın alırken piyasa kuru + ₺0.20 öder</li>
-                        <li>• <strong className="text-red-400">Satım:</strong> Kullanıcı USDT satarken piyasa kuru - ₺0.20 alır</li>
+                    <ul className="list-none mt-2 space-y-1">
+                        <li>• <strong className="text-lime-400">Alım:</strong> Kullanıcı USDT satın alırken piyasa kuru + ₺0.10 öder</li>
+                        <li>• <strong className="text-red-400">Satım:</strong> Kullanıcı USDT satarken piyasa kuru - ₺0.10 alır</li>
                     </ul>
                 </div>
             </div>
