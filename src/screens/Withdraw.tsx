@@ -184,7 +184,45 @@ const Withdraw = () => {
     };
 
     const startPolling = (orderId: string) => {
-        const interval = setInterval(async () => {
+        // 🔥 REALTIME: Order değişikliklerini anında dinle
+        const channel = supabase
+            .channel(`withdraw-order-${orderId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'p2p_orders',
+                    filter: `id=eq.${orderId}`
+                },
+                (payload: any) => {
+                    console.log('[REALTIME] Withdraw order updated:', payload.new);
+                    const order = payload.new;
+
+                    if (order.status === 'MATCHED') {
+                        setMatch({
+                            tradeId: orderId,
+                            buyer: 'Eşleşme bulundu',
+                            amount: order.amount_usd,
+                            fiatAmount: order.amount_usd * sellRate,
+                            status: 'MATCHED'
+                        });
+                        supabase.removeChannel(channel);
+                        setPollInterval(null);
+                    } else if (order.status === 'EXPIRED' || order.status === 'CANCELLED') {
+                        supabase.removeChannel(channel);
+                        setPollInterval(null);
+                        alert('Sipariş süresi doldu veya iptal edildi');
+                        navigate('/dashboard');
+                    }
+                }
+            )
+            .subscribe();
+
+        setPollInterval(channel as any);
+
+        // Fallback polling (15 sn) - realtime bağlantı koparsa
+        const fallbackInterval = setInterval(async () => {
             const order = await api.getP2POrderStatus(orderId);
 
             if (order && order.status === 'MATCHED') {
@@ -195,16 +233,17 @@ const Withdraw = () => {
                     fiatAmount: order.amount_usd * sellRate,
                     status: 'MATCHED'
                 });
-                clearInterval(interval);
+                clearInterval(fallbackInterval);
+                supabase.removeChannel(channel);
                 setPollInterval(null);
             } else if (order?.status === 'EXPIRED' || order?.status === 'CANCELLED') {
-                clearInterval(interval);
+                clearInterval(fallbackInterval);
+                supabase.removeChannel(channel);
                 setPollInterval(null);
                 alert('Sipariş süresi doldu veya iptal edildi');
                 navigate('/dashboard');
             }
-        }, 3000);
-        setPollInterval(interval);
+        }, 15000);
     };
 
     return (

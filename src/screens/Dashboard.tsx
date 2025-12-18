@@ -27,35 +27,77 @@ const Dashboard = () => {
       // Initial Load
       loadData();
 
-      // Smart polling: only poll when page is visible
-      let interval: NodeJS.Timeout;
+      // Get auth user ID for realtime filters
+      supabase.auth.getUser().then(({ data }) => {
+        if (data?.user) {
+          setAuthUserId(data.user.id);
 
-      const startPolling = () => {
-        interval = setInterval(loadData, 15000); // Poll every 15 seconds
-      };
+          // 🔥 REALTIME: P2P Orders değişikliklerini dinle
+          const p2pChannel = supabase
+            .channel('p2p-realtime')
+            .on(
+              'postgres_changes',
+              {
+                event: '*', // INSERT, UPDATE, DELETE
+                schema: 'public',
+                table: 'p2p_orders',
+                filter: `buyer_id=eq.${data.user.id}`
+              },
+              (payload) => {
+                console.log('[REALTIME] P2P order change (buyer):', payload);
+                loadData(); // Veri güncelle
+                refreshUser(); // Bakiye güncelle
+              }
+            )
+            .on(
+              'postgres_changes',
+              {
+                event: '*',
+                schema: 'public',
+                table: 'p2p_orders',
+                filter: `seller_id=eq.${data.user.id}`
+              },
+              (payload) => {
+                console.log('[REALTIME] P2P order change (seller):', payload);
+                loadData();
+                refreshUser();
+              }
+            )
+            .subscribe();
 
-      const stopPolling = () => {
-        if (interval) clearInterval(interval);
-      };
+          // 🔥 REALTIME: Bakiye değişikliklerini dinle
+          const balanceChannel = supabase
+            .channel('balance-realtime')
+            .on(
+              'postgres_changes',
+              {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'profiles',
+                filter: `id=eq.${data.user.id}`
+              },
+              (payload) => {
+                console.log('[REALTIME] Balance updated:', payload.new);
+                refreshUser(); // Bakiyeyi güncelle
+              }
+            )
+            .subscribe();
 
-      const handleVisibilityChange = () => {
-        if (document.hidden) {
-          stopPolling();
-        } else {
-          loadData(); // Refresh immediately when tab becomes visible
-          startPolling();
+          // Cleanup on unmount
+          return () => {
+            supabase.removeChannel(p2pChannel);
+            supabase.removeChannel(balanceChannel);
+          };
         }
-      };
+      });
 
-      // Start polling
-      startPolling();
-
-      // Listen for visibility changes
-      document.addEventListener('visibilitychange', handleVisibilityChange);
+      // Fallback: Daha uzun aralıklı polling (30 sn) - realtime bağlantı koparsa
+      const fallbackInterval = setInterval(() => {
+        loadData();
+      }, 30000);
 
       return () => {
-        stopPolling();
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        clearInterval(fallbackInterval);
       };
     }
   }, [user]);

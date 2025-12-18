@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../App';
 import { api } from '../services/api';
+import { supabase } from '../services/supabase';
 
 interface BankAccount {
     id: string;
@@ -138,34 +139,74 @@ const Deposit = () => {
     };
 
     const startPolling = (orderId: string) => {
-        const interval = setInterval(async () => {
+        // 🔥 REALTIME: Order değişikliklerini anında dinle
+        const channel = supabase
+            .channel(`order-${orderId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'p2p_orders',
+                    filter: `id=eq.${orderId}`
+                },
+                (payload) => {
+                    console.log('[REALTIME] Order updated:', payload.new);
+                    const order = payload.new as any;
+
+                    if (order.status === 'MATCHED') {
+                        // Match bulundu!
+                        setConfirmed(false);
+                        setMatch({
+                            id: orderId,
+                            amount: order.amount_usd * exchangeRate,
+                            sellerIBAN: order.seller_iban || 'N/A',
+                            sellerName: order.seller_account_name || 'Satıcı',
+                            sellerBank: order.seller_bank_name || 'Banka'
+                        });
+                        setPending(null);
+                        supabase.removeChannel(channel);
+                        setPollInterval(null);
+                    } else if (order.status === 'EXPIRED' || order.status === 'CANCELLED') {
+                        supabase.removeChannel(channel);
+                        setPollInterval(null);
+                        alert('Sipariş süresi doldu veya iptal edildi');
+                    }
+                }
+            )
+            .subscribe();
+
+        setPollInterval(channel as any);
+
+        // Fallback polling (daha uzun aralık) - realtime bağlantı koparsa
+        const fallbackInterval = setInterval(async () => {
             const order = await api.getP2POrderStatus(orderId);
 
             if (order && order.status === 'MATCHED') {
-                // Match bulundu!
                 setConfirmed(false);
                 setMatch({
                     id: orderId,
-                    amount: order.amount_usd * exchangeRate, // Güncel kur
+                    amount: order.amount_usd * exchangeRate,
                     sellerIBAN: order.seller_iban || 'N/A',
                     sellerName: order.seller_account_name || 'Satıcı',
                     sellerBank: order.seller_bank_name || 'Banka'
                 });
                 setPending(null);
-                clearInterval(interval);
+                clearInterval(fallbackInterval);
+                supabase.removeChannel(channel);
                 setPollInterval(null);
             } else if (order?.status === 'EXPIRED' || order?.status === 'CANCELLED') {
-                clearInterval(interval);
+                clearInterval(fallbackInterval);
+                supabase.removeChannel(channel);
                 setPollInterval(null);
                 alert('Sipariş süresi doldu veya iptal edildi');
             }
-        }, 5000); // Poll every 5 seconds
+        }, 15000); // 15 sn (eskiden 5 sn)
 
-        setPollInterval(interval as any);
-
-        // Stop polling after 10 minutes
+        // Stop after 10 minutes
         setTimeout(() => {
-            clearInterval(interval);
+            clearInterval(fallbackInterval);
+            supabase.removeChannel(channel);
             setPollInterval(null);
             if (pending) {
                 alert('Eşleşme bulunamadı. Lütfen daha sonra tekrar deneyin.');
