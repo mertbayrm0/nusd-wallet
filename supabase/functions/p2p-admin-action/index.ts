@@ -45,18 +45,25 @@ serve(async (req) => {
         }
 
         // 2️⃣ Admin kontrolü - profiles tablosundan role check
-        const { data: profile } = await supabase
+        console.log('[ADMIN] Checking admin role for user:', user.id, user.email)
+
+        const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('role')
             .eq('id', user.id)
             .single()
 
+        console.log('[ADMIN] Profile result:', { profile, profileError })
+
         if (!profile || profile.role !== 'admin') {
+            console.log('[ADMIN] Access denied - profile:', profile, 'expected role: admin')
             return new Response(
-                JSON.stringify({ error: 'Admin access required' }),
+                JSON.stringify({ error: 'Admin access required', debug: { userId: user.id, profile, profileError } }),
                 { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             )
         }
+
+        console.log('[ADMIN] Access granted for:', user.email)
 
         // 3️⃣ Body parse
         const { action, orderId } = await req.json()
