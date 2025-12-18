@@ -4,6 +4,7 @@ import { useApp } from '../App';
 import { api } from '../services/api';
 import { supabase } from '../services/supabase';
 import SuccessModal from '../components/SuccessModal';
+import { DashboardSkeleton } from '../components/Skeleton';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ const Dashboard = () => {
     title: '',
     message: ''
   });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     refreshUser();
@@ -38,64 +40,70 @@ const Dashboard = () => {
     const { data: { user: authUser } } = await supabase.auth.getUser();
     if (authUser) setAuthUserId(authUser.id);
 
-    // 🚀 PARALLEL DATA FETCHING - All API calls run simultaneously
-    const [transactions, p2pOrders, pendingApprovals, notifs] = await Promise.all([
-      api.getTransactions(user.email),
-      api.getMyP2POrders(),
-      api.getPendingApprovals(user.email),
-      api.getNotifications(user.email)
-    ]);
+    try {
+      // 🚀 PARALLEL DATA FETCHING - All API calls run simultaneously
+      const [transactions, p2pOrders, pendingApprovals, notifs] = await Promise.all([
+        api.getTransactions(user.email),
+        api.getMyP2POrders(),
+        api.getPendingApprovals(user.email),
+        api.getNotifications(user.email)
+      ]);
 
-    // Convert P2P orders to transaction format for display
-    // Only show OPEN (pending) and COMPLETED, not MATCHED/PAID (intermediate states)
-    const p2pAsTxs = (p2pOrders || [])
-      .filter((order: any) => order.status === 'OPEN' || order.status === 'COMPLETED')
-      .map((order: any) => {
-        const isSeller = order.seller_id !== null && order.buyer_id === null;
-        return {
-          id: order.id,
-          title: isSeller ? 'P2P SELL Order' : 'P2P BUY Order',
-          amount: isSeller ? -order.amount_usd : order.amount_usd,
-          status: order.status === 'OPEN' ? 'PENDING' : order.status,
-          date: order.created_at,
-          type: isSeller ? 'P2P_SELL' : 'P2P_BUY'
-        };
+      // Convert P2P orders to transaction format for display
+      // Only show OPEN (pending) and COMPLETED, not MATCHED/PAID (intermediate states)
+      const p2pAsTxs = (p2pOrders || [])
+        .filter((order: any) => order.status === 'OPEN' || order.status === 'COMPLETED')
+        .map((order: any) => {
+          const isSeller = order.seller_id !== null && order.buyer_id === null;
+          return {
+            id: order.id,
+            title: isSeller ? 'P2P SELL Order' : 'P2P BUY Order',
+            amount: isSeller ? -order.amount_usd : order.amount_usd,
+            status: order.status === 'OPEN' ? 'PENDING' : order.status,
+            date: order.created_at,
+            type: isSeller ? 'P2P_SELL' : 'P2P_BUY'
+          };
+        });
+
+      // Merge and sort by date
+      const allTxs = [...transactions, ...p2pAsTxs]
+        .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      setTxs(allTxs.slice(0, 4) as any);
+
+      // Filter P2P orders that need user action
+      const pendingP2P = (p2pOrders || []).filter((order: any) => {
+        // After matching, both buyer_id and seller_id are set
+        // Need to check if current user is the seller or buyer via RLS query
+
+        // Status MATCHED = seller needs to mark as paid
+        if (order.status === 'MATCHED') {
+          // If user can see this order, they're either buyer or seller
+          // Seller needs to click "Ödedim"
+          return true;
+        }
+
+        // Status PAID = buyer needs to confirm
+        if (order.status === 'PAID' && !order.buyer_confirmed_at) {
+          return true;
+        }
+
+        return false;
       });
 
-    // Merge and sort by date
-    const allTxs = [...transactions, ...p2pAsTxs]
-      .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      setP2pPending(pendingP2P);
+      setApprovals(pendingApprovals);
 
-    setTxs(allTxs.slice(0, 4) as any);
-
-    // Filter P2P orders that need user action
-    const pendingP2P = (p2pOrders || []).filter((order: any) => {
-      // After matching, both buyer_id and seller_id are set
-      // Need to check if current user is the seller or buyer via RLS query
-
-      // Status MATCHED = seller needs to mark as paid
-      if (order.status === 'MATCHED') {
-        // If user can see this order, they're either buyer or seller
-        // Seller needs to click "Ödedim"
-        return true;
+      // Check for notifications
+      const unread = notifs.filter((n: any) => !n.read);
+      if (unread.length > 0) {
+        const latest = unread[0];
+        setNotification((prev: any) => (prev?.id === latest.id ? prev : latest));
       }
-
-      // Status PAID = buyer needs to confirm
-      if (order.status === 'PAID' && !order.buyer_confirmed_at) {
-        return true;
-      }
-
-      return false;
-    });
-
-    setP2pPending(pendingP2P);
-    setApprovals(pendingApprovals);
-
-    // Check for notifications
-    const unread = notifs.filter((n: any) => !n.read);
-    if (unread.length > 0) {
-      const latest = unread[0];
-      setNotification((prev: any) => (prev?.id === latest.id ? prev : latest));
+    } catch (error) {
+      console.error('Dashboard loadData error:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -174,6 +182,26 @@ const Dashboard = () => {
   };
 
   if (!user) return null;
+
+  // Show skeleton while loading
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#111111] flex flex-col font-display pb-20">
+        {/* Header Skeleton */}
+        <div className="px-5 py-4 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gray-800 animate-pulse" />
+            <div>
+              <div className="w-24 h-4 bg-gray-800 rounded animate-pulse mb-1" />
+              <div className="w-16 h-3 bg-gray-800 rounded animate-pulse" />
+            </div>
+          </div>
+          <div className="w-10 h-10 rounded-full bg-gray-800 animate-pulse" />
+        </div>
+        <DashboardSkeleton />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#111111] flex flex-col font-display pb-20">
