@@ -79,7 +79,7 @@ const Profile = () => {
                             label="Kimlik Doğrulama (KYC)"
                             sublabel="Limitleri artırmak için doğrulayın"
                             badge={{ text: "Bekliyor", color: "bg-amber-500/20 text-amber-400" }}
-                            onClick={() => { }}
+                            onClick={() => navigate('/kyc')}
                         />
                         <SettingsItem
                             icon="phone_android"
