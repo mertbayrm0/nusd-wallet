@@ -11,6 +11,7 @@ const AdminLayout = ({ children, title }: { children: React.ReactNode, title: st
         { icon: 'dashboard', label: 'Dashboard', path: '/admin' },
         { icon: 'group', label: 'Users', path: '/admin/users' },
         { icon: 'swap_horiz', label: 'P2P Orders', path: '/admin/p2p-orders' },
+        { icon: 'currency_exchange', label: 'Kur Yönetimi', path: '/admin/exchange-rate' },
         { icon: 'lock', label: 'Crypto Vaults', path: '/admin/vaults' },
         { icon: 'business', label: 'Departmanlar', path: '/admin/departments' },
         { icon: 'terminal', label: 'System Logs', path: '/admin/logs' },

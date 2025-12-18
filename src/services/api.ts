@@ -1559,5 +1559,27 @@ export const api = {
         is_fallback: true
       };
     }
+  },
+
+  // Update exchange rate by calling Edge Function
+  updateExchangeRate: async () => {
+    try {
+      const response = await fetch(
+        'https://bzbzcnyipynpkzaqauxd.supabase.co/functions/v1/update-exchange-rate',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ6YnpjbnlpcHlucGt6YXFhdXhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2MDg3ODIsImV4cCI6MjA4MTE4NDc4Mn0.1CfLmFr80h9B0_tvicYxQSJUAmaWBBi3V5ZkD451r-g`
+          }
+        }
+      );
+
+      const data = await response.json();
+      return data;
+    } catch (e: any) {
+      console.error('updateExchangeRate error:', e);
+      return { success: false, error: e.message };
+    }
   }
 };

@@ -24,6 +24,7 @@ import AdminLogs from './screens/AdminLogs';
 import AdminVaults from './screens/AdminVaults';
 import AdminDepartments from './screens/AdminDepartments';
 import AdminDepartmentDetail from './screens/AdminDepartmentDetail';
+import AdminExchangeRate from './screens/AdminExchangeRate';
 import FindAgent from './screens/FindAgent';
 import AutoLogin from './screens/AutoLogin';
 import PaymentPanel from './screens/PaymentPanel';
@@ -343,6 +344,7 @@ const App: React.FC = () => {
           <Route path="/admin/vaults" element={<ProtectedRoute adminOnly><AdminVaults /></ProtectedRoute>} />
           <Route path="/admin/departments" element={<ProtectedRoute adminOnly><AdminDepartments /></ProtectedRoute>} />
           <Route path="/admin/departments/:id" element={<ProtectedRoute adminOnly><AdminDepartmentDetail /></ProtectedRoute>} />
+          <Route path="/admin/exchange-rate" element={<ProtectedRoute adminOnly><AdminExchangeRate /></ProtectedRoute>} />
           <Route path="/admin/logs" element={<ProtectedRoute adminOnly><AdminLogs /></ProtectedRoute>} />
 
           {/* Welcome Screen */}
