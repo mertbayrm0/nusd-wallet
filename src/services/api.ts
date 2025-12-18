@@ -1439,62 +1439,17 @@ export const api = {
   // Admin: Force complete a P2P order
   adminForceCompleteP2POrder: async (orderId: string) => {
     try {
-      // Get the order first
-      const { data: order, error: orderError } = await supabase
-        .from('p2p_orders')
-        .select('*')
-        .eq('id', orderId)
-        .single();
+      // Edge Function kullan - SERVICE_ROLE ile RLS bypass
+      const { data, error } = await supabase.functions.invoke('p2p-admin-action', {
+        body: { action: 'forceComplete', orderId }
+      });
 
-      if (orderError || !order) {
-        return { success: false, error: 'Order not found' };
+      if (error) {
+        console.error('Admin force complete error:', error);
+        return { success: false, error: error.message };
       }
 
-      // Update order status to COMPLETED
-      const { error: updateError } = await supabase
-        .from('p2p_orders')
-        .update({ status: 'COMPLETED', updated_at: new Date().toISOString() })
-        .eq('id', orderId);
-
-      if (updateError) {
-        return { success: false, error: updateError.message };
-      }
-
-      // If matched_order_id exists, check if it needs updating
-      if (order.matched_order_id) {
-        // First check if matched order is already COMPLETED (to avoid conflicts)
-        const { data: matchedOrder } = await supabase
-          .from('p2p_orders')
-          .select('status')
-          .eq('id', order.matched_order_id)
-          .single();
-
-        // Only update if matched order is NOT already COMPLETED
-        if (matchedOrder && matchedOrder.status !== 'COMPLETED') {
-          await supabase
-            .from('p2p_orders')
-            .update({ status: 'COMPLETED', updated_at: new Date().toISOString() })
-            .eq('id', order.matched_order_id);
-        }
-      }
-
-      // Log the admin action (optional - don't fail if p2p_events has RLS issues)
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await supabase.from('p2p_events').insert({
-            order_id: orderId,
-            actor_id: user.id,
-            actor_role: 'admin',
-            event_type: 'ADMIN_FORCE_COMPLETE',
-            metadata: { reason: 'Admin forced completion' }
-          });
-        }
-      } catch (logError) {
-        console.warn('Failed to log admin action (non-critical):', logError);
-      }
-
-      return { success: true };
+      return data;
     } catch (e: any) {
       console.error('adminForceCompleteP2POrder error:', e);
       return { success: false, error: e.message };
@@ -1504,62 +1459,17 @@ export const api = {
   // Admin: Force cancel a P2P order
   adminForceCancelP2POrder: async (orderId: string) => {
     try {
-      // Get the order first
-      const { data: order, error: orderError } = await supabase
-        .from('p2p_orders')
-        .select('*')
-        .eq('id', orderId)
-        .single();
+      // Edge Function kullan - SERVICE_ROLE ile RLS bypass
+      const { data, error } = await supabase.functions.invoke('p2p-admin-action', {
+        body: { action: 'forceCancel', orderId }
+      });
 
-      if (orderError || !order) {
-        return { success: false, error: 'Order not found' };
+      if (error) {
+        console.error('Admin force cancel error:', error);
+        return { success: false, error: error.message };
       }
 
-      // Update order status to CANCELLED
-      const { error: updateError } = await supabase
-        .from('p2p_orders')
-        .update({ status: 'CANCELLED', updated_at: new Date().toISOString() })
-        .eq('id', orderId);
-
-      if (updateError) {
-        return { success: false, error: updateError.message };
-      }
-
-      // If matched_order_id exists, check if it needs updating
-      if (order.matched_order_id) {
-        // First check if matched order is already in a final state
-        const { data: matchedOrder } = await supabase
-          .from('p2p_orders')
-          .select('status')
-          .eq('id', order.matched_order_id)
-          .single();
-
-        // Only update if matched order is NOT already in a final state
-        if (matchedOrder && !['COMPLETED', 'CANCELLED'].includes(matchedOrder.status)) {
-          await supabase
-            .from('p2p_orders')
-            .update({ status: 'CANCELLED', updated_at: new Date().toISOString() })
-            .eq('id', order.matched_order_id);
-        }
-      }
-
-      // Log the admin action (optional - don't fail if p2p_events has RLS issues)
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await supabase.from('p2p_events').insert({
-            order_id: orderId,
-            actor_id: user.id,
-            actor_role: 'admin',
-            event_type: 'ADMIN_FORCE_CANCEL',
-            metadata: { reason: 'Admin forced cancellation' }
-          });
-        }
-      } catch (logError) {
-        console.warn('Failed to log admin action (non-critical):', logError);
-      }
-
-      return { success: true };
+      return data;
     } catch (e: any) {
       console.error('adminForceCancelP2POrder error:', e);
       return { success: false, error: e.message };
