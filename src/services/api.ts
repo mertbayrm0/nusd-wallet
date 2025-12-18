@@ -1460,12 +1460,22 @@ export const api = {
         return { success: false, error: updateError.message };
       }
 
-      // If matched_order_id exists, also update the matched order
+      // If matched_order_id exists, check if it needs updating
       if (order.matched_order_id) {
-        await supabase
+        // First check if matched order is already COMPLETED (to avoid conflicts)
+        const { data: matchedOrder } = await supabase
           .from('p2p_orders')
-          .update({ status: 'COMPLETED', updated_at: new Date().toISOString() })
-          .eq('id', order.matched_order_id);
+          .select('status')
+          .eq('id', order.matched_order_id)
+          .single();
+
+        // Only update if matched order is NOT already COMPLETED
+        if (matchedOrder && matchedOrder.status !== 'COMPLETED') {
+          await supabase
+            .from('p2p_orders')
+            .update({ status: 'COMPLETED', updated_at: new Date().toISOString() })
+            .eq('id', order.matched_order_id);
+        }
       }
 
       // Log the admin action (optional - don't fail if p2p_events has RLS issues)
@@ -1515,12 +1525,22 @@ export const api = {
         return { success: false, error: updateError.message };
       }
 
-      // If matched_order_id exists, also cancel the matched order
+      // If matched_order_id exists, check if it needs updating
       if (order.matched_order_id) {
-        await supabase
+        // First check if matched order is already in a final state
+        const { data: matchedOrder } = await supabase
           .from('p2p_orders')
-          .update({ status: 'CANCELLED', updated_at: new Date().toISOString() })
-          .eq('id', order.matched_order_id);
+          .select('status')
+          .eq('id', order.matched_order_id)
+          .single();
+
+        // Only update if matched order is NOT already in a final state
+        if (matchedOrder && !['COMPLETED', 'CANCELLED'].includes(matchedOrder.status)) {
+          await supabase
+            .from('p2p_orders')
+            .update({ status: 'CANCELLED', updated_at: new Date().toISOString() })
+            .eq('id', order.matched_order_id);
+        }
       }
 
       // Log the admin action (optional - don't fail if p2p_events has RLS issues)
