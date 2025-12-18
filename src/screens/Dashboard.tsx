@@ -27,9 +27,36 @@ const Dashboard = () => {
       // Initial Load
       loadData();
 
-      // Poll every 3 seconds
-      const interval = setInterval(loadData, 10000);
-      return () => clearInterval(interval);
+      // Smart polling: only poll when page is visible
+      let interval: NodeJS.Timeout;
+
+      const startPolling = () => {
+        interval = setInterval(loadData, 15000); // Poll every 15 seconds
+      };
+
+      const stopPolling = () => {
+        if (interval) clearInterval(interval);
+      };
+
+      const handleVisibilityChange = () => {
+        if (document.hidden) {
+          stopPolling();
+        } else {
+          loadData(); // Refresh immediately when tab becomes visible
+          startPolling();
+        }
+      };
+
+      // Start polling
+      startPolling();
+
+      // Listen for visibility changes
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+
+      return () => {
+        stopPolling();
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
     }
   }, [user]);
 
