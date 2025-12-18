@@ -1391,7 +1391,7 @@ export const api = {
   // P2P ADMIN FUNCTIONS
   // =============================================
 
-  // Get all P2P orders for admin panel
+  // Get all P2P orders for admin panel (filtered to avoid duplicates)
   getAllP2POrders: async () => {
     try {
       const { data, error } = await supabase
@@ -1413,7 +1413,23 @@ export const api = {
         return fallbackData || [];
       }
 
-      return data || [];
+      // Filter out duplicate orders - only show the "main" order, not the matched pair
+      // If an order has a matched_order_id, check if that matched order is already in the list
+      // If so, skip this one to avoid showing the same trade twice
+      const seenPairs = new Set<string>();
+      const filteredData = (data || []).filter(order => {
+        // Create a unique pair key (sorted to ensure same pair regardless of direction)
+        if (order.matched_order_id) {
+          const pairKey = [order.id, order.matched_order_id].sort().join('|');
+          if (seenPairs.has(pairKey)) {
+            return false; // Skip this duplicate
+          }
+          seenPairs.add(pairKey);
+        }
+        return true;
+      });
+
+      return filteredData;
     } catch (e) {
       console.error('getAllP2POrders error:', e);
       return [];
