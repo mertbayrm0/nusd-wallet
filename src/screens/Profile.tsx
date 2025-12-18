@@ -175,24 +175,6 @@ const Profile = () => {
                             sublabel="Hesap güvenliği için şifrenizi değiştirin"
                             onClick={() => navigate('/change-password')}
                         />
-                        <SettingsItem
-                            icon="security"
-                            iconBg="bg-emerald-500/20 text-emerald-400"
-                            label="İki Faktörlü Doğrulama"
-                            sublabel="SMS ile doğrulama aktif"
-                            badge={{ text: "Aktif", color: "bg-green-500/20 text-green-400" }}
-                            onClick={() => { }}
-                        />
-                        <SettingsItem
-                            icon="fingerprint"
-                            iconBg="bg-pink-500/20 text-pink-400"
-                            label="Biyometrik Giriş"
-                            sublabel="Face ID / Touch ID"
-                            toggle={true}
-                            toggleValue={true}
-                            onClick={() => { }}
-                        />
-
                     </div>
                 </div>
 
