@@ -138,11 +138,19 @@ const Dashboard = () => {
   const handleMarkPaid = async (orderId: string) => {
     const result = await api.markP2PPaid(orderId);
     if (result?.success) {
-      alert('Ödeme gönderildi olarak işaretlendi!');
+      setSuccessModal({
+        isOpen: true,
+        title: 'Ödeme İşaretlendi!',
+        message: 'Ödeme gönderildi olarak işaretlendi.'
+      });
       loadData();
       refreshUser();
     } else {
-      alert('Hata: ' + (result?.error || 'İşlem başarısız'));
+      setSuccessModal({
+        isOpen: true,
+        title: 'Hata!',
+        message: result?.error || 'İşlem başarısız oldu.'
+      });
     }
   };
 
@@ -158,7 +166,11 @@ const Dashboard = () => {
       loadData();
       refreshUser();
     } else {
-      alert('Hata: ' + (result?.error || 'İşlem başarısız'));
+      setSuccessModal({
+        isOpen: true,
+        title: 'Hata!',
+        message: result?.error || 'İşlem başarısız oldu.'
+      });
     }
   };
 
