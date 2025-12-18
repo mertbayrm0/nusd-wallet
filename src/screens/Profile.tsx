@@ -158,8 +158,8 @@ const Profile = () => {
                             icon="speed"
                             iconBg="bg-orange-500/20 text-orange-400"
                             label="İşlem Limitleri"
-                            sublabel="Günlük: ₺50.000 / Aylık: ₺500.000"
-                            onClick={() => { }}
+                            sublabel="Limitleri görüntüle ve artır"
+                            onClick={() => navigate('/limits')}
                         />
                     </div>
                 </div>
