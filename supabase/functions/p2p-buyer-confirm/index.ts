@@ -155,7 +155,9 @@ serve(async (req) => {
 
         // 🔄 ÖNEMLİ: Eşleşen order'ı da aynı duruma güncelle
         // Bu sayede hem BUY hem SELL order aynı status'a sahip olur
-        if (order.matched_order_id && (confirm || !confirm)) {
+        if (order.matched_order_id) {
+            console.log('[P2P-BUYER-CONFIRM] Updating matched order:', order.matched_order_id)
+
             const matchedUpdateData: any = {
                 status: confirm ? 'COMPLETED' : 'CANCELLED',
                 updated_at: new Date().toISOString()
@@ -165,16 +167,53 @@ serve(async (req) => {
                 matchedUpdateData.buyer_confirmed_at = new Date().toISOString()
             }
 
-            const { error: matchedUpdateError } = await supabase
+            // İlk deneme
+            const { error: matchedUpdateError, data: matchedUpdateResult } = await supabase
                 .from('p2p_orders')
                 .update(matchedUpdateData)
                 .eq('id', order.matched_order_id)
+                .select()
 
             if (matchedUpdateError) {
-                console.error('Failed to update matched order:', matchedUpdateError)
+                console.error('[P2P-BUYER-CONFIRM] First update failed:', matchedUpdateError)
+
+                // Retry without .select()
+                const { error: retryError } = await supabase
+                    .from('p2p_orders')
+                    .update(matchedUpdateData)
+                    .eq('id', order.matched_order_id)
+
+                if (retryError) {
+                    console.error('[P2P-BUYER-CONFIRM] Retry also failed:', retryError)
+                } else {
+                    console.log('[P2P-BUYER-CONFIRM] Retry succeeded for matched order:', order.matched_order_id)
+                }
             } else {
-                console.log('[P2P-BUYER-CONFIRM] Matched order also updated:', order.matched_order_id)
+                console.log('[P2P-BUYER-CONFIRM] Matched order updated successfully:', matchedUpdateResult)
             }
+
+            // Verify the update actually happened
+            const { data: verifyOrder } = await supabase
+                .from('p2p_orders')
+                .select('id, status')
+                .eq('id', order.matched_order_id)
+                .single()
+
+            console.log('[P2P-BUYER-CONFIRM] Verification check:', verifyOrder)
+
+            if (verifyOrder && verifyOrder.status !== matchedUpdateData.status) {
+                console.error('[P2P-BUYER-CONFIRM] STATUS MISMATCH! Expected:', matchedUpdateData.status, 'Got:', verifyOrder.status)
+
+                // Force update one more time
+                await supabase
+                    .from('p2p_orders')
+                    .update({ status: matchedUpdateData.status, updated_at: new Date().toISOString() })
+                    .eq('id', order.matched_order_id)
+
+                console.log('[P2P-BUYER-CONFIRM] Force update attempted')
+            }
+        } else {
+            console.warn('[P2P-BUYER-CONFIRM] No matched_order_id found on order:', orderId)
         }
 
         // 7️⃣ Event log
