@@ -18,6 +18,7 @@ const DepositConfirmation = () => {
     const [investorData, setInvestorData] = useState<{ name: string; bankAccount: BankAccount | null }>({ name: '', bankAccount: null });
     const [receiptFile, setReceiptFile] = useState<File | null>(null);
     const [showSuccess, setShowSuccess] = useState(false);
+    const [buyRate, setBuyRate] = useState<number>(32.5); // Dynamic buy rate from database
 
     const totalTime = 1200; // 20 minutes in seconds
 
@@ -26,6 +27,17 @@ const DepositConfirmation = () => {
             setTimeLeft(prev => prev > 0 ? prev - 1 : 0);
         }, 1000);
         return () => clearInterval(timer);
+    }, []);
+
+    // Load exchange rate from database
+    useEffect(() => {
+        const loadRate = async () => {
+            const rateData = await api.getExchangeRate();
+            if (rateData?.buy_rate) {
+                setBuyRate(rateData.buy_rate);
+            }
+        };
+        loadRate();
     }, []);
 
     useEffect(() => {
@@ -97,7 +109,7 @@ const DepositConfirmation = () => {
     };
 
     const amount = state?.amount || 1000;
-    const amountTRY = (amount * 32.5).toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    const amountTRY = (amount * buyRate).toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
     return (
         <div className="min-h-screen bg-[#111111] flex flex-col font-display">
