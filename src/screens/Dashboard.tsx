@@ -38,11 +38,13 @@ const Dashboard = () => {
     const { data: { user: authUser } } = await supabase.auth.getUser();
     if (authUser) setAuthUserId(authUser.id);
 
-    // Fetch regular transactions
-    const transactions = await api.getTransactions(user.email);
-
-    // Fetch P2P orders
-    const p2pOrders = await api.getMyP2POrders();
+    // 🚀 PARALLEL DATA FETCHING - All API calls run simultaneously
+    const [transactions, p2pOrders, pendingApprovals, notifs] = await Promise.all([
+      api.getTransactions(user.email),
+      api.getMyP2POrders(),
+      api.getPendingApprovals(user.email),
+      api.getNotifications(user.email)
+    ]);
 
     // Convert P2P orders to transaction format for display
     // Only show OPEN (pending) and COMPLETED, not MATCHED/PAID (intermediate states)
@@ -87,10 +89,9 @@ const Dashboard = () => {
     });
 
     setP2pPending(pendingP2P);
-    api.getPendingApprovals(user.email).then(setApprovals);
+    setApprovals(pendingApprovals);
 
     // Check for notifications
-    const notifs = await api.getNotifications(user.email);
     const unread = notifs.filter((n: any) => !n.read);
     if (unread.length > 0) {
       const latest = unread[0];
