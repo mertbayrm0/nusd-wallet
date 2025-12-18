@@ -1468,14 +1468,21 @@ export const api = {
           .eq('id', order.matched_order_id);
       }
 
-      // Log the admin action
-      await supabase.from('p2p_events').insert({
-        order_id: orderId,
-        actor_id: (await supabase.auth.getUser()).data.user?.id,
-        actor_role: 'admin',
-        event_type: 'ADMIN_FORCE_COMPLETE',
-        metadata: { reason: 'Admin forced completion' }
-      });
+      // Log the admin action (optional - don't fail if p2p_events has RLS issues)
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from('p2p_events').insert({
+            order_id: orderId,
+            actor_id: user.id,
+            actor_role: 'admin',
+            event_type: 'ADMIN_FORCE_COMPLETE',
+            metadata: { reason: 'Admin forced completion' }
+          });
+        }
+      } catch (logError) {
+        console.warn('Failed to log admin action (non-critical):', logError);
+      }
 
       return { success: true };
     } catch (e: any) {
@@ -1516,14 +1523,21 @@ export const api = {
           .eq('id', order.matched_order_id);
       }
 
-      // Log the admin action
-      await supabase.from('p2p_events').insert({
-        order_id: orderId,
-        actor_id: (await supabase.auth.getUser()).data.user?.id,
-        actor_role: 'admin',
-        event_type: 'ADMIN_FORCE_CANCEL',
-        metadata: { reason: 'Admin forced cancellation' }
-      });
+      // Log the admin action (optional - don't fail if p2p_events has RLS issues)
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from('p2p_events').insert({
+            order_id: orderId,
+            actor_id: user.id,
+            actor_role: 'admin',
+            event_type: 'ADMIN_FORCE_CANCEL',
+            metadata: { reason: 'Admin forced cancellation' }
+          });
+        }
+      } catch (logError) {
+        console.warn('Failed to log admin action (non-critical):', logError);
+      }
 
       return { success: true };
     } catch (e: any) {
