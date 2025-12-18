@@ -300,6 +300,26 @@ serve(async (req) => {
                 )
             }
 
+            // 🔄 ÖNEMLİ: Eşleşen order'ı da COMPLETED yap
+            // Bu sayede admin panelinde her iki order da aynı status'ta olacak
+            if (order.matched_order_id) {
+                console.log('[P2P-ACTION] Updating matched order to COMPLETED:', order.matched_order_id)
+
+                const { error: matchedError } = await supabase
+                    .from('p2p_orders')
+                    .update({
+                        status: 'COMPLETED',
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', order.matched_order_id)
+
+                if (matchedError) {
+                    console.error('[P2P-ACTION] Failed to update matched order:', matchedError)
+                } else {
+                    console.log('[P2P-ACTION] Matched order updated successfully')
+                }
+            }
+
             // Transfer balance: Seller loses, Buyer gains
             const transferAmount = order.amount_usd
 
