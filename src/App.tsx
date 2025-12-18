@@ -31,6 +31,7 @@ import BusinessDashboard from './screens/BusinessDashboard';
 import KYCVerification from './screens/KYCVerification';
 import ProfileEdit from './screens/ProfileEdit';
 import TransactionLimits from './screens/TransactionLimits';
+import ChangePassword from './screens/ChangePassword';
 import BottomNav from './components/BottomNav';
 import { UserState } from './types';
 import { supabase } from './services/supabase';
@@ -363,6 +364,7 @@ const App: React.FC = () => {
           <Route path="/kyc" element={<Layout><ProtectedRoute><KYCVerification /></ProtectedRoute></Layout>} />
           <Route path="/profile/edit" element={<Layout><ProtectedRoute><ProfileEdit /></ProtectedRoute></Layout>} />
           <Route path="/limits" element={<Layout><ProtectedRoute><TransactionLimits /></ProtectedRoute></Layout>} />
+          <Route path="/change-password" element={<Layout><ProtectedRoute><ChangePassword /></ProtectedRoute></Layout>} />
 
           {/* Public Pages */}
           <Route path="/privacy" element={<PrivacyPolicy />} />

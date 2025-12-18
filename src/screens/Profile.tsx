@@ -172,8 +172,8 @@ const Profile = () => {
                             icon="lock"
                             iconBg="bg-red-500/20 text-red-400"
                             label="Şifre Değiştir"
-                            sublabel="Son değişiklik: 15 gün önce"
-                            onClick={() => { }}
+                            sublabel="Hesap güvenliği için şifrenizi değiştirin"
+                            onClick={() => navigate('/change-password')}
                         />
                         <SettingsItem
                             icon="security"
