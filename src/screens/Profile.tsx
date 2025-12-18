@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../App';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../services/supabase';
 
 const SettingsItem = ({ icon, iconBg, label, sublabel, onClick, badge, toggle, toggleValue }: any) => (
     <button
@@ -34,6 +35,31 @@ const SettingsItem = ({ icon, iconBg, label, sublabel, onClick, badge, toggle, t
 const Profile = () => {
     const { user, logout } = useApp();
     const navigate = useNavigate();
+    const [isProfileComplete, setIsProfileComplete] = useState<boolean | null>(null);
+
+    useEffect(() => {
+        checkProfileCompletion();
+    }, []);
+
+    const checkProfileCompletion = async () => {
+        try {
+            const { data: { user: authUser } } = await supabase.auth.getUser();
+            if (!authUser) return;
+
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('first_name, last_name, birth_date, profile_completed')
+                .eq('id', authUser.id)
+                .single();
+
+            const isComplete = profile?.profile_completed ||
+                (profile?.first_name && profile?.last_name && profile?.birth_date);
+            setIsProfileComplete(!!isComplete);
+        } catch (error) {
+            console.error('Check profile error:', error);
+            setIsProfileComplete(false);
+        }
+    };
 
     return (
         <div className="h-screen bg-[#111111] flex flex-col font-display overflow-hidden">
@@ -108,8 +134,9 @@ const Profile = () => {
                             icon="person"
                             iconBg="bg-lime-500/20 text-lime-400"
                             label="Profil Bilgileri"
-                            sublabel="Ad, soyad, doğum tarihi"
-                            onClick={() => { }}
+                            sublabel={isProfileComplete === null ? 'Kontrol ediliyor...' : isProfileComplete ? 'Tamamlandı' : 'Eksik - Tamamlayın'}
+                            badge={isProfileComplete ? { text: "Tamam", color: "bg-green-500/20 text-green-400" } : isProfileComplete === false ? { text: "Eksik", color: "bg-red-500/20 text-red-400" } : undefined}
+                            onClick={() => navigate('/profile/edit')}
                         />
 
                     </div>
