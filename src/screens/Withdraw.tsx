@@ -25,10 +25,12 @@ const Withdraw = () => {
     const [selectedBank, setSelectedBank] = useState<BankAccount | null>(null);
     const [loadingBanks, setLoadingBanks] = useState(true);
     const [activeOrder, setActiveOrder] = useState<any>(null);
+    const [sellRate, setSellRate] = useState<number>(32); // Dynamic sell rate from database
 
     // Check for active P2P order on page load
     useEffect(() => {
         checkActiveOrder();
+        loadExchangeRate();
     }, []);
 
     // Load bank accounts when user is available
@@ -49,6 +51,13 @@ const Withdraw = () => {
         const order = await api.getActiveP2POrder();
         if (order) {
             setActiveOrder(order);
+        }
+    };
+
+    const loadExchangeRate = async () => {
+        const rateData = await api.getExchangeRate();
+        if (rateData?.sell_rate) {
+            setSellRate(rateData.sell_rate);
         }
     };
 
@@ -157,7 +166,7 @@ const Withdraw = () => {
                         tradeId: matchResult.match.matchedOrderId,
                         buyer: matchResult.match.counterparty?.email,
                         amount: result.order.amount_usd,
-                        fiatAmount: result.order.amount_usd * 32, // Mock TRY rate
+                        fiatAmount: result.order.amount_usd * sellRate, // Dynamic sell rate from database
                         status: 'MATCHED'
                     });
                 } else {
@@ -183,7 +192,7 @@ const Withdraw = () => {
                     tradeId: orderId,
                     buyer: 'Eşleşme bulundu',
                     amount: order.amount_usd,
-                    fiatAmount: order.amount_usd * 32,
+                    fiatAmount: order.amount_usd * sellRate,
                     status: 'MATCHED'
                 });
                 clearInterval(interval);
