@@ -22,11 +22,26 @@ const Deposit = () => {
     const [pending, setPending] = useState<string | null>(null); // Order ID for polling
     const [pollInterval, setPollInterval] = useState<NodeJS.Timeout | null>(null);
     const [activeOrder, setActiveOrder] = useState<any>(null);
+    const [exchangeRate, setExchangeRate] = useState<number>(42.50); // Varsayılan fallback kur
 
-    // Check for active P2P order on page load
+    // Check for active P2P order and fetch exchange rate on page load
     useEffect(() => {
         checkActiveOrder();
+        fetchExchangeRate();
     }, []);
+
+    // Fetch current exchange rate from database
+    const fetchExchangeRate = async () => {
+        try {
+            const rateData = await api.getExchangeRate();
+            if (rateData?.buy_rate) {
+                setExchangeRate(rateData.buy_rate);
+                console.log('[Deposit] Exchange rate fetched:', rateData.buy_rate);
+            }
+        } catch (e) {
+            console.error('[Deposit] Failed to fetch exchange rate:', e);
+        }
+    };
 
     // Fetch user's bank accounts on mount
     useEffect(() => {
@@ -99,7 +114,7 @@ const Deposit = () => {
                     // Anında eşleşti - seller IBAN'ı göster
                     setMatch({
                         id: matchResult.match.matchedOrderId,
-                        amount: result.order.amount_usd * 32, // Mock TRY rate
+                        amount: result.order.amount_usd * exchangeRate, // Güncel kur
                         sellerIBAN: matchResult.match.counterparty?.iban || 'N/A',
                         sellerName: matchResult.match.counterparty?.account_name || 'Satıcı',
                         sellerBank: matchResult.match.counterparty?.bank_name || 'Banka',
@@ -131,7 +146,7 @@ const Deposit = () => {
                 setConfirmed(false);
                 setMatch({
                     id: orderId,
-                    amount: order.amount_usd * 32,
+                    amount: order.amount_usd * exchangeRate, // Güncel kur
                     sellerIBAN: order.seller_iban || 'N/A',
                     sellerName: order.seller_account_name || 'Satıcı',
                     sellerBank: order.seller_bank_name || 'Banka'
