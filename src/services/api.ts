@@ -1514,5 +1514,50 @@ export const api = {
       console.error('adminForceCancelP2POrder error:', e);
       return { success: false, error: e.message };
     }
+  },
+
+  // ===== EXCHANGE RATES =====
+  getExchangeRate: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('exchange_rates')
+        .select('rate, buy_rate, sell_rate, spread, fetched_at')
+        .eq('pair', 'USDT/TRY')
+        .order('fetched_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error) {
+        console.error('getExchangeRate error:', error);
+        // Return fallback rate if no data
+        return {
+          rate: 35.00,
+          buy_rate: 35.20,
+          sell_rate: 34.80,
+          spread: 0.20,
+          fetched_at: new Date().toISOString(),
+          is_fallback: true
+        };
+      }
+
+      return {
+        rate: data.rate,
+        buy_rate: data.buy_rate,
+        sell_rate: data.sell_rate,
+        spread: data.spread,
+        fetched_at: data.fetched_at,
+        is_fallback: false
+      };
+    } catch (e: any) {
+      console.error('getExchangeRate exception:', e);
+      return {
+        rate: 35.00,
+        buy_rate: 35.20,
+        sell_rate: 34.80,
+        spread: 0.20,
+        fetched_at: new Date().toISOString(),
+        is_fallback: true
+      };
+    }
   }
 };
