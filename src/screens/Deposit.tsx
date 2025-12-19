@@ -123,7 +123,14 @@ const Deposit = () => {
                 if (matchResult?.success && matchResult?.match) {
                     // Anında eşleşti - seller tutarını ve IBAN'ını göster
                     // matched_amount_usd = satıcının tutarı
+                    console.log('[MATCH DEBUG] matchResult.match:', JSON.stringify(matchResult.match, null, 2));
+                    console.log('[MATCH DEBUG] matched_amount_usd:', matchResult.match.matched_amount_usd);
+                    console.log('[MATCH DEBUG] amount_usd:', matchResult.match.amount_usd);
+                    console.log('[MATCH DEBUG] result.order.amount_usd:', result.order.amount_usd);
+
                     const sellerAmount = matchResult.match.matched_amount_usd || matchResult.match.amount_usd || result.order.amount_usd;
+                    console.log('[MATCH DEBUG] Final sellerAmount:', sellerAmount);
+
                     setMatch({
                         id: matchResult.match.matchedOrderId,
                         amount: sellerAmount * exchangeRate, // Satıcının tutarı
