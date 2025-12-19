@@ -109,23 +109,29 @@ serve(async (req) => {
                 // Eşleşen order'ı getir (satıcının tutarını almak için)
                 let transferAmount = order.amount_usd; // fallback
 
+                console.log('[P2P-BUYER-CONFIRM] DEBUG: order.matched_order_id =', order.matched_order_id);
+                console.log('[P2P-BUYER-CONFIRM] DEBUG: order.amount_usd =', order.amount_usd);
+
                 if (order.matched_order_id) {
-                    const { data: matchedOrder } = await supabase
+                    const { data: matchedOrder, error: matchErr } = await supabase
                         .from('p2p_orders')
                         .select('amount_usd, seller_id')
                         .eq('id', order.matched_order_id)
                         .single();
 
-                    if (matchedOrder) {
-                        // Satıcının tutarını kullan
-                        // Eğer matched order satıcıya aitse, onun tutarını al
-                        // Değilse, matched order buyer'a ait demektir, bu order'ın tutarını kullan
-                        transferAmount = matchedOrder.seller_id ? matchedOrder.amount_usd : order.amount_usd;
-                        console.log('[P2P-BUYER-CONFIRM] Using seller amount:', transferAmount, 'from matched order');
+                    console.log('[P2P-BUYER-CONFIRM] DEBUG: matchedOrder =', matchedOrder);
+                    console.log('[P2P-BUYER-CONFIRM] DEBUG: matchErr =', matchErr);
+
+                    if (matchedOrder && matchedOrder.amount_usd) {
+                        // Her zaman matched order tutarını kullan (satıcının order'ı)
+                        transferAmount = matchedOrder.amount_usd;
+                        console.log('[P2P-BUYER-CONFIRM] Using matched order amount:', transferAmount);
                     }
+                } else {
+                    console.log('[P2P-BUYER-CONFIRM] WARNING: No matched_order_id!');
                 }
 
-                console.log('[P2P-BUYER-CONFIRM] Transfer amount:', transferAmount);
+                console.log('[P2P-BUYER-CONFIRM] FINAL Transfer amount:', transferAmount);
 
                 // Decrease seller balance
                 const { error: sellerError } = await supabase.rpc('decrease_balance', {
