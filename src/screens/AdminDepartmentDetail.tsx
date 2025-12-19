@@ -249,27 +249,16 @@ const AdminDepartmentDetail = () => {
                                     <div>
                                         <p className="text-xs text-green-600 font-bold uppercase mb-1"># NUSD Adresi</p>
                                         <p className="font-mono font-bold text-xl text-green-700">
-                                            {(() => {
-                                                // Generate NUSD address from owner email (from API relation)
-                                                const email = dept.owner?.email || dept.owner_email || '';
-                                                if (!email) return 'Üye email bulunamadı';
-                                                const hash = email.split('').reduce((acc: number, char: string) => {
-                                                    return ((acc << 5) - acc) + char.charCodeAt(0);
-                                                }, 0);
-                                                return `NUSD-${Math.abs(hash).toString(36).toUpperCase().slice(0, 6)}`;
-                                            })()}
+                                            {dept.owner?.nusd_code || 'NUSD kod bulunamadı'}
                                         </p>
                                     </div>
                                     <button
                                         onClick={() => {
-                                            const email = dept.owner?.email || dept.owner_email || '';
-                                            if (!email) return;
-                                            const hash = email.split('').reduce((acc: number, char: string) => {
-                                                return ((acc << 5) - acc) + char.charCodeAt(0);
-                                            }, 0);
-                                            const code = `NUSD-${Math.abs(hash).toString(36).toUpperCase().slice(0, 6)}`;
-                                            navigator.clipboard.writeText(code);
-                                            alert('Kopyalandı!');
+                                            const code = dept.owner?.nusd_code;
+                                            if (code) {
+                                                navigator.clipboard.writeText(code);
+                                                alert('Kopyalandı!');
+                                            }
                                         }}
                                         className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2"
                                     >
