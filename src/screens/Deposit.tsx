@@ -3,12 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../App';
 import { api } from '../services/api';
 import { supabase } from '../services/supabase';
+import AlertModal from '../components/AlertModal';
 
 interface BankAccount {
     id: string;
     bankName: string;
     iban: string;
     addedAt: string;
+}
+
+interface AlertState {
+    isOpen: boolean;
+    type: 'success' | 'error' | 'warning' | 'info';
+    title: string;
+    message: string;
 }
 
 const Deposit = () => {
@@ -24,6 +32,7 @@ const Deposit = () => {
     const [pollInterval, setPollInterval] = useState<NodeJS.Timeout | null>(null);
     const [activeOrder, setActiveOrder] = useState<any>(null);
     const [exchangeRate, setExchangeRate] = useState<number>(42.50); // Varsayılan fallback kur
+    const [alertModal, setAlertModal] = useState<AlertState>({ isOpen: false, type: 'info', title: '', message: '' });
 
     // Check for active P2P order and fetch exchange rate on page load
     useEffect(() => {
@@ -79,16 +88,16 @@ const Deposit = () => {
         const result = await api.cancelP2POrder(activeOrder.id);
         if (result.success) {
             setActiveOrder(null);
-            alert('İşlem iptal edildi');
+            setAlertModal({ isOpen: true, type: 'success', title: 'İptal Edildi', message: 'İşlem iptal edildi' });
         } else {
-            alert('İptal hatası: ' + result.error);
+            setAlertModal({ isOpen: true, type: 'error', title: 'Hata', message: 'İptal hatası: ' + result.error });
         }
         setLoading(false);
     };
 
     const search = async () => {
         if (!selectedBank) {
-            alert('Lütfen önce bir banka hesabı seçin veya ekleyin.');
+            setAlertModal({ isOpen: true, type: 'warning', title: 'Banka Seçin', message: 'Lütfen önce bir banka hesabı seçin veya ekleyin.' });
             return;
         }
 
@@ -99,7 +108,7 @@ const Deposit = () => {
             const result = await api.createP2POrderNew('BUY', parseFloat(amount));
 
             if (!result) {
-                alert('Sunucu hatası: Yanıt alınamadı');
+                setAlertModal({ isOpen: true, type: 'error', title: 'Sunucu Hatası', message: 'Sunucu hatası: Yanıt alınamadı' });
                 setLoading(false);
                 return;
             }
@@ -128,11 +137,11 @@ const Deposit = () => {
                 }
             } else {
                 // Hata göster
-                alert('İstek oluşturulamadı: ' + (result?.error || 'Bilinmeyen hata'));
+                setAlertModal({ isOpen: true, type: 'error', title: 'Hata', message: 'İstek oluşturulamadı: ' + (result?.error || 'Bilinmeyen hata') });
             }
         } catch (e: any) {
             console.error('Search error:', e);
-            alert('Hata: ' + (e.message || 'Bağlantı hatası'));
+            setAlertModal({ isOpen: true, type: 'error', title: 'Bağlantı Hatası', message: 'Hata: ' + (e.message || 'Bağlantı hatası') });
         }
 
         setLoading(false);
@@ -170,7 +179,7 @@ const Deposit = () => {
                     } else if (order.status === 'EXPIRED' || order.status === 'CANCELLED') {
                         supabase.removeChannel(channel);
                         setPollInterval(null);
-                        alert('Sipariş süresi doldu veya iptal edildi');
+                        setAlertModal({ isOpen: true, type: 'warning', title: 'Süre Doldu', message: 'Sipariş süresi doldu veya iptal edildi' });
                     }
                 }
             )
@@ -209,7 +218,7 @@ const Deposit = () => {
             supabase.removeChannel(channel);
             setPollInterval(null);
             if (pending) {
-                alert('Eşleşme bulunamadı. Lütfen daha sonra tekrar deneyin.');
+                setAlertModal({ isOpen: true, type: 'warning', title: 'Eşleşme Bulunamadı', message: 'Eşleşme bulunamadı. Lütfen daha sonra tekrar deneyin.' });
             }
         }, 10 * 60 * 1000);
     };
@@ -440,6 +449,15 @@ const Deposit = () => {
                     </>
                 )}
             </div>
+
+            {/* Alert Modal */}
+            <AlertModal
+                isOpen={alertModal.isOpen}
+                type={alertModal.type}
+                title={alertModal.title}
+                message={alertModal.message}
+                onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+            />
         </div>
     );
 };

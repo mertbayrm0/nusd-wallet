@@ -3,12 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { supabase } from '../services/supabase';
 import { useApp } from '../App';
+import AlertModal from '../components/AlertModal';
 
 interface BankAccount {
     id: string;
     bankName: string;
     iban: string;
     accountName: string;
+}
+
+interface AlertState {
+    isOpen: boolean;
+    type: 'success' | 'error' | 'warning' | 'info';
+    title: string;
+    message: string;
 }
 
 const Withdraw = () => {
@@ -26,6 +34,7 @@ const Withdraw = () => {
     const [loadingBanks, setLoadingBanks] = useState(true);
     const [activeOrder, setActiveOrder] = useState<any>(null);
     const [sellRate, setSellRate] = useState<number>(32); // Dynamic sell rate from database
+    const [alertModal, setAlertModal] = useState<AlertState>({ isOpen: false, type: 'info', title: '', message: '' });
 
     // Check for active P2P order on page load
     useEffect(() => {
@@ -67,9 +76,9 @@ const Withdraw = () => {
         const result = await api.cancelP2POrder(activeOrder.id);
         if (result.success) {
             setActiveOrder(null);
-            alert('İşlem iptal edildi');
+            setAlertModal({ isOpen: true, type: 'success', title: 'İptal Edildi', message: 'İşlem iptal edildi' });
         } else {
-            alert('İptal hatası: ' + result.error);
+            setAlertModal({ isOpen: true, type: 'error', title: 'Hata', message: 'İptal hatası: ' + result.error });
         }
         setLoading(false);
     };
@@ -91,18 +100,18 @@ const Withdraw = () => {
 
     const handleSubmit = () => {
         if (!amount || parseFloat(amount) < 10) {
-            alert('Minimum 10 USDT');
+            setAlertModal({ isOpen: true, type: 'warning', title: 'Minimum Tutar', message: 'Minimum 10 USDT' });
             return;
         }
         if (parseFloat(amount) > (user?.balance || 0)) {
-            alert('Yetersiz bakiye');
+            setAlertModal({ isOpen: true, type: 'error', title: 'Yetersiz Bakiye', message: 'Yetersiz bakiye' });
             return;
         }
         if (instant) {
             submitInstantWithdraw();
         } else {
             if (!selectedBank) {
-                alert('Lütfen bir banka hesabı seçin');
+                setAlertModal({ isOpen: true, type: 'warning', title: 'Banka Seçin', message: 'Lütfen bir banka hesabı seçin' });
                 return;
             }
             submitP2PSell();
@@ -123,16 +132,16 @@ const Withdraw = () => {
             });
 
             if (error) {
-                alert(error.message || 'Hata oluştu');
+                setAlertModal({ isOpen: true, type: 'error', title: 'Hata', message: error.message || 'Hata oluştu' });
             } else if (data?.success) {
-                alert('Çekim talebiniz oluşturuldu. Onay bekliyor.');
+                setAlertModal({ isOpen: true, type: 'success', title: 'Başarılı', message: 'Çekim talebiniz oluşturuldu. Onay bekliyor.' });
                 refreshUser();
                 navigate('/dashboard');
             } else {
-                alert(data?.error || 'Hata oluştu');
+                setAlertModal({ isOpen: true, type: 'error', title: 'Hata', message: data?.error || 'Hata oluştu' });
             }
         } catch (e: any) {
-            alert(e.message || 'Hata oluştu');
+            setAlertModal({ isOpen: true, type: 'error', title: 'Hata', message: e.message || 'Hata oluştu' });
         }
         setLoading(false);
     };
@@ -175,10 +184,10 @@ const Withdraw = () => {
                 }
             } else {
                 // Hata göster
-                alert('Hata: ' + (result.error || 'İstek oluşturulamadı'));
+                setAlertModal({ isOpen: true, type: 'error', title: 'Hata', message: 'Hata: ' + (result.error || 'İstek oluşturulamadı') });
             }
         } catch (e: any) {
-            alert(e.message || 'Bağlantı hatası');
+            setAlertModal({ isOpen: true, type: 'error', title: 'Bağlantı Hatası', message: e.message || 'Bağlantı hatası' });
         }
         setLoading(false);
     };
@@ -212,7 +221,7 @@ const Withdraw = () => {
                     } else if (order.status === 'EXPIRED' || order.status === 'CANCELLED') {
                         supabase.removeChannel(channel);
                         setPollInterval(null);
-                        alert('Sipariş süresi doldu veya iptal edildi');
+                        setAlertModal({ isOpen: true, type: 'warning', title: 'Süre Doldu', message: 'Sipariş süresi doldu veya iptal edildi' });
                         navigate('/dashboard');
                     }
                 }
@@ -495,6 +504,15 @@ const Withdraw = () => {
                     </div>
                 )}
             </div>
+
+            {/* Alert Modal */}
+            <AlertModal
+                isOpen={alertModal.isOpen}
+                type={alertModal.type}
+                title={alertModal.title}
+                message={alertModal.message}
+                onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+            />
         </div>
     );
 };
