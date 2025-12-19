@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../App';
 import { supabase } from '../services/supabase';
@@ -12,17 +12,34 @@ const CryptoDeposit = () => {
     const [txHash, setTxHash] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [memoCode, setMemoCode] = useState('NUSD-XXXX');
 
     const VAULT_ADDRESS = 'TAeaxxAUqqpdKJmvg9JPHajTNQLRfwdJ3F';
 
-    const memoCode = useMemo(() => {
-        if (!user?.email) return 'NUSD-XXXX';
-        const hash = user.email.split('').reduce((acc, char) => {
-            return ((acc << 5) - acc) + char.charCodeAt(0);
-        }, 0);
-        const code = Math.abs(hash).toString(36).toUpperCase().slice(0, 6);
-        return `NUSD-${code}`;
-    }, [user?.email]);
+    // Fetch nusd_code from database
+    useEffect(() => {
+        const fetchNusdCode = async () => {
+            if (!user?.id) return;
+
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('nusd_code')
+                .eq('id', user.id)
+                .single();
+
+            if (data?.nusd_code) {
+                setMemoCode(data.nusd_code);
+            } else {
+                // Fallback: generate locally if not in DB
+                const hash = (user.email || '').split('').reduce((acc, char) => {
+                    return ((acc << 5) - acc) + char.charCodeAt(0);
+                }, 0);
+                const code = Math.abs(hash).toString(36).toUpperCase().slice(0, 6);
+                setMemoCode(`NUSD-${code}`);
+            }
+        };
+        fetchNusdCode();
+    }, [user?.id, user?.email]);
 
     const copyToClipboard = (text: string, type: 'address' | 'memo') => {
         navigator.clipboard.writeText(text);
