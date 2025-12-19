@@ -108,6 +108,15 @@ export const api = {
           }
         }
 
+        // Generate NUSD code from email
+        const generateNusdCode = (email: string) => {
+          const hash = email.split('').reduce((acc: number, char: string) => {
+            return ((acc << 5) - acc) + char.charCodeAt(0);
+          }, 0);
+          const code = Math.abs(hash).toString(36).toUpperCase().slice(0, 6);
+          return `NUSD-${code}`;
+        };
+
         // Create or update profile record
         const profileData: any = {
           id: data.user.id,
@@ -117,7 +126,8 @@ export const api = {
           is_active: true,
           balance: 0,
           account_type: accountType,
-          business_role: accountType === 'business' ? 'owner' : null
+          business_role: accountType === 'business' ? 'owner' : null,
+          nusd_code: generateNusdCode(email)
         };
 
         // Add business-specific fields
