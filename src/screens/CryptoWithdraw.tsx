@@ -16,6 +16,11 @@ const CryptoWithdraw = () => {
     const [checkingPending, setCheckingPending] = useState(true);
     const [cancelling, setCancelling] = useState(false);
 
+    // Success modal state
+    const [showSuccess, setShowSuccess] = useState(false);
+    const [successAmount, setSuccessAmount] = useState(0);
+    const [successRecipient, setSuccessRecipient] = useState('');
+
     // Check for pending withdrawal on mount
     useEffect(() => {
         const checkPending = async () => {
@@ -96,9 +101,11 @@ const CryptoWithdraw = () => {
                 if (error) {
                     alert(error.message || "Transfer failed");
                 } else if (data?.success) {
-                    alert(`✅ ${val} USDT transferred to ${address.toUpperCase()}`);
+                    // Show success modal instead of alert
+                    setSuccessAmount(val);
+                    setSuccessRecipient(address.toUpperCase());
+                    setShowSuccess(true);
                     refreshUser();
-                    navigate('/dashboard');
                 } else {
                     alert(data?.error || "Transfer failed");
                 }
@@ -296,6 +303,43 @@ const CryptoWithdraw = () => {
                     {loading ? 'Processing...' : isInternalTransfer ? '⚡ Send Instantly' : 'Confirm Withdrawal'}
                 </button>
             </div>
+
+            {/* Success Modal */}
+            {showSuccess && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    {/* Backdrop */}
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+                    {/* Modal */}
+                    <div className="relative bg-[#1a1a1a] border border-lime-500/30 rounded-3xl p-8 w-full max-w-sm shadow-2xl animate-scale-in text-center">
+                        {/* Success Icon */}
+                        <div className="w-20 h-20 bg-lime-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <span className="material-symbols-outlined text-5xl text-lime-400">check_circle</span>
+                        </div>
+                        {/* Title */}
+                        <h2 className="text-2xl font-bold text-white mb-2">Transfer Başarılı!</h2>
+                        {/* Amount */}
+                        <div className="bg-[#111111] rounded-xl p-4 mb-4">
+                            <p className="text-3xl font-extrabold text-lime-400">{successAmount.toLocaleString()} USDT</p>
+                            <p className="text-gray-500 text-sm mt-1">gönderildi</p>
+                        </div>
+                        {/* Recipient */}
+                        <div className="bg-[#0a0a0a] rounded-lg px-4 py-3 mb-6">
+                            <p className="text-xs text-gray-500 mb-1">Alıcı</p>
+                            <p className="font-mono text-lime-400 font-bold">{successRecipient}</p>
+                        </div>
+                        {/* Button */}
+                        <button
+                            onClick={() => {
+                                setShowSuccess(false);
+                                navigate('/dashboard');
+                            }}
+                            className="w-full bg-lime-500 hover:bg-lime-400 text-black py-4 rounded-xl font-bold text-lg transition-all"
+                        >
+                            Tamam
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
