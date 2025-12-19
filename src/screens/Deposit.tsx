@@ -244,9 +244,10 @@ const Deposit = () => {
 
     const proceed = async () => {
         if (match) await api.lockMatch(match.id, user?.email || '');
+        // Satıcının tutarını kullan (match.amountUsd), buyer'ın girdiği tutarı değil
         navigate('/deposit/confirm', {
             state: {
-                amount: parseFloat(amount),
+                amount: match?.amountUsd || parseFloat(amount), // Satıcının tutarı
                 matchId: match?.id,
                 orderId: pending, // P2P order ID for markP2PPaid
                 matchedInvestorEmail: match?.userId,
