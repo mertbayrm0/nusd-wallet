@@ -395,7 +395,7 @@ const Withdraw = () => {
                                     placeholder="0.00"
                                 />
                             </div>
-                            <p className="text-xs text-gray-500 mt-2">Minimum: 10 USDT • Alacağınız: ≈{(parseFloat(amount || '0') * 32).toLocaleString()} TL</p>
+                            <p className="text-xs text-gray-500 mt-2">Minimum: 10 USDT • Alacağınız: ≈{(parseFloat(amount || '0') * sellRate).toLocaleString()} TL</p>
                         </div>
 
                         {/* Quick Amount Buttons */}
