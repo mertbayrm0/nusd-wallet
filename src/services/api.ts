@@ -87,8 +87,9 @@ export const api = {
       if (data.user) {
         let departmentId = null;
 
-        // If business account, create a department first
+        // If business account, create a department and payment panel
         if (accountType === 'business' && businessName) {
+          // 1. Create department
           const { data: deptData, error: deptError } = await supabase
             .from('departments')
             .insert({
@@ -105,6 +106,24 @@ export const api = {
             console.error('Department creation error:', deptError.message);
           } else {
             departmentId = deptData?.id;
+
+            // 2. Create payment panel for the department
+            const slug = businessName.toLowerCase()
+              .replace(/[^a-z0-9\s-]/g, '')
+              .replace(/\s+/g, '-')
+              .substring(0, 30) + '-' + Date.now().toString(36);
+
+            const { error: panelError } = await supabase
+              .from('payment_panels')
+              .insert({
+                department_id: departmentId,
+                public_slug: slug,
+                is_active: true
+              });
+
+            if (panelError) {
+              console.error('Payment panel creation error:', panelError.message);
+            }
           }
         }
 
