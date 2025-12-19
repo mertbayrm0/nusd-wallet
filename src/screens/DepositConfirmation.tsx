@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../services/api';
 import { useApp } from '../App';
 import SuccessModal from '../components/SuccessModal';
+import AlertModal from '../components/AlertModal';
 
 interface BankAccount {
     id: string;
@@ -19,6 +20,7 @@ const DepositConfirmation = () => {
     const [receiptFile, setReceiptFile] = useState<File | null>(null);
     const [showSuccess, setShowSuccess] = useState(false);
     const [buyRate, setBuyRate] = useState<number>(32.5); // Dynamic buy rate from database
+    const [showTimeoutAlert, setShowTimeoutAlert] = useState(false);
 
     const totalTime = 1200; // 20 minutes in seconds
 
@@ -42,8 +44,7 @@ const DepositConfirmation = () => {
         if (orderId) {
             console.log('[TIMEOUT] Order expired, cancelling:', orderId);
             await api.cancelP2POrder(orderId);
-            alert('Süre doldu! İşlem iptal edildi.');
-            navigate('/dashboard');
+            setShowTimeoutAlert(true); // Custom modal göster
         } else {
             navigate('/dashboard');
         }
@@ -268,6 +269,18 @@ const DepositConfirmation = () => {
                     Ödemeyi Gönderdim
                 </button>
             </div>
+
+            {/* Timeout Alert Modal */}
+            <AlertModal
+                isOpen={showTimeoutAlert}
+                type="warning"
+                title="Süre Doldu!"
+                message="İşlem süresi doldu ve iptal edildi. Lütfen yeni bir işlem başlatın."
+                onClose={() => {
+                    setShowTimeoutAlert(false);
+                    navigate('/dashboard');
+                }}
+            />
         </div>
     );
 };
