@@ -1541,5 +1541,146 @@ export const api = {
       console.error('updateExchangeRate error:', e);
       return { success: false, error: e.message };
     }
+  },
+
+  // ===== NOTIFICATIONS =====
+
+  // Bildirim geçmişini getir (max 15)
+  getNotificationHistory: async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(15);
+
+      if (error) {
+        console.error('getNotificationHistory error:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (e: any) {
+      console.error('getNotificationHistory exception:', e);
+      return [];
+    }
+  },
+
+  // Bildirim oluştur (eski bildirimleri sil - max 15 tut)
+  createNotification: async (type: string, title: string, message: string, data: any = {}) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { success: false, error: 'Not authenticated' };
+
+      // Yeni bildirim ekle
+      const { data: newNotif, error: insertError } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: user.id,
+          type,
+          title,
+          message,
+          data
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('createNotification insert error:', insertError);
+        return { success: false, error: insertError.message };
+      }
+
+      // 15'ten fazla bildirim varsa eskileri sil
+      const { data: allNotifs } = await supabase
+        .from('notifications')
+        .select('id')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (allNotifs && allNotifs.length > 15) {
+        const idsToDelete = allNotifs.slice(15).map(n => n.id);
+        await supabase
+          .from('notifications')
+          .delete()
+          .in('id', idsToDelete);
+      }
+
+      return { success: true, notification: newNotif };
+    } catch (e: any) {
+      console.error('createNotification exception:', e);
+      return { success: false, error: e.message };
+    }
+  },
+
+  // Bildirimi okundu işaretle
+  markNotificationAsRead: async (notificationId: string) => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('id', notificationId);
+
+      if (error) {
+        console.error('markNotificationAsRead error:', error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (e: any) {
+      console.error('markNotificationAsRead exception:', e);
+      return { success: false, error: e.message };
+    }
+  },
+
+  // Tüm bildirimleri okundu işaretle
+  markAllNotificationsAsRead: async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { success: false, error: 'Not authenticated' };
+
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('user_id', user.id)
+        .eq('read', false);
+
+      if (error) {
+        console.error('markAllNotificationsAsRead error:', error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (e: any) {
+      console.error('markAllNotificationsAsRead exception:', e);
+      return { success: false, error: e.message };
+    }
+  },
+
+  // Okunmamış bildirim sayısı
+  getUnreadNotificationCount: async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return 0;
+
+      const { count, error } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('read', false);
+
+      if (error) {
+        console.error('getUnreadNotificationCount error:', error);
+        return 0;
+      }
+
+      return count || 0;
+    } catch (e: any) {
+      console.error('getUnreadNotificationCount exception:', e);
+      return 0;
+    }
   }
 };
