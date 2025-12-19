@@ -397,6 +397,7 @@ const Deposit = () => {
                                     onChange={e => setAmount(e.target.value)}
                                 />
                             </div>
+                            <p className="text-xs text-gray-500 mt-2">Minimum: 10 USDT • Ödeyeceğiniz: ≈{(parseFloat(amount || '0') * exchangeRate).toLocaleString()} TL</p>
                         </div>
 
                         {/* Quick Amount Buttons */}
