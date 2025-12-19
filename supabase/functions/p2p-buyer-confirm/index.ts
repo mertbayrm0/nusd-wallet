@@ -104,31 +104,45 @@ serve(async (req) => {
             // 💰 BALANCE TRANSFER
             // Seller: bakiyesinden düş (P2P sell = çekim)
             // Buyer: bakiyesine ekle (P2P buy = yatırım)
-            // ⚠️ ÖNEMLI: Satıcının tutarı referans alınır (matched_order'dan)
+            // ⚠️ ÖNEMLI: Satıcının tutarı referans alınır
             if (order.seller_id && order.buyer_id) {
-                // Eşleşen order'ı getir (satıcının tutarını almak için)
                 let transferAmount = order.amount_usd; // fallback
 
-                console.log('[P2P-BUYER-CONFIRM] DEBUG: order.matched_order_id =', order.matched_order_id);
-                console.log('[P2P-BUYER-CONFIRM] DEBUG: order.amount_usd =', order.amount_usd);
+                console.log('[P2P-BUYER-CONFIRM] Order ID:', order.id);
+                console.log('[P2P-BUYER-CONFIRM] Order amount_usd:', order.amount_usd);
+                console.log('[P2P-BUYER-CONFIRM] Order matched_order_id:', order.matched_order_id);
 
+                // Yöntem 1: matched_order_id varsa kullan
                 if (order.matched_order_id) {
                     const { data: matchedOrder, error: matchErr } = await supabase
                         .from('p2p_orders')
-                        .select('amount_usd, seller_id')
+                        .select('amount_usd')
                         .eq('id', order.matched_order_id)
                         .single();
 
-                    console.log('[P2P-BUYER-CONFIRM] DEBUG: matchedOrder =', matchedOrder);
-                    console.log('[P2P-BUYER-CONFIRM] DEBUG: matchErr =', matchErr);
+                    console.log('[P2P-BUYER-CONFIRM] Matched order:', matchedOrder, 'Error:', matchErr);
 
-                    if (matchedOrder && matchedOrder.amount_usd) {
-                        // Her zaman matched order tutarını kullan (satıcının order'ı)
+                    if (matchedOrder?.amount_usd) {
                         transferAmount = matchedOrder.amount_usd;
                         console.log('[P2P-BUYER-CONFIRM] Using matched order amount:', transferAmount);
                     }
-                } else {
-                    console.log('[P2P-BUYER-CONFIRM] WARNING: No matched_order_id!');
+                }
+
+                // Yöntem 2: matched_order_id yoksa, aynı eşleşmede satıcının order'ını bul
+                if (transferAmount === order.amount_usd && order.id) {
+                    // Bu buyer'ın order'ı olabilir, satıcının order'ını ara
+                    const { data: sellerOrder, error: sellerErr } = await supabase
+                        .from('p2p_orders')
+                        .select('amount_usd')
+                        .eq('matched_order_id', order.id)  // Satıcının order'ı bu order'a matched olmuş olabilir
+                        .single();
+
+                    console.log('[P2P-BUYER-CONFIRM] Seller order lookup:', sellerOrder, 'Error:', sellerErr);
+
+                    if (sellerOrder?.amount_usd) {
+                        transferAmount = sellerOrder.amount_usd;
+                        console.log('[P2P-BUYER-CONFIRM] Using seller order amount:', transferAmount);
+                    }
                 }
 
                 console.log('[P2P-BUYER-CONFIRM] FINAL Transfer amount:', transferAmount);
