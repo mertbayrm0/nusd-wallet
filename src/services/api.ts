@@ -1054,6 +1054,25 @@ export const api = {
     }
   },
 
+  // Get pending withdrawals closest to target amount
+  getPendingWithdrawals: async (targetAmount: number) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('get-pending-withdrawals', {
+        body: { targetAmount }
+      });
+
+      if (error) {
+        console.error('Get pending withdrawals error:', error);
+        return { success: false, error: error.message || 'Error fetching withdrawals' };
+      }
+
+      return { success: true, withdrawals: data?.withdrawals || [], totalAvailable: data?.totalAvailable || 0 };
+    } catch (e: any) {
+      console.error('Get pending withdrawals exception:', e);
+      return { success: false, error: e.message || 'Network error' };
+    }
+  },
+
   // Seller marks payment as sent
   markP2PPaid: async (orderId: string) => {
     try {

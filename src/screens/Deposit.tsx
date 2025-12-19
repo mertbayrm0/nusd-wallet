@@ -34,6 +34,10 @@ const Deposit = () => {
     const [exchangeRate, setExchangeRate] = useState<number>(42.50); // Varsayılan fallback kur
     const [alertModal, setAlertModal] = useState<AlertState>({ isOpen: false, type: 'info', title: '', message: '' });
 
+    // Havuz öneri popup state'leri
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [pendingWithdrawals, setPendingWithdrawals] = useState<{ id: string, amount_usd: number }[]>([]);
+
     // Check for active P2P order and fetch exchange rate on page load
     useEffect(() => {
         checkActiveOrder();
@@ -142,8 +146,29 @@ const Deposit = () => {
                     });
                     setPending(null);
                 } else {
-                    // Bekleme durumu - polling başlat
-                    startPolling(orderId);
+                    // ❌ Tam eşleşme yok - havuzdan önerileri getir
+                    console.log('[DEPOSIT] No exact match, fetching suggestions...');
+
+                    const suggestionsResult = await api.getPendingWithdrawals(parseFloat(amount));
+
+                    if (suggestionsResult.success && suggestionsResult.withdrawals?.length > 0) {
+                        // Öneriler var - popup göster
+                        setPendingWithdrawals(suggestionsResult.withdrawals);
+                        setShowSuggestions(true);
+
+                        // Oluşturulan order'ı iptal et (kullanıcı farklı tutar seçecek)
+                        await api.cancelP2POrder(orderId);
+                        setPending(null);
+                    } else {
+                        // Hiç bekleyen çekim yok - bekleme moduna geç
+                        setAlertModal({
+                            isOpen: true,
+                            type: 'info',
+                            title: 'Eşleşme Bekleniyor',
+                            message: 'Bu tutarda çekim talebi yok. Talebiniz havuza eklendi, çekim talebi geldiğinde eşleşeceksiniz.'
+                        });
+                        startPolling(orderId);
+                    }
                 }
             } else {
                 // Hata göster
@@ -240,6 +265,52 @@ const Deposit = () => {
                 setAlertModal({ isOpen: true, type: 'warning', title: 'Eşleşme Bulunamadı', message: 'Eşleşme bulunamadı. Lütfen daha sonra tekrar deneyin.' });
             }
         }, 10 * 60 * 1000);
+    };
+
+    // Kullanıcı öneri popup'ından tutar seçtiğinde
+    const handleSuggestionSelect = async (selectedAmount: number) => {
+        setShowSuggestions(false);
+        setAmount(selectedAmount.toString());
+        setLoading(true);
+
+        console.log('[DEPOSIT] User selected suggestion:', selectedAmount);
+
+        try {
+            // Seçilen tutarla yeni order oluştur
+            const result = await api.createP2POrderNew('BUY', selectedAmount);
+
+            if (result.success && result.order) {
+                const orderId = result.order.id;
+                setPending(orderId);
+
+                // Eşleşme ara (tam tutar olduğu için eşleşmeli)
+                const matchResult = await api.matchP2POrder(orderId);
+
+                if (matchResult?.success && matchResult?.match) {
+                    // Eşleşti!
+                    setMatch({
+                        id: matchResult.match.matchedOrderId,
+                        amount: selectedAmount * exchangeRate,
+                        amountUsd: selectedAmount,
+                        sellerIBAN: matchResult.match.counterparty?.iban || 'N/A',
+                        sellerName: matchResult.match.counterparty?.account_name || 'Satıcı',
+                        sellerBank: matchResult.match.counterparty?.bank_name || 'Banka',
+                        timeRemaining: matchResult.match.lock_expires_at
+                    });
+                    setPending(null);
+                } else {
+                    // Bu olmamalı (tam tutar seçildi), ama olursa bekle
+                    startPolling(orderId);
+                }
+            } else {
+                setAlertModal({ isOpen: true, type: 'error', title: 'Hata', message: 'İstek oluşturulamadı' });
+            }
+        } catch (e: any) {
+            console.error('Suggestion select error:', e);
+            setAlertModal({ isOpen: true, type: 'error', title: 'Hata', message: e.message || 'Bağlantı hatası' });
+        }
+
+        setLoading(false);
     };
 
     const proceed = async () => {
@@ -479,6 +550,50 @@ const Deposit = () => {
                 message={alertModal.message}
                 onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
             />
+
+            {/* Suggestions Modal - Tam eşleşme yoksa öneriler */}
+            {showSuggestions && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    {/* Backdrop */}
+                    <div
+                        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+                        onClick={() => setShowSuggestions(false)}
+                    />
+                    {/* Modal */}
+                    <div className="relative bg-[#1a1a1a] border border-gray-800 rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-scale-in">
+                        {/* Icon */}
+                        <div className="w-16 h-16 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span className="material-symbols-outlined text-4xl text-amber-400">search</span>
+                        </div>
+                        {/* Title */}
+                        <h2 className="text-white text-xl font-bold text-center mb-2">Eşleşme Bulunamadı</h2>
+                        {/* Message */}
+                        <p className="text-gray-400 text-center text-sm mb-4">
+                            ${amount} tutarında çekim talebi yok. En yakın bekleyen tutarları seçebilirsiniz:
+                        </p>
+                        {/* Suggestions */}
+                        <div className="space-y-2 mb-6">
+                            {pendingWithdrawals.map((withdrawal, index) => (
+                                <button
+                                    key={withdrawal.id || index}
+                                    onClick={() => handleSuggestionSelect(withdrawal.amount_usd)}
+                                    className="w-full py-3 px-4 rounded-xl bg-[#252525] border border-white/10 hover:border-lime-500/50 hover:bg-lime-500/10 transition-all flex justify-between items-center"
+                                >
+                                    <span className="text-white font-bold">${withdrawal.amount_usd.toLocaleString()}</span>
+                                    <span className="text-gray-500 text-sm">≈ {(withdrawal.amount_usd * exchangeRate).toLocaleString()} TL</span>
+                                </button>
+                            ))}
+                        </div>
+                        {/* Cancel */}
+                        <button
+                            onClick={() => setShowSuggestions(false)}
+                            className="w-full py-3 rounded-xl border border-gray-600 text-gray-400 font-semibold hover:bg-white/5 transition-all"
+                        >
+                            İptal
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

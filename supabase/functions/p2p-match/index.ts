@@ -116,31 +116,23 @@ serve(async (req) => {
         const targetColumn = isBuyer ? 'seller_id' : 'buyer_id'
         const myColumn = isBuyer ? 'buyer_id' : 'seller_id'
 
-        // 🎯 DİNAMİK TOLERANS hesapla
-        const tolerancePercent = calculateTolerance(myOrder.amount_usd)
-        const minAmount = myOrder.amount_usd * (1 - tolerancePercent / 100)
-        const maxAmount = myOrder.amount_usd * (1 + tolerancePercent / 100)
-
-        console.log('[P2P-MATCH] Looking for match with criteria:', {
+        // 🎯 TAM EŞLEŞME - Tolerans kaldırıldı, birebir tutar eşleşmesi
+        console.log('[P2P-MATCH] Looking for EXACT match:', {
             myOrderId: orderId,
             isBuyer,
             targetColumn,
             myColumn,
-            amount: myOrder.amount_usd,
-            tolerancePercent: tolerancePercent.toFixed(1) + '%',
-            minAmount: minAmount.toFixed(2),
-            maxAmount: maxAmount.toFixed(2)
+            exactAmount: myOrder.amount_usd
         })
 
-        // Uygun OPEN order bul (karşı taraf dolu, benim tarafım boş)
+        // Uygun OPEN order bul (karşı taraf dolu, benim tarafım boş, TAM TUTAR)
         const { data: matches, error: matchError } = await supabase
             .from('p2p_orders')
             .select('*')
             .eq('status', 'OPEN')
             .not(targetColumn, 'is', null)  // Karşı taraf dolu
             .is(myColumn, null)              // Benim tarafım boş
-            .gte('amount_usd', minAmount)
-            .lte('amount_usd', maxAmount)
+            .eq('amount_usd', myOrder.amount_usd)  // 🎯 TAM TUTAR EŞLEŞMESİ
             .neq('id', orderId)              // Kendim hariç
             .order('created_at', { ascending: true })
             .limit(1)
