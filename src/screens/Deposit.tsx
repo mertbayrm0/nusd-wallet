@@ -166,21 +166,23 @@ const Deposit = () => {
                     const order = payload.new as any;
 
                     if (order.status === 'MATCHED') {
-                        // Match bulundu! - matched_order_id'den satıcı tutarını al
-                        const matchedOrder = order.matched_order_id ? await api.getP2POrderStatus(order.matched_order_id) : null;
-                        const sellerAmount = matchedOrder?.amount_usd || order.amount_usd;
-                        setConfirmed(false);
-                        setMatch({
-                            id: orderId,
-                            amount: sellerAmount * exchangeRate,
-                            amountUsd: sellerAmount,
-                            sellerIBAN: order.seller_iban || 'N/A',
-                            sellerName: order.seller_account_name || 'Satıcı',
-                            sellerBank: order.seller_bank_name || 'Banka'
-                        });
-                        setPending(null);
-                        supabase.removeChannel(channel);
-                        setPollInterval(null);
+                        // Match bulundu! - async IIFE ile satıcı tutarını al
+                        (async () => {
+                            const matchedOrder = order.matched_order_id ? await api.getP2POrderStatus(order.matched_order_id) : null;
+                            const sellerAmount = matchedOrder?.amount_usd || order.amount_usd;
+                            setConfirmed(false);
+                            setMatch({
+                                id: orderId,
+                                amount: sellerAmount * exchangeRate,
+                                amountUsd: sellerAmount,
+                                sellerIBAN: order.seller_iban || 'N/A',
+                                sellerName: order.seller_account_name || 'Satıcı',
+                                sellerBank: order.seller_bank_name || 'Banka'
+                            });
+                            setPending(null);
+                            supabase.removeChannel(channel);
+                            setPollInterval(null);
+                        })();
                     } else if (order.status === 'EXPIRED' || order.status === 'CANCELLED') {
                         supabase.removeChannel(channel);
                         setPollInterval(null);
