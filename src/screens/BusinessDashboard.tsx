@@ -32,14 +32,8 @@ const BusinessDashboard = () => {
     const [inviteRole, setInviteRole] = useState('staff');
     const [inviteLoading, setInviteLoading] = useState(false);
 
-    // NUSD adresi - email hash'inden oluştur
-    const memoCode = useMemo(() => {
-        if (!user?.email) return 'NUSD-XXXX';
-        const hash = user.email.split('').reduce((acc, char) => {
-            return ((acc << 5) - acc) + char.charCodeAt(0);
-        }, 0);
-        return `NUSD-${Math.abs(hash).toString(36).toUpperCase().slice(0, 6)}`;
-    }, [user?.email]);
+    // NUSD adresi - profilden al (tüm ekranlarda aynı)
+    const memoCode = user?.nusd_code || 'NUSD-XXXX';
 
     useEffect(() => {
         loadData();
@@ -517,8 +511,8 @@ const BusinessDashboard = () => {
                                             </div>
                                         </div>
                                         <span className={`text-xs px-2 py-1 rounded ${member.business_role === 'owner' ? 'bg-lime-500/20 text-lime-400' :
-                                                member.business_role === 'manager' ? 'bg-blue-500/20 text-blue-400' :
-                                                    'bg-gray-700 text-gray-400'
+                                            member.business_role === 'manager' ? 'bg-blue-500/20 text-blue-400' :
+                                                'bg-gray-700 text-gray-400'
                                             }`}>
                                             {member.business_role === 'owner' ? 'Sahip' :
                                                 member.business_role === 'manager' ? 'Yönetici' : 'Personel'}
