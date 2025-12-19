@@ -123,7 +123,8 @@ const Dashboard = () => {
       const p2pAsTxs = (p2pOrders || [])
         .filter((order: any) => order.status === 'OPEN' || order.status === 'COMPLETED')
         .map((order: any) => {
-          const isSeller = order.seller_id !== null && order.buyer_id === null;
+          // Kullanıcının seller mı buyer mı olduğunu authUserId ile kontrol et
+          const isSeller = order.seller_id === authUserId;
           return {
             id: order.id,
             title: isSeller ? 'P2P SELL Order' : 'P2P BUY Order',
