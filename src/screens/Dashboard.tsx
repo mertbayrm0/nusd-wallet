@@ -120,21 +120,21 @@ const Dashboard = () => {
 
       // Convert P2P orders to transaction format for display
       // Only show OPEN (pending) and COMPLETED, not MATCHED/PAID (intermediate states)
-      // Dedupe: For matched pairs, only show one order per match
-      const seenMatchIds = new Set<string>();
+      // Dedupe: Aynı tutarda ve yakın zamanda oluşturulan order'lardan sadece birini göster
+      const seenAmountTimes = new Map<string, boolean>();
 
       const p2pAsTxs = (p2pOrders || [])
         .filter((order: any) => order.status === 'OPEN' || order.status === 'COMPLETED')
         .filter((order: any) => {
-          // Eşleşmiş order'larda çift kayıt önleme
-          if (order.matched_order_id) {
-            // Bu order'ın matched_order_id'si zaten görüldüyse, skip
-            if (seenMatchIds.has(order.matched_order_id)) {
-              return false;
-            }
-            // Bu order'ın ID'sini ekle, karşı taraf geldiğinde skip olacak
-            seenMatchIds.add(order.id);
+          // Dakika bazlı key oluştur (amount + dakika)
+          const date = new Date(order.created_at);
+          const minuteKey = `${order.amount_usd}-${date.getFullYear()}-${date.getMonth()}-${date.getDate()}-${date.getHours()}-${date.getMinutes()}`;
+
+          if (seenAmountTimes.has(minuteKey)) {
+            // Bu tutar+dakika kombinasyonu zaten var, skip
+            return false;
           }
+          seenAmountTimes.set(minuteKey, true);
           return true;
         })
         .map((order: any) => {
