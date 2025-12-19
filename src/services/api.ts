@@ -94,8 +94,6 @@ export const api = {
             .insert({
               name: businessName,
               category: 'business',
-              commission_mode: 'percentage',
-              commission_value: 0,
               is_active: true,
               color: '#FFD700',
               owner_id: data.user.id
@@ -110,7 +108,7 @@ export const api = {
           }
         }
 
-        // Create profile record
+        // Create or update profile record
         const profileData: any = {
           id: data.user.id,
           email: data.user.email,
@@ -118,7 +116,8 @@ export const api = {
           role: 'user',
           is_active: true,
           balance: 0,
-          account_type: accountType
+          account_type: accountType,
+          business_role: accountType === 'business' ? 'owner' : null
         };
 
         // Add business-specific fields
@@ -127,9 +126,10 @@ export const api = {
           profileData.business_department_id = departmentId;
         }
 
+        // Use upsert to avoid conflict if profile already exists
         const { error: profileError } = await supabase
           .from('profiles')
-          .insert(profileData);
+          .upsert(profileData, { onConflict: 'id' });
 
         if (profileError) {
           console.error('Profile creation error:', profileError.message);
