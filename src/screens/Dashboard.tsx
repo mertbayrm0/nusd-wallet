@@ -305,7 +305,10 @@ const Dashboard = () => {
             <p className="text-gray-500 text-xs">NUSD Wallet</p>
           </div>
         </div>
-        <button className="w-10 h-10 rounded-full bg-[#1a1a1a] flex items-center justify-center text-gray-400 hover:text-white transition-colors relative">
+        <button
+          onClick={() => navigate('/notifications')}
+          className="w-10 h-10 rounded-full bg-[#1a1a1a] flex items-center justify-center text-gray-400 hover:text-white transition-colors relative"
+        >
           <span className="material-symbols-outlined text-xl">notifications</span>
           {notification && <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>}
         </button>
