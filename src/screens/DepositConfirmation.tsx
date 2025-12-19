@@ -24,10 +24,30 @@ const DepositConfirmation = () => {
 
     useEffect(() => {
         const timer = setInterval(() => {
-            setTimeLeft(prev => prev > 0 ? prev - 1 : 0);
+            setTimeLeft(prev => {
+                if (prev <= 1) {
+                    // ⏰ Timer doldu - otomatik iptal
+                    handleTimeoutCancel();
+                    return 0;
+                }
+                return prev - 1;
+            });
         }, 1000);
         return () => clearInterval(timer);
     }, []);
+
+    // Timer dolduğunda işlemi iptal et
+    const handleTimeoutCancel = async () => {
+        const orderId = state?.orderId || state?.matchId;
+        if (orderId) {
+            console.log('[TIMEOUT] Order expired, cancelling:', orderId);
+            await api.cancelP2POrder(orderId);
+            alert('Süre doldu! İşlem iptal edildi.');
+            navigate('/dashboard');
+        } else {
+            navigate('/dashboard');
+        }
+    };
 
     // Load exchange rate from database
     useEffect(() => {
