@@ -23,6 +23,8 @@ export interface UserState {
   account_type?: 'personal' | 'business';
   business_name?: string;
   business_department_id?: string;
+  nusd_code?: string;
+  id?: string;
 }
 
 export interface WithdrawRequest {

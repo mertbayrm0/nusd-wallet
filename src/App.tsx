@@ -123,6 +123,7 @@ async function fetchProfileFromSupabase(authUser: User, fallbackUser: UserState)
 
       if (newProfile) {
         return {
+          id: newProfile.id,
           email: newProfile.email,
           name: newProfile.name || 'User',
           balance: newProfile.balance || 0,
@@ -132,7 +133,8 @@ async function fetchProfileFromSupabase(authUser: User, fallbackUser: UserState)
           trxAddress: newProfile.trx_address,
           account_type: newProfile.account_type || 'personal',
           business_name: newProfile.business_name,
-          business_department_id: newProfile.business_department_id
+          business_department_id: newProfile.business_department_id,
+          nusd_code: newProfile.nusd_code
         };
       }
       return fallbackUser;
@@ -143,6 +145,7 @@ async function fetchProfileFromSupabase(authUser: User, fallbackUser: UserState)
 
     if (profile) {
       return {
+        id: profile.id,
         email: profile.email,
         name: profile.name || 'User',
         balance: profile.balance || 0,
@@ -152,7 +155,8 @@ async function fetchProfileFromSupabase(authUser: User, fallbackUser: UserState)
         trxAddress: profile.trx_address,
         account_type: profile.account_type || 'personal',
         business_name: profile.business_name,
-        business_department_id: profile.business_department_id
+        business_department_id: profile.business_department_id,
+        nusd_code: profile.nusd_code
       };
     }
     return fallbackUser;

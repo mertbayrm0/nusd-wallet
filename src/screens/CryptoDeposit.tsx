@@ -5,41 +5,30 @@ import { supabase } from '../services/supabase';
 
 const CryptoDeposit = () => {
     const navigate = useNavigate();
-    const { user } = useApp();
+    const { user, refreshUser } = useApp();
     const [network, setNetwork] = useState('TRC20');
     const [copied, setCopied] = useState<'address' | 'memo' | null>(null);
     const [amount, setAmount] = useState('');
     const [txHash, setTxHash] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
-    const [memoCode, setMemoCode] = useState('NUSD-XXXX');
 
     const VAULT_ADDRESS = 'TAeaxxAUqqpdKJmvg9JPHajTNQLRfwdJ3F';
 
-    // Fetch nusd_code from database
+    // NUSD kodunu user.nusd_code'dan al, yoksa fallback üret
+    const memoCode = user?.nusd_code || (() => {
+        if (!user?.email) return 'NUSD-XXXX';
+        const hash = user.email.split('').reduce((acc, char) => {
+            return ((acc << 5) - acc) + char.charCodeAt(0);
+        }, 0);
+        const code = Math.abs(hash).toString(36).toUpperCase().slice(0, 6);
+        return `NUSD-${code}`;
+    })();
+
+    // Sayfa yüklendiğinde user'ı yenile (güncel nusd_code için)
     useEffect(() => {
-        const fetchNusdCode = async () => {
-            if (!user?.id) return;
-
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('nusd_code')
-                .eq('id', user.id)
-                .single();
-
-            if (data?.nusd_code) {
-                setMemoCode(data.nusd_code);
-            } else {
-                // Fallback: generate locally if not in DB
-                const hash = (user.email || '').split('').reduce((acc, char) => {
-                    return ((acc << 5) - acc) + char.charCodeAt(0);
-                }, 0);
-                const code = Math.abs(hash).toString(36).toUpperCase().slice(0, 6);
-                setMemoCode(`NUSD-${code}`);
-            }
-        };
-        fetchNusdCode();
-    }, [user?.id, user?.email]);
+        refreshUser?.();
+    }, []);
 
     const copyToClipboard = (text: string, type: 'address' | 'memo') => {
         navigator.clipboard.writeText(text);
