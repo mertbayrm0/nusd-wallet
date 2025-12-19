@@ -24,6 +24,14 @@ const BusinessDashboard = () => {
     const [withdrawalRequests, setWithdrawalRequests] = useState<any[]>([]);
     const [processingWithdrawal, setProcessingWithdrawal] = useState<string | null>(null);
 
+    // Ekip Yönetimi
+    const [showTeam, setShowTeam] = useState(false);
+    const [teamMembers, setTeamMembers] = useState<any[]>([]);
+    const [pendingInvites, setPendingInvites] = useState<any[]>([]);
+    const [inviteEmail, setInviteEmail] = useState('');
+    const [inviteRole, setInviteRole] = useState('staff');
+    const [inviteLoading, setInviteLoading] = useState(false);
+
     // NUSD adresi - email hash'inden oluştur
     const memoCode = useMemo(() => {
         if (!user?.email) return 'NUSD-XXXX';
@@ -105,6 +113,47 @@ const BusinessDashboard = () => {
         alert('Kopyalandı!');
     };
 
+    // Ekip verilerini yükle
+    const loadTeam = async () => {
+        const teamResult = await api.getBusinessTeam();
+        if (teamResult.success) {
+            setTeamMembers(teamResult.members || []);
+        }
+
+        const invitesResult = await api.getBusinessInvites();
+        if (invitesResult.success) {
+            setPendingInvites(invitesResult.invites || []);
+        }
+    };
+
+    // Ekip üyesi davet et
+    const handleInvite = async () => {
+        if (!inviteEmail) {
+            alert('Email gerekli');
+            return;
+        }
+
+        setInviteLoading(true);
+        const result = await api.inviteBusinessMember(inviteEmail, inviteRole);
+
+        if (result.success) {
+            alert(`Davet gönderildi!\n\nDavet linki: ${result.invite_link}`);
+            setInviteEmail('');
+            loadTeam();
+        } else {
+            alert(result.error || 'Davet gönderilemedi');
+        }
+        setInviteLoading(false);
+    };
+
+    // Daveti iptal et
+    const handleCancelInvite = async (inviteId: string) => {
+        const result = await api.cancelBusinessInvite(inviteId);
+        if (result.success) {
+            loadTeam();
+        }
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
@@ -162,20 +211,27 @@ const BusinessDashboard = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="grid grid-cols-2 gap-3 mb-6">
+            <div className="grid grid-cols-3 gap-3 mb-6">
                 <button
                     onClick={() => setShowTransfer(true)}
-                    className="bg-lime-500 text-black font-bold py-3 rounded-xl flex items-center justify-center gap-2"
+                    className="bg-lime-500 text-black font-bold py-3 rounded-xl flex flex-col items-center justify-center gap-1"
                 >
                     <span className="material-symbols-outlined">send</span>
-                    NUSD Gönder
+                    <span className="text-xs">Gönder</span>
                 </button>
                 <button
                     onClick={() => setShowWithdrawals(true)}
-                    className="bg-[#1a1a1a] text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 border border-gray-700"
+                    className="bg-[#1a1a1a] text-white font-bold py-3 rounded-xl flex flex-col items-center justify-center gap-1 border border-gray-700"
                 >
                     <span className="material-symbols-outlined">account_balance</span>
-                    Çekim Talepleri
+                    <span className="text-xs">Çekim</span>
+                </button>
+                <button
+                    onClick={() => { setShowTeam(true); loadTeam(); }}
+                    className="bg-[#1a1a1a] text-white font-bold py-3 rounded-xl flex flex-col items-center justify-center gap-1 border border-gray-700"
+                >
+                    <span className="material-symbols-outlined">groups</span>
+                    <span className="text-xs">Ekip</span>
                 </button>
             </div>
 
@@ -374,6 +430,102 @@ const BusinessDashboard = () => {
                             >
                                 {transferLoading ? 'Gönderiliyor...' : 'Gönder'}
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Ekip Modal */}
+            {showTeam && (
+                <div className="fixed inset-0 bg-black/80 flex items-end justify-center z-50">
+                    <div className="bg-[#1a1a1a] w-full max-w-lg rounded-t-3xl p-6 max-h-[85vh] overflow-y-auto">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="font-bold text-lg flex items-center gap-2">
+                                <span className="material-symbols-outlined text-lime-400">groups</span>
+                                Ekip Yönetimi
+                            </h2>
+                            <button onClick={() => setShowTeam(false)}>
+                                <span className="material-symbols-outlined text-gray-400">close</span>
+                            </button>
+                        </div>
+
+                        {/* Davet Formu */}
+                        <div className="bg-[#0a0a0a] rounded-xl p-4 mb-6">
+                            <h3 className="font-bold text-sm mb-3 text-gray-300">Yeni Üye Davet Et</h3>
+                            <input
+                                type="email"
+                                value={inviteEmail}
+                                onChange={e => setInviteEmail(e.target.value)}
+                                placeholder="Email adresi"
+                                className="w-full bg-[#1a1a1a] border border-gray-700 rounded-lg p-3 text-white mb-3"
+                            />
+                            <select
+                                value={inviteRole}
+                                onChange={e => setInviteRole(e.target.value)}
+                                className="w-full bg-[#1a1a1a] border border-gray-700 rounded-lg p-3 text-white mb-3"
+                            >
+                                <option value="staff">Staff (Sadece Görüntüleme)</option>
+                                <option value="manager">Manager (İşlem Yapabilir)</option>
+                            </select>
+                            <button
+                                onClick={handleInvite}
+                                disabled={inviteLoading || !inviteEmail}
+                                className="w-full bg-lime-500 text-black font-bold py-3 rounded-lg disabled:opacity-50"
+                            >
+                                {inviteLoading ? 'Gönderiliyor...' : 'Davet Gönder'}
+                            </button>
+                        </div>
+
+                        {/* Bekleyen Davetler */}
+                        {pendingInvites.length > 0 && (
+                            <div className="mb-6">
+                                <h3 className="font-bold text-sm mb-3 text-gray-300">Bekleyen Davetler</h3>
+                                <div className="space-y-2">
+                                    {pendingInvites.map((invite: any) => (
+                                        <div key={invite.id} className="bg-[#0a0a0a] rounded-lg p-3 flex items-center justify-between">
+                                            <div>
+                                                <p className="text-white font-medium">{invite.email}</p>
+                                                <p className="text-xs text-amber-400">{invite.role}</p>
+                                            </div>
+                                            <button
+                                                onClick={() => handleCancelInvite(invite.id)}
+                                                className="text-red-400 text-xs"
+                                            >
+                                                İptal
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Ekip Üyeleri */}
+                        <div>
+                            <h3 className="font-bold text-sm mb-3 text-gray-300">Ekip Üyeleri ({teamMembers.length})</h3>
+                            <div className="space-y-2">
+                                {teamMembers.map((member: any) => (
+                                    <div key={member.id} className="bg-[#0a0a0a] rounded-lg p-3 flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${member.business_role === 'owner' ? 'bg-lime-500/20 text-lime-400' : 'bg-gray-700 text-gray-300'}`}>
+                                                <span className="material-symbols-outlined text-sm">
+                                                    {member.business_role === 'owner' ? 'star' : 'person'}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <p className="text-white font-medium">{member.name || member.email?.split('@')[0]}</p>
+                                                <p className="text-xs text-gray-500">{member.email}</p>
+                                            </div>
+                                        </div>
+                                        <span className={`text-xs px-2 py-1 rounded ${member.business_role === 'owner' ? 'bg-lime-500/20 text-lime-400' :
+                                                member.business_role === 'manager' ? 'bg-blue-500/20 text-blue-400' :
+                                                    'bg-gray-700 text-gray-400'
+                                            }`}>
+                                            {member.business_role === 'owner' ? 'Sahip' :
+                                                member.business_role === 'manager' ? 'Yönetici' : 'Personel'}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>

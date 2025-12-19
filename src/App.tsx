@@ -29,6 +29,7 @@ import FindAgent from './screens/FindAgent';
 import AutoLogin from './screens/AutoLogin';
 import PaymentPanel from './screens/PaymentPanel';
 import BusinessDashboard from './screens/BusinessDashboard';
+import JoinBusiness from './screens/JoinBusiness';
 import KYCVerification from './screens/KYCVerification';
 import ProfileEdit from './screens/ProfileEdit';
 import TransactionLimits from './screens/TransactionLimits';
@@ -381,6 +382,7 @@ const App: React.FC = () => {
           <Route path="/autologin" element={<AutoLogin />} />
           <Route path="/pay/:slug" element={<PaymentPanel />} />
           <Route path="/business" element={<Layout><ProtectedRoute><BusinessDashboard /></ProtectedRoute></Layout>} />
+          <Route path="/join/:inviteCode" element={<JoinBusiness />} />
         </Routes>
       </HashRouter>
     </AppContext.Provider>

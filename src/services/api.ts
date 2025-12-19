@@ -1701,5 +1701,113 @@ export const api = {
       console.error('getUnreadNotificationCount exception:', e);
       return 0;
     }
+  },
+
+  // ===== BUSINESS TEAM MANAGEMENT =====
+
+  // İşletme üyesi davet et
+  inviteBusinessMember: async (email: string, role: string = 'staff') => {
+    try {
+      const { data, error } = await supabase.functions.invoke('invite-business-member', {
+        body: { email, role }
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, ...data };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  // İşletme davetini kabul et
+  acceptBusinessInvite: async (inviteCode: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('accept-business-invite', {
+        body: { invite_code: inviteCode }
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, ...data };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  // İşletme ekibi üyelerini getir
+  getBusinessTeam: async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { success: false, error: 'Unauthorized' };
+
+      // Get current user's profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, parent_business_id, business_role')
+        .eq('id', user.id)
+        .single();
+
+      // Determine the business ID (either self if owner, or parent)
+      const businessId = profile?.parent_business_id || profile?.id;
+
+      // Get all team members
+      const { data: members, error } = await supabase
+        .from('profiles')
+        .select('id, email, name, business_role, created_at')
+        .or(`id.eq.${businessId},parent_business_id.eq.${businessId}`);
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, members: members || [] };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  // Bekleyen davetleri getir
+  getBusinessInvites: async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { success: false, error: 'Unauthorized' };
+
+      const { data: invites, error } = await supabase
+        .from('business_invites')
+        .select('*')
+        .eq('business_id', user.id)
+        .eq('status', 'pending');
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, invites: invites || [] };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  // Daveti iptal et
+  cancelBusinessInvite: async (inviteId: string) => {
+    try {
+      const { error } = await supabase
+        .from('business_invites')
+        .update({ status: 'cancelled' })
+        .eq('id', inviteId);
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
   }
 };
