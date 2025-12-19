@@ -20,21 +20,21 @@ const LOCK_DURATION_MINUTES = 15
 // =============================================
 // DİNAMİK TOLERANS HESAPLAMA
 // =============================================
-// Düşük tutarlarda dar tolerans, yüksek tutarlarda geniş tolerans
-// Formül: tolerance = min(30%, 10% + (amount / 100) * 2%)
+// Düşük tutarlarda geniş tolerans, yüksek tutarlarda daha geniş
+// Formül: tolerance = min(35%, 20% + (amount / 100) * 1.5%)
 // 
 // Örnek sonuçlar:
-// 50 USD  → 11% tolerans → 44.5 - 55.5 USD aralığı
-// 100 USD → 12% tolerans → 88 - 112 USD aralığı
-// 200 USD → 14% tolerans → 172 - 228 USD aralığı
-// 300 USD → 16% tolerans → 252 - 348 USD aralığı
-// 500 USD → 20% tolerans → 400 - 600 USD aralığı
-// 1000 USD → 30% tolerans → 700 - 1300 USD aralığı (max)
+// 10 USD  → 20.15% tolerans → 8 - 12 USD aralığı
+// 15 USD  → 20.23% tolerans → 12 - 18 USD aralığı
+// 50 USD  → 20.75% tolerans → 40 - 60 USD aralığı
+// 100 USD → 21.5% tolerans → 78 - 122 USD aralığı
+// 300 USD → 24.5% tolerans → 227 - 374 USD aralığı
+// 1000 USD → 35% tolerans → 650 - 1350 USD aralığı (max)
 // =============================================
 function calculateTolerance(amount: number): number {
-    const baseTolerance = 10; // Base: %10
-    const scaleFactor = 2;    // Her 100 USD için %2 eklenir
-    const maxTolerance = 30;  // Maximum: %30
+    const baseTolerance = 20; // Base: %20 (artırıldı)
+    const scaleFactor = 1.5;  // Her 100 USD için %1.5 eklenir
+    const maxTolerance = 35;  // Maximum: %35 (artırıldı)
 
     const calculatedTolerance = baseTolerance + (amount / 100) * scaleFactor;
     return Math.min(calculatedTolerance, maxTolerance);
