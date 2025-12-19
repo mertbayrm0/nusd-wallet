@@ -121,10 +121,12 @@ const Deposit = () => {
                 const matchResult = await api.matchP2POrder(orderId);
 
                 if (matchResult?.success && matchResult?.match) {
-                    // Anında eşleşti - seller IBAN'ı göster
+                    // Anında eşleşti - seller tutarını ve IBAN'ını göster
+                    const sellerAmount = matchResult.match.amount_usd || result.order.amount_usd;
                     setMatch({
                         id: matchResult.match.matchedOrderId,
-                        amount: result.order.amount_usd * exchangeRate, // Güncel kur
+                        amount: sellerAmount * exchangeRate, // Satıcının tutarı
+                        amountUsd: sellerAmount, // Satıcının USD tutarı
                         sellerIBAN: matchResult.match.counterparty?.iban || 'N/A',
                         sellerName: matchResult.match.counterparty?.account_name || 'Satıcı',
                         sellerBank: matchResult.match.counterparty?.bank_name || 'Banka',
@@ -164,11 +166,14 @@ const Deposit = () => {
                     const order = payload.new as any;
 
                     if (order.status === 'MATCHED') {
-                        // Match bulundu!
+                        // Match bulundu! - matched_order_id'den satıcı tutarını al
+                        const matchedOrder = order.matched_order_id ? await api.getP2POrderStatus(order.matched_order_id) : null;
+                        const sellerAmount = matchedOrder?.amount_usd || order.amount_usd;
                         setConfirmed(false);
                         setMatch({
                             id: orderId,
-                            amount: order.amount_usd * exchangeRate,
+                            amount: sellerAmount * exchangeRate,
+                            amountUsd: sellerAmount,
                             sellerIBAN: order.seller_iban || 'N/A',
                             sellerName: order.seller_account_name || 'Satıcı',
                             sellerBank: order.seller_bank_name || 'Banka'
@@ -192,10 +197,14 @@ const Deposit = () => {
             const order = await api.getP2POrderStatus(orderId);
 
             if (order && order.status === 'MATCHED') {
+                // Match bulundu! - matched_order_id'den satıcı tutarını al
+                const matchedOrder = order.matched_order_id ? await api.getP2POrderStatus(order.matched_order_id) : null;
+                const sellerAmount = matchedOrder?.amount_usd || order.amount_usd;
                 setConfirmed(false);
                 setMatch({
                     id: orderId,
-                    amount: order.amount_usd * exchangeRate,
+                    amount: sellerAmount * exchangeRate,
+                    amountUsd: sellerAmount,
                     sellerIBAN: order.seller_iban || 'N/A',
                     sellerName: order.seller_account_name || 'Satıcı',
                     sellerBank: order.seller_bank_name || 'Banka'
@@ -434,7 +443,7 @@ const Deposit = () => {
                                     <div className="border-t border-white/5 my-2"></div>
                                     <p className="text-xs text-gray-500 mb-1 mt-2">İşlem Tutarı</p>
                                     <p className="text-3xl font-bold text-white tracking-tight">₺{match.amount?.toLocaleString()}</p>
-                                    <p className="text-xs text-lime-500 mt-1 font-mono">≈ {parseFloat(amount).toLocaleString()} USDT</p>
+                                    <p className="text-xs text-lime-500 mt-1 font-mono">≈ {match.amountUsd?.toLocaleString() || parseFloat(amount).toLocaleString()} USDT</p>
                                 </div>
 
                                 <button
