@@ -294,6 +294,7 @@ serve(async (req) => {
                     myOrderId: orderId,
                     matchedOrderId: matchedOrder.id,
                     amount_usd: myOrder.amount_usd,
+                    matched_amount_usd: matchedOrder.amount_usd, // Satıcının tutarı (buyer için)
                     status: 'MATCHED',
                     lock_expires_at: lockExpiry,
                     counterparty: {
