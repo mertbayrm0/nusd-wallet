@@ -120,8 +120,23 @@ const Dashboard = () => {
 
       // Convert P2P orders to transaction format for display
       // Only show OPEN (pending) and COMPLETED, not MATCHED/PAID (intermediate states)
+      // Dedupe: For matched pairs, only show one order per match
+      const seenMatchIds = new Set<string>();
+
       const p2pAsTxs = (p2pOrders || [])
         .filter((order: any) => order.status === 'OPEN' || order.status === 'COMPLETED')
+        .filter((order: any) => {
+          // Eşleşmiş order'larda çift kayıt önleme
+          if (order.matched_order_id) {
+            // Bu order'ın matched_order_id'si zaten görüldüyse, skip
+            if (seenMatchIds.has(order.matched_order_id)) {
+              return false;
+            }
+            // Bu order'ın ID'sini ekle, karşı taraf geldiğinde skip olacak
+            seenMatchIds.add(order.id);
+          }
+          return true;
+        })
         .map((order: any) => {
           // Kullanıcının seller mı buyer mı olduğunu authUserId ile kontrol et
           const isSeller = order.seller_id === authUserId;
