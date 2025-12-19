@@ -4,7 +4,7 @@
 // OPEN order'lar arasında eşleşme bulur
 // Atomic lock: Sadece 1 seller bağlanabilir
 // Lock süresi: 15 dakika
-// Tolerans: ±%2
+// Tolerans: Dinamik (tutar bazlı)
 // =============================================
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
@@ -16,7 +16,29 @@ const corsHeaders = {
 }
 
 const LOCK_DURATION_MINUTES = 15
-const MATCH_TOLERANCE_PERCENT = 2.0
+
+// =============================================
+// DİNAMİK TOLERANS HESAPLAMA
+// =============================================
+// Düşük tutarlarda dar tolerans, yüksek tutarlarda geniş tolerans
+// Formül: tolerance = min(30%, 10% + (amount / 100) * 2%)
+// 
+// Örnek sonuçlar:
+// 50 USD  → 11% tolerans → 44.5 - 55.5 USD aralığı
+// 100 USD → 12% tolerans → 88 - 112 USD aralığı
+// 200 USD → 14% tolerans → 172 - 228 USD aralığı
+// 300 USD → 16% tolerans → 252 - 348 USD aralığı
+// 500 USD → 20% tolerans → 400 - 600 USD aralığı
+// 1000 USD → 30% tolerans → 700 - 1300 USD aralığı (max)
+// =============================================
+function calculateTolerance(amount: number): number {
+    const baseTolerance = 10; // Base: %10
+    const scaleFactor = 2;    // Her 100 USD için %2 eklenir
+    const maxTolerance = 30;  // Maximum: %30
+
+    const calculatedTolerance = baseTolerance + (amount / 100) * scaleFactor;
+    return Math.min(calculatedTolerance, maxTolerance);
+}
 
 serve(async (req) => {
     if (req.method === 'OPTIONS') {
@@ -94,9 +116,10 @@ serve(async (req) => {
         const targetColumn = isBuyer ? 'seller_id' : 'buyer_id'
         const myColumn = isBuyer ? 'buyer_id' : 'seller_id'
 
-        // Tolerans hesapla
-        const minAmount = myOrder.amount_usd * (1 - MATCH_TOLERANCE_PERCENT / 100)
-        const maxAmount = myOrder.amount_usd * (1 + MATCH_TOLERANCE_PERCENT / 100)
+        // 🎯 DİNAMİK TOLERANS hesapla
+        const tolerancePercent = calculateTolerance(myOrder.amount_usd)
+        const minAmount = myOrder.amount_usd * (1 - tolerancePercent / 100)
+        const maxAmount = myOrder.amount_usd * (1 + tolerancePercent / 100)
 
         console.log('[P2P-MATCH] Looking for match with criteria:', {
             myOrderId: orderId,
@@ -104,8 +127,9 @@ serve(async (req) => {
             targetColumn,
             myColumn,
             amount: myOrder.amount_usd,
-            minAmount,
-            maxAmount
+            tolerancePercent: tolerancePercent.toFixed(1) + '%',
+            minAmount: minAmount.toFixed(2),
+            maxAmount: maxAmount.toFixed(2)
         })
 
         // Uygun OPEN order bul (karşı taraf dolu, benim tarafım boş)
