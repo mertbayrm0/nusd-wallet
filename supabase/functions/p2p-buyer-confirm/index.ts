@@ -104,11 +104,33 @@ serve(async (req) => {
             // 💰 BALANCE TRANSFER
             // Seller: bakiyesinden düş (P2P sell = çekim)
             // Buyer: bakiyesine ekle (P2P buy = yatırım)
+            // ⚠️ ÖNEMLI: Satıcının tutarı referans alınır (matched_order'dan)
             if (order.seller_id && order.buyer_id) {
+                // Eşleşen order'ı getir (satıcının tutarını almak için)
+                let transferAmount = order.amount_usd; // fallback
+
+                if (order.matched_order_id) {
+                    const { data: matchedOrder } = await supabase
+                        .from('p2p_orders')
+                        .select('amount_usd, seller_id')
+                        .eq('id', order.matched_order_id)
+                        .single();
+
+                    if (matchedOrder) {
+                        // Satıcının tutarını kullan
+                        // Eğer matched order satıcıya aitse, onun tutarını al
+                        // Değilse, matched order buyer'a ait demektir, bu order'ın tutarını kullan
+                        transferAmount = matchedOrder.seller_id ? matchedOrder.amount_usd : order.amount_usd;
+                        console.log('[P2P-BUYER-CONFIRM] Using seller amount:', transferAmount, 'from matched order');
+                    }
+                }
+
+                console.log('[P2P-BUYER-CONFIRM] Transfer amount:', transferAmount);
+
                 // Decrease seller balance
                 const { error: sellerError } = await supabase.rpc('decrease_balance', {
                     p_user_id: order.seller_id,
-                    p_amount: order.amount_usd
+                    p_amount: transferAmount
                 })
 
                 if (sellerError) {
@@ -116,14 +138,14 @@ serve(async (req) => {
                     // Try direct update as fallback
                     await supabase
                         .from('profiles')
-                        .update({ balance: supabase.raw(`balance - ${order.amount_usd}`) })
+                        .update({ balance: supabase.raw(`balance - ${transferAmount}`) })
                         .eq('id', order.seller_id)
                 }
 
                 // Increase buyer balance
                 const { error: buyerError } = await supabase.rpc('increase_balance', {
                     p_user_id: order.buyer_id,
-                    p_amount: order.amount_usd
+                    p_amount: transferAmount
                 })
 
                 if (buyerError) {
@@ -131,7 +153,7 @@ serve(async (req) => {
                     // Try direct update as fallback
                     await supabase
                         .from('profiles')
-                        .update({ balance: supabase.raw(`balance + ${order.amount_usd}`) })
+                        .update({ balance: supabase.raw(`balance + ${transferAmount}`) })
                         .eq('id', order.buyer_id)
                 }
             }
