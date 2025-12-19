@@ -122,10 +122,7 @@ const Login = () => {
         </button>
       </form>
 
-      <div className="mt-8 text-center space-y-1">
-        <p className="text-gray-500 text-xs">Demo User: <span className="font-mono text-gray-400">demo@nusd.com</span></p>
-        <p className="text-gray-500 text-xs">Admin: <span className="font-mono text-gray-400">admin@nusd.com</span></p>
-      </div>
+
     </div>
   );
 };
