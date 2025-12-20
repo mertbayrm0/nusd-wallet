@@ -2,10 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import AdminLayout from '../components/AdminLayout';
 
+const ITEMS_PER_PAGE = 25;
+
 const AdminUsers = () => {
     const [users, setUsers] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'user'>('all');
+    const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
         loadUsers();
@@ -51,6 +54,9 @@ const AdminUsers = () => {
         const matchesRole = roleFilter === 'all' || u.role === roleFilter;
         return matchesSearch && matchesRole;
     });
+
+    const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
+    const paginatedUsers = filteredUsers.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
     const exportToCsv = () => {
         const headers = ['Ad', 'Email', 'Rol', 'Bakiye', 'Durum', 'TRX Adres'];
@@ -120,7 +126,7 @@ const AdminUsers = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {filteredUsers.map(u => (
+                            {paginatedUsers.map(u => (
                                 <tr key={u.email} className="hover:bg-gray-50/50 transition-colors">
                                     <td className="p-4">
                                         <div className="flex items-center gap-3">
@@ -182,6 +188,34 @@ const AdminUsers = () => {
                     </table>
                 </div>
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+                <div className="mt-4 flex items-center justify-between">
+                    <span className="text-sm text-gray-500">
+                        {filteredUsers.length} sonuçtan {(currentPage - 1) * ITEMS_PER_PAGE + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, filteredUsers.length)} gösteriliyor
+                    </span>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                            className="px-4 py-2 text-sm font-bold rounded-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                        >
+                            ← Önceki
+                        </button>
+                        <span className="px-4 py-2 text-sm font-bold bg-blue-600 text-white rounded-lg">
+                            {currentPage} / {totalPages}
+                        </span>
+                        <button
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                            className="px-4 py-2 text-sm font-bold rounded-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                        >
+                            Sonraki →
+                        </button>
+                    </div>
+                </div>
+            )}
         </AdminLayout>
     );
 };
