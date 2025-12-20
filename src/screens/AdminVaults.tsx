@@ -195,6 +195,18 @@ const AdminVaults = () => {
                                                 <span className="material-symbols-outlined text-sm">account_balance_wallet</span>
                                             </div>
                                             <h3 className="font-bold text-gray-700 text-sm">{vault.name}</h3>
+                                            <button
+                                                onClick={async (e) => {
+                                                    e.stopPropagation();
+                                                    const result = await api.toggleVaultStatus(vault.id);
+                                                    if (result.success) {
+                                                        api.getAdminVaults().then(setData);
+                                                    }
+                                                }}
+                                                className={`px-2 py-0.5 rounded text-[10px] font-bold ${(vault as any).is_active !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
+                                            >
+                                                {(vault as any).is_active !== false ? 'AKTİF' : 'PASİF'}
+                                            </button>
                                         </div>
                                         <div className="flex items-center gap-3">
                                             <div className="text-right">

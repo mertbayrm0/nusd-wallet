@@ -680,6 +680,27 @@ export const api = {
     }
   },
 
+  toggleVaultStatus: async (vaultId: string) => {
+    try {
+      const { data: vault } = await supabase
+        .from('vaults')
+        .select('id, is_active')
+        .eq('id', vaultId)
+        .single();
+
+      if (!vault) return { success: false };
+
+      await supabase
+        .from('vaults')
+        .update({ is_active: !vault.is_active })
+        .eq('id', vaultId);
+
+      return { success: true, newStatus: !vault.is_active };
+    } catch (e) {
+      return { success: false };
+    }
+  },
+
   approveTransaction: async (txId: string) => {
     try {
       const { data, error } = await supabase.functions.invoke('approve-transaction', {
