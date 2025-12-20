@@ -701,6 +701,19 @@ export const api = {
     }
   },
 
+  checkBlockchainDeposits: async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('check-deposits');
+      if (error) {
+        console.error('Check deposits error:', error);
+        return { success: false, error: error.message };
+      }
+      return data || { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  },
+
   approveTransaction: async (txId: string) => {
     try {
       const { data, error } = await supabase.functions.invoke('approve-transaction', {

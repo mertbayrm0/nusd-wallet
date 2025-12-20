@@ -272,8 +272,22 @@ const AdminDashboard = () => {
 
             {/* Quick Actions */}
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Tehlikeli Bölge</h3>
-                <div className="flex gap-4">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Hızlı İşlemler</h3>
+                <div className="flex gap-4 flex-wrap">
+                    <button
+                        onClick={async () => {
+                            const result = await api.checkBlockchainDeposits();
+                            if (result.success) {
+                                alert(`Kontrol tamamlandı!\n${result.checked || 0} vault kontrol edildi\n${result.newDeposits || 0} yeni deposit algılandı`);
+                            } else {
+                                alert('Hata: ' + (result.error || 'Kontrol başarısız'));
+                            }
+                        }}
+                        className="px-6 py-3 bg-green-50 text-green-600 hover:bg-green-100 border border-green-100 rounded-xl font-bold transition-colors flex items-center gap-2"
+                    >
+                        <span className="material-symbols-outlined">sync</span>
+                        Blockchain Deposit Kontrol
+                    </button>
                     <button onClick={reset} className="px-6 py-3 bg-red-50 text-red-600 hover:bg-red-100 border border-red-100 rounded-xl font-bold transition-colors flex items-center gap-2">
                         <span className="material-symbols-outlined">restart_alt</span>
                         Veritabanını Sıfırla
