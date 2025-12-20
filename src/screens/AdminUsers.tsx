@@ -18,6 +18,14 @@ const AdminUsers = () => {
         }
     };
 
+    const toggleRole = async (email: string, currentRole: string) => {
+        const newRole = currentRole === 'admin' ? 'user' : 'admin';
+        if (window.confirm(`Change role to ${newRole}?`)) {
+            await api.toggleUserRole(email);
+            loadUsers();
+        }
+    };
+
     return (
         <AdminLayout title="User Management">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -67,15 +75,23 @@ const AdminUsers = () => {
                                         </span>
                                     </td>
                                     <td className="p-4 text-right">
-                                        <button
-                                            onClick={() => toggleStatus(u.email)}
-                                            className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-colors ${u.isActive
-                                                ? 'border-red-200 text-red-600 hover:bg-red-50'
-                                                : 'border-green-200 text-green-600 hover:bg-green-50'
-                                                }`}
-                                        >
-                                            {u.isActive ? 'Suspend' : 'Activate'}
-                                        </button>
+                                        <div className="flex items-center justify-end gap-2">
+                                            <button
+                                                onClick={() => toggleRole(u.email, u.role)}
+                                                className="text-xs font-bold px-3 py-1.5 rounded-lg border border-purple-200 text-purple-600 hover:bg-purple-50 transition-colors"
+                                            >
+                                                {u.role === 'admin' ? '→ User' : '→ Admin'}
+                                            </button>
+                                            <button
+                                                onClick={() => toggleStatus(u.email)}
+                                                className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-colors ${u.isActive
+                                                    ? 'border-red-200 text-red-600 hover:bg-red-50'
+                                                    : 'border-green-200 text-green-600 hover:bg-green-50'
+                                                    }`}
+                                            >
+                                                {u.isActive ? 'Suspend' : 'Activate'}
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

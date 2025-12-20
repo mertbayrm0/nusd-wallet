@@ -609,6 +609,28 @@ export const api = {
     }
   },
 
+  toggleUserRole: async (email: string) => {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, role')
+        .eq('email', email)
+        .single();
+
+      if (!profile) return { success: false };
+
+      const newRole = profile.role === 'admin' ? 'user' : 'admin';
+      await supabase
+        .from('profiles')
+        .update({ role: newRole })
+        .eq('id', profile.id);
+
+      return { success: true, newRole };
+    } catch (e) {
+      return { success: false };
+    }
+  },
+
   approveTransaction: async (txId: string) => {
     try {
       const { data, error } = await supabase.functions.invoke('approve-transaction', {
