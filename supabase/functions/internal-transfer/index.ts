@@ -122,39 +122,34 @@ serve(async (req) => {
             )
         }
 
-        // 5. Update balances
-        const senderNewBalance = sender.balance - amount
-        const recipientNewBalance = recipient.balance + amount
+        // 5. ATOMIC TRANSFER - prevents race condition
+        const { data: transferResult, error: transferError } = await supabase
+            .rpc('atomic_transfer', {
+                p_sender_id: sender.id,
+                p_recipient_id: recipient.id,
+                p_amount: amount
+            });
 
-        // Update sender
-        const { error: updateSenderError } = await supabase
-            .from('profiles')
-            .update({ balance: senderNewBalance })
-            .eq('id', sender.id)
-
-        if (updateSenderError) {
-            console.error('Update sender error:', updateSenderError)
+        if (transferError) {
+            console.error('Atomic transfer error:', transferError);
             return new Response(
-                JSON.stringify({ error: 'Failed to update sender balance' }),
+                JSON.stringify({ error: 'Transfer failed', details: transferError.message }),
                 { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            )
+            );
         }
 
-        // Update recipient
-        const { error: updateRecipientError } = await supabase
-            .from('profiles')
-            .update({ balance: recipientNewBalance })
-            .eq('id', recipient.id)
-
-        if (updateRecipientError) {
-            // Rollback sender
-            await supabase.from('profiles').update({ balance: sender.balance }).eq('id', sender.id)
-            console.error('Update recipient error:', updateRecipientError)
+        if (!transferResult?.success) {
             return new Response(
-                JSON.stringify({ error: 'Failed to update recipient balance' }),
-                { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            )
+                JSON.stringify({
+                    error: transferResult?.error || 'Transfer failed',
+                    balance: transferResult?.balance
+                }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
         }
+
+        const senderNewBalance = transferResult.sender_new_balance;
+        const recipientNewBalance = transferResult.recipient_new_balance;
 
         // 6. Create transaction records
         const { data: senderTx } = await supabase
