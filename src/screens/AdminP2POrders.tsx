@@ -23,6 +23,8 @@ const AdminP2POrders = () => {
 
     useEffect(() => {
         loadOrders();
+        const interval = setInterval(loadOrders, 5000); // 5 saniyede bir yenile
+        return () => clearInterval(interval);
     }, []);
 
     const loadOrders = async () => {
@@ -94,8 +96,8 @@ const AdminP2POrders = () => {
                         key={f}
                         onClick={() => setFilter(f)}
                         className={`px-4 py-2 rounded-lg text-sm font-bold capitalize transition-colors ${filter === f
-                                ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
-                                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                            ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
+                            : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
                             }`}
                     >
                         {f === 'all' ? 'Tümü' : f}
