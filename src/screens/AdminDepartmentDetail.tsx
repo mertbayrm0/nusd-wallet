@@ -179,8 +179,8 @@ const AdminDepartmentDetail = () => {
                             }
                         }}
                         className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2 ${dept.is_active
-                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                : 'bg-red-100 text-red-700 hover:bg-red-200'
+                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                            : 'bg-red-100 text-red-700 hover:bg-red-200'
                             }`}
                     >
                         <span className="material-symbols-outlined text-sm">
@@ -411,6 +411,22 @@ const AdminDepartmentDetail = () => {
                                                 </button>
                                                 <button className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1.5 rounded-md text-xs font-bold transition-colors">
                                                     Kopyala
+                                                </button>
+                                                <button
+                                                    onClick={async () => {
+                                                        if (window.confirm(`"${panel.name}" portalını silmek istediğinize emin misiniz?`)) {
+                                                            const result = await api.deletePaymentPanel(panel.id);
+                                                            if (result.success) {
+                                                                alert('Portal silindi!');
+                                                                fetchDetail();
+                                                            } else {
+                                                                alert('Hata: ' + (result.error || 'Silme başarısız'));
+                                                            }
+                                                        }
+                                                    }}
+                                                    className="bg-red-100 hover:bg-red-200 text-red-600 px-3 py-1.5 rounded-md text-xs font-bold transition-colors"
+                                                >
+                                                    Sil
                                                 </button>
                                             </div>
                                         </div>
