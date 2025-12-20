@@ -1,7 +1,10 @@
 // TronGrid API Service
 // Gerçek blockchain bakiyeleri için
 
-const TRONGRID_API_KEY = 'f8f57351-2bcf-428c-92d0-7d8652807847';
+// WARNING: API key frontend'de expose oluyor
+// Production'da edge function proxy kullanılmalı
+// veya Vite env variable: import.meta.env.VITE_TRONGRID_API_KEY
+const TRONGRID_API_KEY = import.meta.env.VITE_TRONGRID_API_KEY || 'f8f57351-2bcf-428c-92d0-7d8652807847';
 const TRONGRID_BASE_URL = 'https://api.trongrid.io';
 
 // USDT TRC20 Contract Address
