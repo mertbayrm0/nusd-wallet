@@ -645,6 +645,27 @@ export const api = {
     }
   },
 
+  toggleDepartmentStatus: async (deptId: string) => {
+    try {
+      const { data: dept } = await supabase
+        .from('departments')
+        .select('id, is_active')
+        .eq('id', deptId)
+        .single();
+
+      if (!dept) return { success: false };
+
+      await supabase
+        .from('departments')
+        .update({ is_active: !dept.is_active })
+        .eq('id', deptId);
+
+      return { success: true, newStatus: !dept.is_active };
+    } catch (e) {
+      return { success: false };
+    }
+  },
+
   approveTransaction: async (txId: string) => {
     try {
       const { data, error } = await supabase.functions.invoke('approve-transaction', {

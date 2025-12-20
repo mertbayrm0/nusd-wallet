@@ -167,6 +167,27 @@ const AdminDepartmentDetail = () => {
                         </span>
                         {dept.owner?.account_type === 'business' ? 'İşletme Paneli Aktif' : 'İşletme Paneli Aktifleştir'}
                     </button>
+                    {/* Departman Aktif/Pasif Toggle */}
+                    <button
+                        onClick={async () => {
+                            const result = await api.toggleDepartmentStatus(dept.id);
+                            if (result.success) {
+                                alert(result.newStatus ? 'Departman aktif edildi!' : 'Departman pasif edildi!');
+                                fetchDetail();
+                            } else {
+                                alert('Hata: İşlem başarısız');
+                            }
+                        }}
+                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2 ${dept.is_active
+                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                : 'bg-red-100 text-red-700 hover:bg-red-200'
+                            }`}
+                    >
+                        <span className="material-symbols-outlined text-sm">
+                            {dept.is_active ? 'check_circle' : 'cancel'}
+                        </span>
+                        {dept.is_active ? 'Departman Aktif' : 'Departman Pasif'}
+                    </button>
                 </div>
 
                 {/* Top Stats Cards */}
