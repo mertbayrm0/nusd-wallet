@@ -4,6 +4,8 @@ import AdminLayout from '../components/AdminLayout';
 
 const AdminUsers = () => {
     const [users, setUsers] = useState<any[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'user'>('all');
 
     useEffect(() => {
         loadUsers();
@@ -42,8 +44,42 @@ const AdminUsers = () => {
         }
     };
 
+    const filteredUsers = users.filter(u => {
+        const matchesSearch = searchQuery === '' ||
+            u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            u.email.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesRole = roleFilter === 'all' || u.role === roleFilter;
+        return matchesSearch && matchesRole;
+    });
+
     return (
         <AdminLayout title="User Management">
+            {/* Search & Filters */}
+            <div className="mb-4 flex gap-4 items-center">
+                <div className="relative flex-1 max-w-md">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">search</span>
+                    <input
+                        type="text"
+                        placeholder="İsim veya email ara..."
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                </div>
+                <div className="flex gap-2">
+                    {(['all', 'admin', 'user'] as const).map(role => (
+                        <button
+                            key={role}
+                            onClick={() => setRoleFilter(role)}
+                            className={`px-3 py-2 rounded-lg text-xs font-bold capitalize transition-colors ${roleFilter === role ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                        >
+                            {role === 'all' ? 'Tümü' : role}
+                        </button>
+                    ))}
+                </div>
+                <span className="text-sm text-gray-500">{filteredUsers.length} kullanıcı</span>
+            </div>
+
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
@@ -58,7 +94,7 @@ const AdminUsers = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {users.map(u => (
+                            {filteredUsers.map(u => (
                                 <tr key={u.email} className="hover:bg-gray-50/50 transition-colors">
                                     <td className="p-4">
                                         <div className="flex items-center gap-3">
