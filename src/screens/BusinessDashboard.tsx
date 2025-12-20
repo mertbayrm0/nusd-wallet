@@ -283,11 +283,26 @@ const BusinessDashboard = () => {
                         Portallarım
                     </h3>
                     <button
-                        onClick={() => alert('Yeni portal oluşturma yakında')}
+                        onClick={async () => {
+                            const portalName = prompt('Portal adı girin:');
+                            if (!portalName) return;
+
+                            if (!department?.id) {
+                                alert('Departman bulunamadı');
+                                return;
+                            }
+
+                            const result = await api.createPortalRequest(department.id, portalName);
+                            if (result.success) {
+                                alert('Portal talebi gönderildi! Admin onayından sonra aktif olacak.');
+                            } else {
+                                alert('Hata: ' + (result.error || 'Talep gönderilemedi'));
+                            }
+                        }}
                         className="bg-lime-500/20 text-lime-400 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1"
                     >
                         <span className="material-symbols-outlined text-sm">add</span>
-                        Portal Ekle
+                        Portal Talep Et
                     </button>
                 </div>
 

@@ -1856,5 +1856,119 @@ export const api = {
       console.error('activateBusinessPanel exception:', e);
       return { success: false, error: e.message };
     }
+  },
+
+  // Portal Talep Sistemi
+  createPortalRequest: async (departmentId: string, name: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { success: false, error: 'Not authenticated' };
+
+      const { error } = await supabase
+        .from('portal_requests')
+        .insert({
+          department_id: departmentId,
+          requested_by: user.id,
+          name,
+          status: 'pending'
+        });
+
+      if (error) {
+        console.error('createPortalRequest error:', error);
+        return { success: false, error: error.message };
+      }
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  getPortalRequests: async (departmentId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('portal_requests')
+        .select('*, requester:profiles!portal_requests_requested_by_fkey(email, name)')
+        .eq('department_id', departmentId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('getPortalRequests error:', error);
+        return [];
+      }
+      return data || [];
+    } catch (e) {
+      return [];
+    }
+  },
+
+  approvePortalRequest: async (requestId: string) => {
+    try {
+      // Get request details
+      const { data: request, error: fetchError } = await supabase
+        .from('portal_requests')
+        .select('*')
+        .eq('id', requestId)
+        .single();
+
+      if (fetchError || !request) {
+        return { success: false, error: 'Request not found' };
+      }
+
+      // Create the portal
+      const slug = request.name.toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .substring(0, 30) + '-' + Date.now().toString(36);
+
+      const { error: panelError } = await supabase
+        .from('payment_panels')
+        .insert({
+          department_id: request.department_id,
+          name: request.name,
+          public_slug: slug,
+          is_active: true
+        });
+
+      if (panelError) {
+        console.error('Panel creation error:', panelError);
+        return { success: false, error: panelError.message };
+      }
+
+      // Update request status
+      const { data: { user } } = await supabase.auth.getUser();
+      await supabase
+        .from('portal_requests')
+        .update({
+          status: 'approved',
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: user?.id
+        })
+        .eq('id', requestId);
+
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  rejectPortalRequest: async (requestId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase
+        .from('portal_requests')
+        .update({
+          status: 'rejected',
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: user?.id
+        })
+        .eq('id', requestId);
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
   }
 };

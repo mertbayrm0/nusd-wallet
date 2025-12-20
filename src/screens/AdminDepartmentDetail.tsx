@@ -18,7 +18,8 @@ const AdminDepartmentDetail = () => {
     // UI States
     const [activeTab, setActiveTab] = useState<'transactions' | 'members' | 'portal'>('portal');
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
-    const [isPanelModalOpen, setIsPanelModalOpen] = useState(false); // For creating new panel
+    const [isPanelModalOpen, setIsPanelModalOpen] = useState(false);
+    const [portalRequests, setPortalRequests] = useState<any[]>([]);
 
     // Create Panel Form
     const [panelForm, setPanelForm] = useState({
@@ -35,6 +36,7 @@ const AdminDepartmentDetail = () => {
             fetchDetail();
             fetchVaults();
             fetchTransactions();
+            fetchPortalRequests();
         }
     }, [id]);
 
@@ -51,6 +53,11 @@ const AdminDepartmentDetail = () => {
     const fetchTransactions = async () => {
         const txs = await api.getDepartmentTransactions(id!);
         setTransactions(txs);
+    };
+
+    const fetchPortalRequests = async () => {
+        const requests = await api.getPortalRequests(id!);
+        setPortalRequests(requests);
     };
 
     const fetchVaults = async () => {
@@ -151,8 +158,8 @@ const AdminDepartmentDetail = () => {
                             }
                         }}
                         className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2 ${dept.owner?.account_type === 'business'
-                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                            : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
                             }`}
                     >
                         <span className="material-symbols-outlined text-sm">
@@ -291,6 +298,56 @@ const AdminDepartmentDetail = () => {
                                     </button>
                                 </div>
                             </div>
+
+                            {/* Bekleyen Portal Talepleri */}
+                            {portalRequests.filter(r => r.status === 'pending').length > 0 && (
+                                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+                                    <h4 className="font-bold text-amber-800 mb-3 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-amber-600">pending_actions</span>
+                                        Bekleyen Portal Talepleri ({portalRequests.filter(r => r.status === 'pending').length})
+                                    </h4>
+                                    <div className="space-y-2">
+                                        {portalRequests.filter(r => r.status === 'pending').map((req: any) => (
+                                            <div key={req.id} className="bg-white p-3 rounded-lg flex items-center justify-between">
+                                                <div>
+                                                    <p className="font-bold text-gray-800">{req.name}</p>
+                                                    <p className="text-xs text-gray-500">
+                                                        {req.requester?.email || 'Bilinmiyor'} - {new Date(req.created_at).toLocaleDateString('tr-TR')}
+                                                    </p>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={async () => {
+                                                            const result = await api.approvePortalRequest(req.id);
+                                                            if (result.success) {
+                                                                alert('Portal oluşturuldu!');
+                                                                fetchDetail();
+                                                                fetchPortalRequests();
+                                                            } else {
+                                                                alert('Hata: ' + (result.error || 'Onaylama başarısız'));
+                                                            }
+                                                        }}
+                                                        className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold"
+                                                    >
+                                                        Onayla
+                                                    </button>
+                                                    <button
+                                                        onClick={async () => {
+                                                            const result = await api.rejectPortalRequest(req.id);
+                                                            if (result.success) {
+                                                                fetchPortalRequests();
+                                                            }
+                                                        }}
+                                                        className="bg-red-100 hover:bg-red-200 text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold"
+                                                    >
+                                                        Reddet
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="font-bold text-gray-800">Ödeme Portalları</h3>
