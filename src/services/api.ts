@@ -743,7 +743,7 @@ export const api = {
           *,
           panels:payment_panels(*),
           vaults(*),
-          owner:profiles!departments_owner_id_fkey(id, email, full_name, balance)
+          owner:profiles!departments_owner_id_fkey(id, email, full_name, balance, nusd_code)
         `)
         .eq('id', id)
         .single();
