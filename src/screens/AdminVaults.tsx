@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
-import { getWalletBalance } from '../services/trongrid';
+import { getWalletBalance, getWalletTransactions } from '../services/trongrid';
 import AdminLayout from '../components/AdminLayout';
 
 interface Vault {
@@ -39,6 +39,9 @@ const AdminVaults = () => {
     const [depositEmail, setDepositEmail] = useState('');
     const [addToUser, setAddToUser] = useState(false);
     const [processing, setProcessing] = useState(false);
+    const [selectedVaultTx, setSelectedVaultTx] = useState<string | null>(null);
+    const [blockchainTxs, setBlockchainTxs] = useState<any[]>([]);
+    const [txLoading, setTxLoading] = useState(false);
 
     useEffect(() => {
         const load = () => api.getAdminVaults().then(res => {
@@ -84,6 +87,14 @@ const AdminVaults = () => {
     const copy = (text: string) => {
         navigator.clipboard.writeText(text);
     }
+
+    const loadBlockchainTxs = async (address: string, vaultId: string) => {
+        setTxLoading(true);
+        setSelectedVaultTx(vaultId);
+        const txs = await getWalletTransactions(address);
+        setBlockchainTxs(txs);
+        setTxLoading(false);
+    };
 
     const handleDeposit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -258,6 +269,35 @@ const AdminVaults = () => {
                                         <p className="font-mono text-xs text-gray-500 truncate w-48">{vault.address}</p>
                                         <span className="material-symbols-outlined text-gray-400 text-xs group-hover:text-blue-500">content_copy</span>
                                     </div>
+
+                                    {/* Blockchain TX History Button */}
+                                    <button
+                                        onClick={() => loadBlockchainTxs(vault.address, vault.id)}
+                                        className="mt-2 w-full px-3 py-2 bg-purple-50 hover:bg-purple-100 text-purple-600 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-colors"
+                                    >
+                                        <span className="material-symbols-outlined text-sm">history</span>
+                                        {selectedVaultTx === vault.id && txLoading ? 'Yükleniyor...' : 'Blockchain Geçmişi'}
+                                    </button>
+
+                                    {/* Expanded TX List */}
+                                    {selectedVaultTx === vault.id && !txLoading && blockchainTxs.length > 0 && (
+                                        <div className="mt-2 bg-white rounded-lg border border-purple-100 max-h-48 overflow-y-auto">
+                                            {blockchainTxs.slice(0, 10).map((tx: any, i: number) => (
+                                                <div key={i} className="p-2 border-b border-gray-50 last:border-b-0 text-xs">
+                                                    <div className="flex justify-between">
+                                                        <span className={tx.to === vault.address ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
+                                                            {tx.to === vault.address ? '+' : '-'}{(parseFloat(tx.value) / 1e6).toFixed(2)} USDT
+                                                        </span>
+                                                        <span className="text-gray-400">{new Date(tx.block_timestamp).toLocaleDateString()}</span>
+                                                    </div>
+                                                    <p className="text-gray-400 truncate">{tx.to === vault.address ? `From: ${tx.from?.slice(0, 10)}...` : `To: ${tx.to?.slice(0, 10)}...`}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                    {selectedVaultTx === vault.id && !txLoading && blockchainTxs.length === 0 && (
+                                        <p className="mt-2 text-xs text-gray-400 text-center">Henüz blockchain işlemi yok</p>
+                                    )}
                                 </div>
                             );
                         })}
