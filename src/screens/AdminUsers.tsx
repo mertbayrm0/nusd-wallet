@@ -52,6 +52,25 @@ const AdminUsers = () => {
         return matchesSearch && matchesRole;
     });
 
+    const exportToCsv = () => {
+        const headers = ['Ad', 'Email', 'Rol', 'Bakiye', 'Durum', 'TRX Adres'];
+        const rows = filteredUsers.map(u => [
+            u.name,
+            u.email,
+            u.role,
+            u.balance?.toFixed(2) || '0',
+            u.isActive ? 'Aktif' : 'Pasif',
+            u.trxAddress || ''
+        ]);
+        const csvContent = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `users_${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+    };
+
     return (
         <AdminLayout title="User Management">
             {/* Search & Filters */}
@@ -78,6 +97,13 @@ const AdminUsers = () => {
                     ))}
                 </div>
                 <span className="text-sm text-gray-500">{filteredUsers.length} kullanıcı</span>
+                <button
+                    onClick={exportToCsv}
+                    className="ml-auto px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-bold flex items-center gap-2 transition-colors"
+                >
+                    <span className="material-symbols-outlined text-sm">download</span>
+                    CSV İndir
+                </button>
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
