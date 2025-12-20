@@ -714,6 +714,21 @@ export const api = {
     }
   },
 
+  processBlockchainWithdrawal: async (withdrawalId: string, vaultId: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('process-withdrawal', {
+        body: { withdrawal_id: withdrawalId, vault_id: vaultId }
+      });
+      if (error) {
+        console.error('Process withdrawal error:', error);
+        return { success: false, error: error.message };
+      }
+      return data || { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  },
+
   approveTransaction: async (txId: string) => {
     try {
       const { data, error } = await supabase.functions.invoke('approve-transaction', {
