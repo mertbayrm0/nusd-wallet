@@ -132,10 +132,34 @@ const AdminDepartmentDetail = () => {
         <AdminLayout title="">
             {/* Header / Breadcrumb */}
             <div className="mb-6">
-                <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
-                    <span className="cursor-pointer hover:text-gray-600" onClick={() => navigate('/admin/departments')}>Departmanlar</span>
-                    <span>/</span>
-                    <span className="text-gray-800 font-bold">{dept.name}</span>
+                <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2 text-sm text-gray-400">
+                        <span className="cursor-pointer hover:text-gray-600" onClick={() => navigate('/admin/departments')}>Departmanlar</span>
+                        <span>/</span>
+                        <span className="text-gray-800 font-bold">{dept.name}</span>
+                    </div>
+                    {/* İşletme Paneli Toggle Button */}
+                    <button
+                        onClick={async () => {
+                            const isCurrentlyBusiness = dept.owner?.account_type === 'business';
+                            const result = await api.activateBusinessPanel(dept.owner?.id, !isCurrentlyBusiness);
+                            if (result.success) {
+                                alert(isCurrentlyBusiness ? 'İşletme Paneli deaktif edildi!' : 'İşletme Paneli aktifleştirildi!');
+                                fetchDetail();
+                            } else {
+                                alert('Hata: ' + (result.error || 'İşlem başarısız'));
+                            }
+                        }}
+                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2 ${dept.owner?.account_type === 'business'
+                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+                            }`}
+                    >
+                        <span className="material-symbols-outlined text-sm">
+                            {dept.owner?.account_type === 'business' ? 'storefront' : 'add_business'}
+                        </span>
+                        {dept.owner?.account_type === 'business' ? 'İşletme Paneli Aktif' : 'İşletme Paneli Aktifleştir'}
+                    </button>
                 </div>
 
                 {/* Top Stats Cards */}

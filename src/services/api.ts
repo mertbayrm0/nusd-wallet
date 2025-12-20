@@ -743,7 +743,7 @@ export const api = {
           *,
           panels:payment_panels(*),
           vaults(*),
-          owner:profiles!departments_owner_id_fkey(id, email, full_name, balance, nusd_code)
+          owner:profiles!departments_owner_id_fkey(id, email, full_name, balance, nusd_code, account_type)
         `)
         .eq('id', id)
         .single();
@@ -1836,6 +1836,28 @@ export const api = {
 
       return { success: true };
     } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  // Admin: İşletme Paneli yetkilendirmesi
+  activateBusinessPanel: async (userId: string, activate: boolean = true) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          account_type: activate ? 'business' : 'personal',
+          business_role: activate ? 'owner' : null
+        })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('activateBusinessPanel error:', error);
+        return { success: false, error: error.message };
+      }
+      return { success: true };
+    } catch (e: any) {
+      console.error('activateBusinessPanel exception:', e);
       return { success: false, error: e.message };
     }
   }
