@@ -1840,22 +1840,18 @@ export const api = {
     }
   },
 
-  // Admin: İşletme Paneli yetkilendirmesi
+  // Admin: İşletme Paneli yetkilendirmesi (Edge Function ile RLS bypass)
   activateBusinessPanel: async (userId: string, activate: boolean = true) => {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          account_type: activate ? 'business' : 'personal',
-          business_role: activate ? 'owner' : null
-        })
-        .eq('id', userId);
+      const { data, error } = await supabase.functions.invoke('activate-business-panel', {
+        body: { userId, activate }
+      });
 
       if (error) {
         console.error('activateBusinessPanel error:', error);
         return { success: false, error: error.message };
       }
-      return { success: true };
+      return data || { success: true };
     } catch (e: any) {
       console.error('activateBusinessPanel exception:', e);
       return { success: false, error: e.message };
