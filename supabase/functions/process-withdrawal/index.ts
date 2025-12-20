@@ -4,12 +4,18 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 // TronWeb için hex encoding utility
 const toHex = (str: string) => Array.from(str).map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join('');
 
-const TRONGRID_API_KEY = 'f8f57351-2bcf-428c-92d0-7d8652807847';
+// Use environment variable for API key
+const TRONGRID_API_KEY = Deno.env.get('TRONGRID_API_KEY') || 'f8f57351-2bcf-428c-92d0-7d8652807847';
 const USDT_CONTRACT = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
+const VAULT_MASTER_KEY = Deno.env.get('VAULT_MASTER_KEY') || '';
 
-const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+// Dynamic CORS
+function getCorsHeaders(origin: string | null) {
+    const ALLOWED = ['http://localhost:5173', 'http://localhost:3000', 'https://nusd-wallet-production.up.railway.app'];
+    return {
+        'Access-Control-Allow-Origin': origin && ALLOWED.includes(origin) ? origin : ALLOWED[0],
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    };
 }
 
 // TRC20 Transfer endpoint (TronGrid API)
@@ -50,6 +56,9 @@ async function sendUSDT(fromPrivateKey: string, toAddress: string, amount: numbe
 }
 
 serve(async (req) => {
+    const origin = req.headers.get('origin');
+    const corsHeaders = getCorsHeaders(origin);
+
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders });
     }
@@ -99,12 +108,22 @@ serve(async (req) => {
         // 4. Get vault with private key
         const { data: vault, error: vError } = await supabase
             .from('vaults')
-            .select('id, name, address, private_key, balance')
+            .select('id, name, address, private_key, encrypted_private_key, balance')
             .eq('id', vault_id)
             .single();
 
         if (vError || !vault) throw new Error('Vault not found');
-        if (!vault.private_key) throw new Error('Vault has no private key configured');
+
+        // Decrypt private key if encrypted, or use plain (legacy)
+        let privateKey = vault.private_key;
+        if (!privateKey && vault.encrypted_private_key && VAULT_MASTER_KEY) {
+            const { data: decrypted } = await supabase.rpc('decrypt_private_key', {
+                p_encrypted: vault.encrypted_private_key,
+                p_master_key: VAULT_MASTER_KEY
+            });
+            privateKey = decrypted;
+        }
+        if (!privateKey) throw new Error('Vault has no private key configured');
 
         const toAddress = withdrawal.profile?.trx_address || withdrawal.metadata?.withdrawal_address;
         if (!toAddress) throw new Error('No destination address');
@@ -115,7 +134,7 @@ serve(async (req) => {
         }
 
         // 6. Send the actual USDT transfer
-        const txResult = await sendUSDT(vault.private_key, toAddress, withdrawal.amount);
+        const txResult = await sendUSDT(privateKey, toAddress, withdrawal.amount);
 
         if (!txResult.success) {
             throw new Error(txResult.error || 'Transfer failed');
