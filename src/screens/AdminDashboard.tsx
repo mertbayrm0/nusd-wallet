@@ -48,16 +48,18 @@ const StatCard = ({ icon, iconBg, label, value, sublabel, trend }: {
 const AdminDashboard = () => {
     const [stats, setStats] = useState<Stats | null>(null);
     const [loading, setLoading] = useState(true);
+    const [pendingTxs, setPendingTxs] = useState(0);
+    const [portalRequests, setPortalRequests] = useState(0);
 
     useEffect(() => {
-        const load = () => {
-            api.getSystemStats().then(s => {
-                setStats(s);
-                setLoading(false);
-            });
+        const load = async () => {
+            const s = await api.getSystemStats();
+            setStats(s);
+            setPendingTxs(s?.pendingTransactions || 0);
+            setLoading(false);
         };
         load();
-        const interval = setInterval(load, 10000); // Refresh every 10s
+        const interval = setInterval(load, 10000);
         return () => clearInterval(interval);
     }, []);
 
@@ -70,6 +72,27 @@ const AdminDashboard = () => {
 
     return (
         <AdminLayout title="Sistem Özeti">
+            {/* Notifications Panel */}
+            {(pendingTxs > 0) && (
+                <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-4">
+                    <h3 className="font-bold text-amber-800 mb-3 flex items-center gap-2">
+                        <span className="material-symbols-outlined text-amber-600">notifications_active</span>
+                        Bildirimler
+                    </h3>
+                    <div className="flex flex-wrap gap-3">
+                        {pendingTxs > 0 && (
+                            <a href="/#/admin/transactions" className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-amber-200 hover:border-amber-400 transition-colors">
+                                <div className="w-8 h-8 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center font-bold">
+                                    {pendingTxs}
+                                </div>
+                                <span className="text-sm font-bold text-gray-700">Bekleyen İşlem</span>
+                                <span className="material-symbols-outlined text-gray-400 text-sm">arrow_forward</span>
+                            </a>
+                        )}
+                    </div>
+                </div>
+            )}
+
             {/* Main Stats Banner */}
             <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-6 mb-6 text-white">
                 <div className="flex items-center justify-between">
