@@ -32,8 +32,8 @@ const StatCard = ({ icon, iconBg, label, value, sublabel, trend }: {
             </div>
             {trend && (
                 <span className={`text-xs font-bold px-2 py-1 rounded-full ${trend === 'up' ? 'bg-green-100 text-green-600' :
-                        trend === 'down' ? 'bg-red-100 text-red-600' :
-                            'bg-gray-100 text-gray-600'
+                    trend === 'down' ? 'bg-red-100 text-red-600' :
+                        'bg-gray-100 text-gray-600'
                     }`}>
                     {trend === 'up' ? '↑' : trend === 'down' ? '↓' : '—'}
                 </span>
@@ -179,6 +179,71 @@ const AdminDashboard = () => {
                         </div>
                     </div>
                     <p className="text-xs text-gray-400">Tüm işlemlerin toplam değeri</p>
+                </div>
+            </div>
+
+            {/* Visual Flow Chart */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-blue-600">insights</span>
+                    Para Akış Grafiği
+                </h3>
+                <div className="space-y-4">
+                    {/* Deposits Bar */}
+                    <div>
+                        <div className="flex justify-between text-sm mb-1">
+                            <span className="font-bold text-green-600">Gelen</span>
+                            <span className="font-bold text-green-600">${stats?.totalDeposits?.toLocaleString() || 0}</span>
+                        </div>
+                        <div className="h-6 bg-gray-100 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transition-all duration-1000"
+                                style={{
+                                    width: `${Math.min(100, ((stats?.totalDeposits || 0) / Math.max((stats?.totalDeposits || 0) + (stats?.totalWithdrawals || 0), 1)) * 100)}%`
+                                }}
+                            />
+                        </div>
+                    </div>
+                    {/* Withdrawals Bar */}
+                    <div>
+                        <div className="flex justify-between text-sm mb-1">
+                            <span className="font-bold text-red-600">Çıkan</span>
+                            <span className="font-bold text-red-600">${stats?.totalWithdrawals?.toLocaleString() || 0}</span>
+                        </div>
+                        <div className="h-6 bg-gray-100 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-gradient-to-r from-red-400 to-rose-500 rounded-full transition-all duration-1000"
+                                style={{
+                                    width: `${Math.min(100, ((stats?.totalWithdrawals || 0) / Math.max((stats?.totalDeposits || 0) + (stats?.totalWithdrawals || 0), 1)) * 100)}%`
+                                }}
+                            />
+                        </div>
+                    </div>
+                    {/* Ratio Info */}
+                    <div className="flex items-center justify-center gap-4 pt-2 border-t border-gray-100">
+                        <div className="text-center">
+                            <p className="text-3xl font-extrabold text-gray-900">
+                                {stats && (stats.totalDeposits + stats.totalWithdrawals) > 0
+                                    ? Math.round((stats.totalDeposits / (stats.totalDeposits + stats.totalWithdrawals)) * 100)
+                                    : 0}%
+                            </p>
+                            <p className="text-xs text-gray-400">Gelen Oranı</p>
+                        </div>
+                        <div className="w-px h-12 bg-gray-200" />
+                        <div className="text-center">
+                            <p className="text-3xl font-extrabold text-gray-900">
+                                {stats?.totalTransactions || 0}
+                            </p>
+                            <p className="text-xs text-gray-400">Toplam İşlem</p>
+                        </div>
+                        <div className="w-px h-12 bg-gray-200" />
+                        <div className="text-center">
+                            <p className={`text-3xl font-extrabold ${(stats?.totalDeposits || 0) >= (stats?.totalWithdrawals || 0) ? 'text-green-600' : 'text-red-600'}`}>
+                                ${Math.abs((stats?.totalDeposits || 0) - (stats?.totalWithdrawals || 0)).toLocaleString()}
+                            </p>
+                            <p className="text-xs text-gray-400">Net Bakiye</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
