@@ -26,6 +26,22 @@ const AdminUsers = () => {
         }
     };
 
+    const editBalance = async (email: string, currentBalance: number) => {
+        const newBalanceStr = prompt(`Yeni bakiye (mevcut: $${currentBalance.toFixed(2)}):`, currentBalance.toString());
+        if (newBalanceStr === null) return;
+        const newBalance = parseFloat(newBalanceStr);
+        if (isNaN(newBalance)) {
+            alert('Geçersiz tutar');
+            return;
+        }
+        const result = await api.updateUserBalance(email, newBalance);
+        if (result.success) {
+            loadUsers();
+        } else {
+            alert('Hata: ' + (result.error || 'Güncelleme başarısız'));
+        }
+    };
+
     return (
         <AdminLayout title="User Management">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -65,8 +81,13 @@ const AdminUsers = () => {
                                             {u.role}
                                         </span>
                                     </td>
-                                    <td className="p-4 font-mono font-bold text-gray-700">
-                                        ${u.balance?.toFixed(2)}
+                                    <td className="p-4">
+                                        <button
+                                            onClick={() => editBalance(u.email, u.balance || 0)}
+                                            className="font-mono font-bold text-gray-700 hover:text-blue-600 cursor-pointer"
+                                        >
+                                            ${u.balance?.toFixed(2)} ✏️
+                                        </button>
                                     </td>
                                     <td className="p-4">
                                         <span className={`flex items-center gap-1.5 text-xs font-bold ${u.isActive ? 'text-green-600' : 'text-red-600'}`}>

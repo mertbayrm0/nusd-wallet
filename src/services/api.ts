@@ -631,6 +631,20 @@ export const api = {
     }
   },
 
+  updateUserBalance: async (email: string, newBalance: number) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ balance: newBalance })
+        .eq('email', email);
+
+      if (error) return { success: false, error: error.message };
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  },
+
   approveTransaction: async (txId: string) => {
     try {
       const { data, error } = await supabase.functions.invoke('approve-transaction', {
