@@ -427,7 +427,7 @@ serve(async (req) => {
     } catch (e: any) {
         console.error('P2P Action error:', e)
         return new Response(
-            JSON.stringify({ success: false, error: 'Internal error', details: e.message }),
+            JSON.stringify({ success: false, error: 'Internal error' }),
             { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
     }

@@ -170,7 +170,7 @@ serve(async (req) => {
     } catch (e: any) {
         console.error('Unexpected error:', e)
         return new Response(
-            JSON.stringify({ error: 'Internal server error', code: 'INTERNAL_ERROR', details: e.message }),
+            JSON.stringify({ error: 'Internal server error', code: 'INTERNAL_ERROR' }),
             { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
     }

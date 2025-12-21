@@ -189,7 +189,22 @@ serve(async (req) => {
                 description: `Transfer from internal`
             })
 
-        console.log('Transfer completed:', { sender: sender.id, recipient: recipient.id, amount })
+        // 7. Audit Log
+        await supabase.rpc('log_audit', {
+            p_actor_id: sender.id,
+            p_actor_email: sender.email,
+            p_actor_role: 'user',
+            p_action: 'TRANSFER',
+            p_resource_type: 'transaction',
+            p_resource_id: senderTx?.id,
+            p_details: {
+                amount,
+                recipient_code,
+                recipient_id: recipient.id,
+                sender_new_balance: senderNewBalance,
+                recipient_new_balance: recipientNewBalance
+            }
+        });
 
         return new Response(
             JSON.stringify({
@@ -201,10 +216,11 @@ serve(async (req) => {
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
-    } catch (e) {
-        console.error('Function error:', e)
+    } catch (e: any) {
+        // Log details server-side only
+        console.error('Function error:', e.message);
         return new Response(
-            JSON.stringify({ error: 'Internal error', details: e.message }),
+            JSON.stringify({ error: 'Transfer failed. Please try again.' }),
             { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
     }

@@ -192,7 +192,7 @@ serve(async (req) => {
     } catch (e: any) {
         console.error('Admin action error:', e)
         return new Response(
-            JSON.stringify({ error: 'Internal error', details: e.message }),
+            JSON.stringify({ error: 'Internal error' }),
             { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
     }
