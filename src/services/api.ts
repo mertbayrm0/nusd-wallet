@@ -2300,5 +2300,59 @@ export const api = {
     } catch (e) {
       return false;
     }
+  },
+
+  // ===== TRANSACTION LIMITS =====
+
+  // Get user's current limits and usage
+  getUserLimits: async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data, error } = await supabase
+        .rpc('get_user_limits', { p_user_id: user.id });
+
+      if (error) {
+        console.error('getUserLimits error:', error);
+        return null;
+      }
+
+      return data?.[0] || null;
+    } catch (e) {
+      console.error('getUserLimits error:', e);
+      return null;
+    }
+  },
+
+  // Check if a transaction amount is within limits
+  checkTransactionLimit: async (amount: number, updateUsage: boolean = false) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { allowed: false, error: 'Oturum bulunamadı' };
+
+      const { data, error } = await supabase
+        .rpc('check_transaction_limit', {
+          p_user_id: user.id,
+          p_amount: amount,
+          p_update: updateUsage
+        });
+
+      if (error) {
+        console.error('checkTransactionLimit error:', error);
+        return { allowed: false, error: 'Limit kontrolü yapılamadı' };
+      }
+
+      const result = data?.[0];
+      return {
+        allowed: result?.allowed || false,
+        daily_remaining: result?.daily_remaining || 0,
+        monthly_remaining: result?.monthly_remaining || 0,
+        error: result?.error_message || null
+      };
+    } catch (e) {
+      console.error('checkTransactionLimit error:', e);
+      return { allowed: false, error: 'Beklenmeyen hata' };
+    }
   }
 };
