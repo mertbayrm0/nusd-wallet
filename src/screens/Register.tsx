@@ -16,12 +16,14 @@ const Register = () => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [termsAccepted, setTermsAccepted] = useState(false);
 
     const handleRegister = async () => {
         if (!name || !email || !password) return alert("Lütfen tüm alanları doldurun");
         if (password.length < 6) return alert("Şifre en az 6 karakter olmalıdır");
         if (password !== confirmPassword) return alert("Şifreler eşleşmiyor");
         if (accountType === 'business' && !businessName) return alert("Ticari hesaplar için firma adı gereklidir");
+        if (!termsAccepted) return alert("Kullanım koşullarını ve gizlilik politikasını kabul etmelisiniz");
 
         setLoading(true);
         const result = await api.register(name, email, password, accountType, businessName);
@@ -183,9 +185,26 @@ const Register = () => {
                                 </div>
                             </div>
 
+                            {/* Terms Acceptance Checkbox */}
+                            <div className="flex items-start gap-3 py-2">
+                                <input
+                                    type="checkbox"
+                                    id="terms"
+                                    checked={termsAccepted}
+                                    onChange={(e) => setTermsAccepted(e.target.checked)}
+                                    className="w-5 h-5 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500 mt-0.5 shrink-0"
+                                />
+                                <label htmlFor="terms" className="text-gray-500 text-xs leading-relaxed">
+                                    <button type="button" onClick={() => navigate('/terms')} className="text-emerald-600 underline">Kullanım Koşulları</button>
+                                    {' '}ve{' '}
+                                    <button type="button" onClick={() => navigate('/privacy')} className="text-emerald-600 underline">Gizlilik Politikası</button>
+                                    'nı okudum ve kabul ediyorum. 18 yaşından büyük olduğumu beyan ederim.
+                                </label>
+                            </div>
+
                             <button
                                 onClick={handleRegister}
-                                disabled={loading}
+                                disabled={loading || !termsAccepted}
                                 className="w-full bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-emerald-500/30 transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >
                                 {loading ? (

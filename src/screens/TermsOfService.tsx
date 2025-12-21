@@ -44,6 +44,25 @@ const TermsOfService = () => {
                     </p>
                 </div>
 
+                <div className="bg-white rounded-2xl p-5 shadow-lg border-2 border-red-200 space-y-4">
+                    <h2 className="text-red-600 font-bold text-lg flex items-center gap-2">
+                        <span className="material-symbols-outlined">dangerous</span>
+                        Yaş Sınırı ve Risk Uyarısı
+                    </h2>
+                    <div className="bg-red-50 rounded-xl p-4 border border-red-200">
+                        <p className="text-red-700 text-sm leading-relaxed font-medium">
+                            🔞 Bu platform yalnızca 18 yaş ve üzeri kullanıcılar içindir.
+                        </p>
+                    </div>
+                    <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
+                        <p className="text-amber-700 text-sm leading-relaxed font-medium">
+                            ⚠️ KRİPTO PARA YATIRIMLARI RİSK İÇERİR. Yatırdığınız tutarın tamamını
+                            kaybedebilirsiniz. Bu platform yatırım tavsiyesi vermez. Tüm işlem
+                            kararları tamamen sizin sorumluluğunuzdadır.
+                        </p>
+                    </div>
+                </div>
+
                 <div className="bg-white rounded-2xl p-5 shadow-lg border-2 border-amber-200 space-y-4">
                     <h2 className="text-amber-600 font-bold text-lg flex items-center gap-2">
                         <span className="material-symbols-outlined">warning</span>
