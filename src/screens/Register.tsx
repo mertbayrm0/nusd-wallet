@@ -47,8 +47,8 @@ const Register = () => {
 
                 {/* Logo Section */}
                 <div className="text-center mb-6">
-                    <div className="w-36 h-36 bg-white rounded-3xl flex items-center justify-center mx-auto mb-3 shadow-xl shadow-emerald-900/50 overflow-hidden">
-                        <img src="/logo.png" alt="Nubit Logo" className="w-24 h-24 object-contain" />
+                    <div className="w-28 h-28 bg-white rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-xl shadow-emerald-900/50 overflow-hidden p-1.5">
+                        <img src="/logo.png" alt="Nubit Logo" className="w-full h-full object-contain" />
                     </div>
                     <h1 className="text-2xl font-extrabold text-white mb-1">Hesap Oluştur</h1>
                     <p className="text-emerald-300/80 text-sm">Nubit Wallet'a katılın</p>
