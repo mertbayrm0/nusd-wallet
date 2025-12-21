@@ -19,21 +19,55 @@ const History = () => {
                     return;
                 }
 
-                const { data, error } = await supabase
+                // 1. Normal transactions
+                const { data: transactions, error: txError } = await supabase
                     .from('transactions')
                     .select('*')
                     .eq('user_id', user.id)
                     .order('created_at', { ascending: false });
 
-                console.log('[History] Query result:', { data, error, count: data?.length });
+                if (txError) console.error('[History] Transactions error:', txError);
 
-                if (error) {
-                    console.error('[History] Transactions fetch error:', error);
-                } else {
-                    setTxs(data || []);
-                }
+                // 2. P2P orders
+                const { data: p2pOrders, error: p2pError } = await supabase
+                    .from('p2p_orders')
+                    .select('*')
+                    .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
+                    .in('status', ['COMPLETED'])
+                    .order('created_at', { ascending: false });
+
+                if (p2pError) console.error('[History] P2P error:', p2pError);
+
+                // Convert P2P orders to transaction format - deduplicate matched pairs
+                const seenPairs = new Set<string>();
+                const p2pAsTxs = (p2pOrders || [])
+                    .filter((order: any) => {
+                        if (order.matched_order_id) {
+                            const pairKey = [order.id, order.matched_order_id].sort().join('|');
+                            if (seenPairs.has(pairKey)) return false;
+                            seenPairs.add(pairKey);
+                        }
+                        return true;
+                    })
+                    .map((order: any) => {
+                        const isSeller = order.seller_id === user.id;
+                        return {
+                            id: order.id,
+                            type: isSeller ? 'P2P_SELL' : 'P2P_BUY',
+                            amount: isSeller ? -order.amount_usd : order.amount_usd,
+                            status: order.status,
+                            created_at: order.created_at
+                        };
+                    });
+
+                // Combine and sort
+                const allTxs = [...(transactions || []), ...p2pAsTxs]
+                    .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+                console.log('[History] Combined result:', { count: allTxs.length });
+                setTxs(allTxs);
             } catch (e) {
-                console.error('[History] Transactions exception:', e);
+                console.error('[History] Exception:', e);
             }
             setLoading(false);
         };
@@ -51,8 +85,10 @@ const History = () => {
 
     const getTypeIcon = (type: string) => {
         switch (type?.toUpperCase()) {
-            case 'DEPOSIT': return 'arrow_downward';
-            case 'WITHDRAW': return 'arrow_upward';
+            case 'DEPOSIT':
+            case 'P2P_BUY': return 'arrow_downward';
+            case 'WITHDRAW':
+            case 'P2P_SELL': return 'arrow_upward';
             case 'TRANSFER': return 'swap_horiz';
             default: return 'receipt_long';
         }
@@ -97,8 +133,8 @@ const History = () => {
                     txs.map((tx: any) => (
                         <div key={tx.id} className="bg-[#1a1a1a] p-4 rounded-2xl border border-white/5 flex items-center justify-between hover:bg-[#222] transition-colors">
                             <div className="flex items-center gap-4">
-                                <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${tx.type === 'DEPOSIT' ? 'bg-lime-500/20 text-lime-400' :
-                                    tx.type === 'WITHDRAW' ? 'bg-red-500/20 text-red-400' :
+                                <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${['DEPOSIT', 'P2P_BUY'].includes(tx.type) ? 'bg-lime-500/20 text-lime-400' :
+                                    ['WITHDRAW', 'P2P_SELL'].includes(tx.type) ? 'bg-red-500/20 text-red-400' :
                                         'bg-blue-500/20 text-blue-400'
                                     }`}>
                                     <span className="material-symbols-outlined">
@@ -109,14 +145,16 @@ const History = () => {
                                     <h3 className="font-bold text-white text-sm">
                                         {tx.type === 'DEPOSIT' ? 'Yatırım' :
                                             tx.type === 'WITHDRAW' ? 'Çekim' :
-                                                tx.type === 'TRANSFER' ? 'Transfer' : tx.type}
+                                                tx.type === 'TRANSFER' ? 'Transfer' :
+                                                    tx.type === 'P2P_BUY' ? 'P2P Alış' :
+                                                        tx.type === 'P2P_SELL' ? 'P2P Satış' : tx.type}
                                     </h3>
                                     <p className="text-gray-500 text-xs font-medium mt-0.5">{formatDate(tx.created_at)}</p>
                                 </div>
                             </div>
                             <div className="text-right">
-                                <p className={`font-bold text-base ${tx.type === 'DEPOSIT' ? 'text-lime-400' : 'text-white'}`}>
-                                    {tx.type === 'DEPOSIT' ? '+' : tx.type === 'WITHDRAW' ? '-' : ''}{Math.abs(tx.amount).toLocaleString()} <span className="text-xs text-gray-500 font-bold ml-0.5">USDT</span>
+                                <p className={`font-bold text-base ${['DEPOSIT', 'P2P_BUY'].includes(tx.type) ? 'text-lime-400' : 'text-white'}`}>
+                                    {['DEPOSIT', 'P2P_BUY'].includes(tx.type) ? '+' : ['WITHDRAW', 'P2P_SELL'].includes(tx.type) ? '-' : ''}{Math.abs(tx.amount).toLocaleString()} <span className="text-xs text-gray-500 font-bold ml-0.5">USDT</span>
                                 </p>
                                 <p className={`text-xs font-medium mt-0.5 capitalize ${getStatusColor(tx.status)}`}>
                                     {tx.status === 'COMPLETED' ? 'Tamamlandı' :
