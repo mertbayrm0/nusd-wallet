@@ -10,6 +10,7 @@ import { useTheme } from '../theme';
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, refreshUser } = useApp();
+  const { isDark } = useTheme();
   const [txs, setTxs] = useState([]);
   const [approvals, setApprovals] = useState([]);
   const [notification, setNotification] = useState<any>(null);
@@ -313,17 +314,17 @@ const Dashboard = () => {
       {/* Header */}
       <div className="px-5 py-4 flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-lime-400 to-green-600 flex items-center justify-center text-black font-bold text-sm shadow-lg shadow-lime-500/30">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-emerald-500/30">
             {user.name?.charAt(0) || 'U'}
           </div>
           <div>
-            <p className="text-white font-bold text-sm">{user.name || user.email}</p>
-            <p className="text-gray-500 text-xs">NUSD Wallet</p>
+            <p className={`font-bold text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>{user.name || user.email}</p>
+            <p className="text-gray-500 text-xs">Nubit Wallet</p>
           </div>
         </div>
         <button
           onClick={() => navigate('/notifications')}
-          className="w-10 h-10 rounded-full bg-[#1a1a1a] flex items-center justify-center text-gray-400 hover:text-white transition-colors relative"
+          className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors relative ${isDark ? 'bg-[#1a1a1a] text-gray-400 hover:text-white' : 'bg-gray-100 text-gray-600 hover:text-gray-900'}`}
         >
           <span className="material-symbols-outlined text-xl">notifications</span>
           {notification && <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>}
@@ -415,22 +416,22 @@ const Dashboard = () => {
         {/* Balance Card with Action Buttons */}
         <div className="mb-8 relative">
           {/* Aurora Background Effect */}
-          <div className="absolute inset-0 bg-gradient-to-br from-lime-500/10 via-transparent to-purple-500/10 rounded-3xl blur-xl"></div>
+          <div className={`absolute inset-0 rounded-3xl blur-xl ${isDark ? 'bg-gradient-to-br from-emerald-500/10 via-transparent to-purple-500/10' : 'bg-gradient-to-br from-emerald-500/5 via-transparent to-blue-500/5'}`}></div>
 
-          <div className="relative bg-[#1a1a1a]/80 backdrop-blur-xl p-6 rounded-3xl border border-white/5">
+          <div className={`relative p-6 rounded-3xl border backdrop-blur-xl ${isDark ? 'bg-[#1a1a1a]/80 border-white/5' : 'bg-white/80 border-gray-200 shadow-lg'}`}>
             {/* İŞLETME PANELİ BUTONU - Sadece business hesaplar için */}
             {user.account_type === 'business' && (
               <button
                 onClick={() => navigate('/business')}
-                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 active:scale-[0.98] transition-all text-black py-3 rounded-xl font-bold text-sm shadow-lg shadow-amber-500/30 mb-4"
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 active:scale-[0.98] transition-all text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-amber-500/30 mb-4"
               >
                 <span className="material-symbols-outlined text-lg">storefront</span>
                 İşletme Paneli
               </button>
             )}
 
-            <p className="text-gray-500 font-medium text-sm mb-2">Your balance</p>
-            <h2 className="text-5xl font-extrabold text-white tracking-tight mb-6">
+            <p className={`font-medium text-sm mb-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Your balance</p>
+            <h2 className={`text-5xl font-extrabold tracking-tight mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
               ${user.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </h2>
 
@@ -438,52 +439,52 @@ const Dashboard = () => {
             <div className="flex justify-between gap-2">
               {/* Deposit */}
               <button onClick={() => navigate('/deposit')} className="flex flex-col items-center gap-2 group flex-1">
-                <div className="w-12 h-12 rounded-full bg-lime-500 flex items-center justify-center shadow-lg shadow-lime-500/30 group-hover:scale-110 group-active:scale-95 transition-all">
-                  <span className="material-symbols-outlined text-black text-xl">arrow_downward</span>
+                <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30 group-hover:scale-110 group-active:scale-95 transition-all">
+                  <span className="material-symbols-outlined text-white text-xl">arrow_downward</span>
                 </div>
-                <span className="text-gray-400 text-xs font-medium group-hover:text-white transition-colors">Deposit</span>
+                <span className={`text-xs font-medium group-hover:text-emerald-500 transition-colors ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Deposit</span>
               </button>
 
               {/* Withdraw */}
               <button onClick={() => navigate('/withdraw')} className="flex flex-col items-center gap-2 group flex-1">
-                <div className="w-12 h-12 rounded-full bg-lime-500 flex items-center justify-center shadow-lg shadow-lime-500/30 group-hover:scale-110 group-active:scale-95 transition-all">
-                  <span className="material-symbols-outlined text-black text-xl">arrow_upward</span>
+                <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30 group-hover:scale-110 group-active:scale-95 transition-all">
+                  <span className="material-symbols-outlined text-white text-xl">arrow_upward</span>
                 </div>
-                <span className="text-gray-400 text-xs font-medium group-hover:text-white transition-colors">Withdraw</span>
+                <span className={`text-xs font-medium group-hover:text-emerald-500 transition-colors ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Withdraw</span>
               </button>
 
               {/* Crypto Deposit */}
               <button onClick={() => navigate('/crypto/deposit')} className="flex flex-col items-center gap-2 group flex-1">
-                <div className="w-12 h-12 rounded-full bg-lime-500 flex items-center justify-center shadow-lg shadow-lime-500/30 group-hover:scale-110 group-active:scale-95 transition-all">
-                  <span className="material-symbols-outlined text-black text-xl">download</span>
+                <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30 group-hover:scale-110 group-active:scale-95 transition-all">
+                  <span className="material-symbols-outlined text-white text-xl">download</span>
                 </div>
-                <span className="text-gray-400 text-[10px] font-medium group-hover:text-white transition-colors text-center leading-tight">Crypto<br />Deposit</span>
+                <span className={`text-[10px] font-medium group-hover:text-emerald-500 transition-colors text-center leading-tight ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Crypto<br />Deposit</span>
               </button>
 
               {/* Crypto Withdraw */}
               <button onClick={() => navigate('/crypto/withdraw')} className="flex flex-col items-center gap-2 group flex-1">
-                <div className="w-12 h-12 rounded-full bg-lime-500 flex items-center justify-center shadow-lg shadow-lime-500/30 group-hover:scale-110 group-active:scale-95 transition-all">
-                  <span className="material-symbols-outlined text-black text-xl">upload</span>
+                <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30 group-hover:scale-110 group-active:scale-95 transition-all">
+                  <span className="material-symbols-outlined text-white text-xl">upload</span>
                 </div>
-                <span className="text-gray-400 text-[10px] font-medium group-hover:text-white transition-colors text-center leading-tight">Crypto<br />Withdraw</span>
+                <span className={`text-[10px] font-medium group-hover:text-emerald-500 transition-colors text-center leading-tight ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Crypto<br />Withdraw</span>
               </button>
             </div>
 
             {/* Find Agent Button */}
             <button
               onClick={() => navigate('/find-agent')}
-              className="mt-4 w-full bg-[#222] border border-white/10 p-3 rounded-2xl flex items-center justify-between group hover:bg-[#2a2a2a] transition-all"
+              className={`mt-4 w-full p-3 rounded-2xl flex items-center justify-between group transition-all border ${isDark ? 'bg-[#222] border-white/10 hover:bg-[#2a2a2a]' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'}`}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-lime-500/20 flex items-center justify-center text-lime-400 group-hover:bg-lime-500 group-hover:text-black transition-colors">
+                <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
                   <span className="material-symbols-outlined">map</span>
                 </div>
                 <div className="text-left">
-                  <p className="text-white font-bold text-sm">Find Agent</p>
+                  <p className={`font-bold text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>Find Agent</p>
                   <p className="text-gray-500 text-xs">Locate nearest exchange points</p>
                 </div>
               </div>
-              <span className="material-symbols-outlined text-gray-500 group-hover:text-white">chevron_right</span>
+              <span className={`material-symbols-outlined ${isDark ? 'text-gray-500 group-hover:text-white' : 'text-gray-400 group-hover:text-gray-900'}`}>chevron_right</span>
             </button>
           </div>
         </div>
@@ -501,10 +502,10 @@ const Dashboard = () => {
 
         {/* Recent Activity */}
         <div className="flex justify-between items-center mb-4">
-          <h3 className="font-bold text-lg text-white">Recent Activity</h3>
+          <h3 className={`font-bold text-lg ${isDark ? 'text-white' : 'text-gray-900'}`}>Recent Activity</h3>
           <button
             onClick={() => navigate('/history')}
-            className="text-lime-400 text-xs font-bold flex items-center hover:text-lime-300 transition-colors"
+            className="text-emerald-500 text-xs font-bold flex items-center hover:text-emerald-400 transition-colors"
           >
             View All <span className="material-symbols-outlined text-sm ml-1">arrow_forward</span>
           </button>
@@ -512,25 +513,25 @@ const Dashboard = () => {
 
         <div className="space-y-3">
           {txs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 bg-[#1a1a1a] rounded-2xl border border-white/5 text-gray-500">
+            <div className={`flex flex-col items-center justify-center py-12 rounded-2xl border ${isDark ? 'bg-[#1a1a1a] border-white/5 text-gray-500' : 'bg-gray-50 border-gray-200 text-gray-400'}`}>
               <span className="material-symbols-outlined text-4xl mb-2 opacity-30">history</span>
               <p className="text-sm font-medium">No recent transactions</p>
             </div>
           ) : (
             txs.map((tx: any) => (
-              <div key={tx.id} className="bg-[#1a1a1a] p-4 rounded-2xl border border-white/5 flex justify-between items-center transition-all hover:bg-[#222] hover:border-white/10">
+              <div key={tx.id} className={`p-4 rounded-2xl border flex justify-between items-center transition-all ${isDark ? 'bg-[#1a1a1a] border-white/5 hover:bg-[#222] hover:border-white/10' : 'bg-white border-gray-200 hover:bg-gray-50 shadow-sm'}`}>
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${tx.amount > 0 ? 'bg-lime-500/20 text-lime-400' : 'bg-red-500/20 text-red-400'}`}>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${tx.amount > 0 ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-500'}`}>
                     <span className="material-symbols-outlined text-xl">
                       {tx.amount > 0 ? 'arrow_downward' : 'arrow_upward'}
                     </span>
                   </div>
                   <div>
-                    <p className="font-bold text-white text-sm">{tx.title}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{tx.date?.split(',')[0] || tx.date?.split('T')[0]} • <span className={tx.status?.toLowerCase() === 'completed' ? 'text-lime-400' : 'text-amber-400'}>{tx.status === 'PAYMENT_REVIEW' ? 'PENDING' : tx.status}</span></p>
+                    <p className={`font-bold text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>{tx.title}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{tx.date?.split(',')[0] || tx.date?.split('T')[0]} • <span className={tx.status?.toLowerCase() === 'completed' ? 'text-emerald-500' : 'text-amber-500'}>{tx.status === 'PAYMENT_REVIEW' ? 'PENDING' : tx.status}</span></p>
                   </div>
                 </div>
-                <span className={`font-bold text-base ${tx.amount > 0 ? 'text-lime-400' : 'text-white'}`}>
+                <span className={`font-bold text-base ${tx.amount > 0 ? 'text-emerald-500' : isDark ? 'text-white' : 'text-gray-900'}`}>
                   {tx.amount > 0 ? '+' : ''}{tx.amount.toFixed(2)}
                 </span>
               </div>
