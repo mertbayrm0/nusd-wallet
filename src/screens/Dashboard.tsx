@@ -514,8 +514,8 @@ const Dashboard = () => {
 
         {/* Transaction History - Bottom Sheet */}
         <div
-          className={`fixed left-0 right-0 bg-white rounded-t-3xl shadow-2xl shadow-black/30 transition-all duration-300 ease-out z-40 ${sheetExpanded ? 'top-32' : 'bottom-20'}`}
-          style={{ height: sheetExpanded ? 'calc(100vh - 8rem)' : '180px' }}
+          className={`fixed left-0 right-0 bottom-0 bg-white rounded-t-3xl shadow-2xl shadow-black/30 transition-all duration-300 ease-out z-40`}
+          style={{ height: sheetExpanded ? 'calc(100vh - 120px)' : '200px' }}
         >
           {/* Drag Handle */}
           <div
@@ -537,14 +537,17 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className={`px-5 space-y-3 overflow-y-auto ${sheetExpanded ? 'pb-32' : ''}`} style={{ maxHeight: sheetExpanded ? 'calc(100vh - 14rem)' : '100px' }}>
+          <div
+            className="px-5 space-y-3 overflow-y-auto pb-24"
+            style={{ height: sheetExpanded ? 'calc(100% - 80px)' : '100px' }}
+          >
             {txs.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 rounded-2xl bg-gray-50 text-gray-400">
                 <span className="material-symbols-outlined text-3xl mb-2 opacity-30">history</span>
                 <p className="text-sm font-medium">No recent transactions</p>
               </div>
             ) : (
-              txs.slice(0, sheetExpanded ? txs.length : 2).map((tx: any) => (
+              txs.slice(0, sheetExpanded ? txs.length : 1).map((tx: any) => (
                 <div key={tx.id} className="p-4 rounded-2xl bg-gray-50 flex justify-between items-center transition-all hover:bg-gray-100">
                   <div className="flex items-center gap-3">
                     <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${tx.amount > 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-500'}`}>
