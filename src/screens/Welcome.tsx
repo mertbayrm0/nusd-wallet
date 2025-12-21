@@ -8,19 +8,19 @@ const Welcome: React.FC = () => {
     const slides = [
         {
             icon: 'account_balance_wallet',
-            iconBg: 'from-emerald-400 to-teal-500',
+            iconBg: 'bg-emerald-500',
             title: 'Güvenli Kripto Cüzdanı',
             description: 'USDT varlıklarınızı güvenle saklayın ve yönetin. Gelişmiş güvenlik altyapısıyla korunun.'
         },
         {
             icon: 'swap_horiz',
-            iconBg: 'from-blue-400 to-indigo-500',
+            iconBg: 'bg-blue-500',
             title: 'Hızlı P2P Transferler',
             description: 'Anında dahili transferler yapın. NUSD-XXXX kodunuzla saniyeler içinde para gönderin ve alın.'
         },
         {
             icon: 'verified_user',
-            iconBg: 'from-purple-400 to-pink-500',
+            iconBg: 'bg-purple-500',
             title: 'Çoklu Ağ Desteği',
             description: 'TRC20, ERC20 ve BEP20 ağlarında USDT yatırın ve çekin. Tek cüzdan, tüm ağlar.'
         }
@@ -44,20 +44,19 @@ const Welcome: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-emerald-800 via-emerald-900 to-emerald-950 flex flex-col font-display relative overflow-hidden">
+        <div className="min-h-screen bg-white flex flex-col font-display relative overflow-hidden">
 
             {/* Decorative Background Elements */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute -top-32 -right-32 w-96 h-96 bg-emerald-600/30 rounded-full blur-3xl" />
-                <div className="absolute -bottom-48 -left-48 w-[500px] h-[500px] bg-teal-500/20 rounded-full blur-3xl" />
-                <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-80 h-80 bg-emerald-400/10 rounded-full blur-2xl" />
+                <div className="absolute -top-32 -right-32 w-96 h-96 bg-emerald-100 rounded-full blur-3xl opacity-60" />
+                <div className="absolute -bottom-48 -left-48 w-[500px] h-[500px] bg-teal-100 rounded-full blur-3xl opacity-50" />
             </div>
 
             {/* Skip Button */}
             <div className="relative z-10 p-6 flex justify-end">
                 <button
                     onClick={handleSkip}
-                    className="text-white/60 hover:text-white text-sm font-medium transition-colors"
+                    className="text-gray-400 hover:text-gray-600 text-sm font-medium transition-colors"
                 >
                     Atla
                 </button>
@@ -67,8 +66,8 @@ const Welcome: React.FC = () => {
             <div className="flex-1 relative z-10 flex flex-col items-center justify-center px-8 pb-8">
 
                 {/* Logo at top */}
-                <div className="mb-8">
-                    <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center shadow-2xl shadow-emerald-900/50 p-2">
+                <div className="mb-10">
+                    <div className="w-28 h-28 bg-white rounded-3xl flex items-center justify-center shadow-xl shadow-gray-200/80 p-2 border border-gray-100">
                         <img src="/logo.png" alt="Nubit Logo" className="w-full h-full object-contain" />
                     </div>
                 </div>
@@ -77,7 +76,7 @@ const Welcome: React.FC = () => {
                 <div className="text-center max-w-sm">
                     {/* Animated Icon */}
                     <div className="mb-8">
-                        <div className={`w-20 h-20 mx-auto bg-gradient-to-br ${slides[currentSlide].iconBg} rounded-full flex items-center justify-center shadow-xl transform transition-all duration-500`}>
+                        <div className={`w-20 h-20 mx-auto ${slides[currentSlide].iconBg} rounded-full flex items-center justify-center shadow-lg transform transition-all duration-500`}>
                             <span className="material-symbols-outlined text-4xl text-white">
                                 {slides[currentSlide].icon}
                             </span>
@@ -85,12 +84,12 @@ const Welcome: React.FC = () => {
                     </div>
 
                     {/* Title */}
-                    <h1 className="text-3xl font-bold text-white mb-4 transition-all duration-300">
+                    <h1 className="text-3xl font-bold text-gray-900 mb-4 transition-all duration-300">
                         {slides[currentSlide].title}
                     </h1>
 
                     {/* Description */}
-                    <p className="text-emerald-200/80 text-base leading-relaxed mb-8 transition-all duration-300">
+                    <p className="text-gray-500 text-base leading-relaxed mb-8 transition-all duration-300">
                         {slides[currentSlide].description}
                     </p>
                 </div>
@@ -102,8 +101,8 @@ const Welcome: React.FC = () => {
                             key={index}
                             onClick={() => setCurrentSlide(index)}
                             className={`h-2 rounded-full transition-all duration-300 ${index === currentSlide
-                                    ? 'w-8 bg-white'
-                                    : 'w-2 bg-white/30 hover:bg-white/50'
+                                    ? 'w-8 bg-emerald-500'
+                                    : 'w-2 bg-gray-200 hover:bg-gray-300'
                                 }`}
                         />
                     ))}
@@ -113,20 +112,20 @@ const Welcome: React.FC = () => {
                 <div className="w-full max-w-sm space-y-3">
                     <button
                         onClick={handleNext}
-                        className="w-full bg-white text-emerald-900 font-bold py-4 px-8 rounded-2xl text-lg shadow-xl transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+                        className="w-full bg-emerald-500 hover:bg-emerald-400 text-white font-bold py-4 px-8 rounded-2xl text-lg shadow-lg shadow-emerald-500/30 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
                     >
                         {currentSlide === slides.length - 1 ? 'Başlayalım' : 'Devam'}
                     </button>
 
                     {currentSlide === slides.length - 1 && (
                         <div className="text-center pt-2">
-                            <p className="text-emerald-300/60 text-xs">
+                            <p className="text-gray-400 text-xs">
                                 Devam ederek{' '}
-                                <button onClick={() => navigate('/terms')} className="text-white/80 underline">
+                                <button onClick={() => navigate('/terms')} className="text-emerald-600 underline">
                                     Kullanım Koşulları
                                 </button>
                                 {' '}ve{' '}
-                                <button onClick={() => navigate('/privacy')} className="text-white/80 underline">
+                                <button onClick={() => navigate('/privacy')} className="text-emerald-600 underline">
                                     Gizlilik Politikası
                                 </button>
                                 'nı kabul etmiş olursunuz
@@ -138,19 +137,19 @@ const Welcome: React.FC = () => {
 
             {/* Trust indicators at bottom */}
             <div className="relative z-10 px-8 pb-8">
-                <div className="flex items-center justify-center gap-6 text-white/40">
+                <div className="flex items-center justify-center gap-6 text-gray-400">
                     <div className="flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-sm">lock</span>
+                        <span className="material-symbols-outlined text-sm text-emerald-500">lock</span>
                         <span className="text-xs">256-bit SSL</span>
                     </div>
-                    <div className="w-1 h-1 rounded-full bg-white/20" />
+                    <div className="w-1 h-1 rounded-full bg-gray-300" />
                     <div className="flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-sm">verified</span>
+                        <span className="material-symbols-outlined text-sm text-emerald-500">verified</span>
                         <span className="text-xs">Güvenli</span>
                     </div>
-                    <div className="w-1 h-1 rounded-full bg-white/20" />
+                    <div className="w-1 h-1 rounded-full bg-gray-300" />
                     <div className="flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-sm">speed</span>
+                        <span className="material-symbols-outlined text-sm text-emerald-500">speed</span>
                         <span className="text-xs">Hızlı</span>
                     </div>
                 </div>
