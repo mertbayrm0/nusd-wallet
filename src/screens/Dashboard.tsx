@@ -324,10 +324,14 @@ const Dashboard = () => {
         </div>
         <button
           onClick={() => navigate('/notifications')}
-          className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors relative ${isDark ? 'bg-[#1a1a1a] text-gray-400 hover:text-white' : 'bg-gray-100 text-gray-600 hover:text-gray-900'}`}
+          className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors relative shadow-sm ${isDark ? 'bg-white/10 text-gray-400 hover:text-white' : 'bg-white text-gray-600 hover:text-gray-900 border border-emerald-100'}`}
         >
           <span className="material-symbols-outlined text-xl">notifications</span>
-          {notification && <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>}
+          {notification && (
+            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 shadow-md">
+              1
+            </span>
+          )}
         </button>
       </div>
 
