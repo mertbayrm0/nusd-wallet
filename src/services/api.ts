@@ -2133,5 +2133,172 @@ export const api = {
     } catch (e: any) {
       return { success: false, error: e.message };
     }
+  },
+
+  // ===== TELEGRAM VERIFICATION (KYC & DEKONT) =====
+
+  // Submit KYC or Deposit verification
+  submitVerification: async (
+    type: 'kyc' | 'deposit',
+    documentFile: File,
+    documentFile2?: File,
+    amount?: number
+  ) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { success: false, error: 'Not authenticated' };
+
+      // Get user profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name, email')
+        .eq('id', user.id)
+        .single();
+
+      // Upload first document to storage
+      const fileName1 = `${user.id}/${type}_${Date.now()}_1.${documentFile.name.split('.').pop()}`;
+      const { error: uploadError1 } = await supabase.storage
+        .from('verification-docs')
+        .upload(fileName1, documentFile);
+
+      if (uploadError1) {
+        console.error('Upload error 1:', uploadError1);
+        return { success: false, error: 'Belge yüklenemedi' };
+      }
+
+      // Upload second document if provided
+      let fileName2 = null;
+      if (documentFile2) {
+        fileName2 = `${user.id}/${type}_${Date.now()}_2.${documentFile2.name.split('.').pop()}`;
+        const { error: uploadError2 } = await supabase.storage
+          .from('verification-docs')
+          .upload(fileName2, documentFile2);
+
+        if (uploadError2) {
+          console.error('Upload error 2:', uploadError2);
+        }
+      }
+
+      // Create submission record
+      const { data: submission, error: insertError } = await supabase
+        .from('verification_submissions')
+        .insert({
+          user_id: user.id,
+          user_email: profile?.email || user.email,
+          user_name: profile?.name,
+          submission_type: type,
+          document_url: fileName1,
+          document_url_2: fileName2,
+          amount: type === 'deposit' ? amount : null,
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Insert error:', insertError);
+        return { success: false, error: 'Başvuru oluşturulamadı' };
+      }
+
+      // Send to Telegram via Edge Function
+      const { error: telegramError } = await supabase.functions.invoke('send-telegram-verification', {
+        body: {
+          submission_id: submission.id,
+          submission_type: type,
+          user_email: profile?.email || user.email,
+          user_name: profile?.name,
+          document_url: fileName1,
+          document_url_2: fileName2,
+          amount
+        }
+      });
+
+      if (telegramError) {
+        console.error('Telegram error:', telegramError);
+        // Don't fail - submission is saved, just telegram notification failed
+      }
+
+      return { success: true, submission_id: submission.id };
+    } catch (e: any) {
+      console.error('submitVerification error:', e);
+      return { success: false, error: e.message };
+    }
+  },
+
+  // Get current verification status
+  getVerificationStatus: async (type?: 'kyc' | 'deposit') => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      let query = supabase
+        .from('verification_submissions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (type) {
+        query = query.eq('submission_type', type);
+      }
+
+      const { data, error } = await query.limit(1).single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('getVerificationStatus error:', error);
+      }
+
+      return data;
+    } catch (e) {
+      console.error('getVerificationStatus error:', e);
+      return null;
+    }
+  },
+
+  // Get verification history
+  getVerificationHistory: async (type?: 'kyc' | 'deposit') => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      let query = supabase
+        .from('verification_submissions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (type) {
+        query = query.eq('submission_type', type);
+      }
+
+      const { data, error } = await query.limit(20);
+
+      if (error) {
+        console.error('getVerificationHistory error:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (e) {
+      console.error('getVerificationHistory error:', e);
+      return [];
+    }
+  },
+
+  // Check if user has verified KYC
+  isKYCVerified: async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('kyc_verified')
+        .eq('id', user.id)
+        .single();
+
+      return profile?.kyc_verified || false;
+    } catch (e) {
+      return false;
+    }
   }
 };
