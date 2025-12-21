@@ -5,6 +5,7 @@ import { api } from '../services/api';
 import { supabase } from '../services/supabase';
 import SuccessModal from '../components/SuccessModal';
 import { DashboardSkeleton } from '../components/Skeleton';
+import { useTheme } from '../theme';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -282,7 +283,7 @@ const Dashboard = () => {
   // Show skeleton while loading
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#111111] flex flex-col font-display pb-20">
+      <div className="min-h-screen bg-theme-primary flex flex-col font-display pb-20">
         {/* Header Skeleton */}
         <div className="px-5 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -300,7 +301,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#111111] flex flex-col font-display pb-20">
+    <div className="min-h-screen bg-theme-primary flex flex-col font-display pb-20">
 
       <SuccessModal
         isOpen={successModal.isOpen}

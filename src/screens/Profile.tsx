@@ -3,6 +3,7 @@ import { useApp } from '../App';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { useI18n } from '../i18n';
+import { useTheme } from '../theme';
 
 const SettingsItem = ({ icon, iconBg, label, sublabel, onClick, badge, toggle, toggleValue }: any) => (
     <button
@@ -37,6 +38,7 @@ const Profile = () => {
     const { user, logout } = useApp();
     const navigate = useNavigate();
     const { language, setLanguage, t } = useI18n();
+    const { isDark, toggleTheme } = useTheme();
     const [isProfileComplete, setIsProfileComplete] = useState<boolean | null>(null);
     const [showLangModal, setShowLangModal] = useState(false);
 
@@ -262,11 +264,11 @@ const Profile = () => {
                         <SettingsItem
                             icon="dark_mode"
                             iconBg="bg-slate-500/20 text-slate-400"
-                            label="Karanlık Mod"
-                            sublabel="Her zaman açık"
+                            label={isDark ? 'Karanlık Mod' : 'Light Mode'}
+                            sublabel={isDark ? 'Aktif' : 'Active'}
                             toggle={true}
-                            toggleValue={true}
-                            onClick={() => { }}
+                            toggleValue={isDark}
+                            onClick={toggleTheme}
                         />
                     </div>
                 </div>

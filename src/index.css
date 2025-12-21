@@ -2,6 +2,124 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===== THEME VARIABLES ===== */
+/* Logo-inspired colors: Emerald green gradient */
+:root {
+  /* Primary colors - Emerald Green from logo */
+  --color-primary: #10B981;
+  --color-primary-light: #34D399;
+  --color-primary-dark: #059669;
+
+  /* Dark theme defaults */
+  --color-bg-primary: #111111;
+  --color-bg-secondary: #1a1a1a;
+  --color-bg-tertiary: #2a2a2a;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #9ca3af;
+  --color-text-muted: #6b7280;
+  --color-border-light: rgba(255, 255, 255, 0.05);
+  --color-border-medium: rgba(255, 255, 255, 0.1);
+}
+
+/* Light theme */
+.light {
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f9fafb;
+  --color-bg-tertiary: #f3f4f6;
+  --color-text-primary: #111827;
+  --color-text-secondary: #4b5563;
+  --color-text-muted: #6b7280;
+  --color-border-light: rgba(0, 0, 0, 0.05);
+  --color-border-medium: rgba(0, 0, 0, 0.1);
+}
+
+/* Dark theme (explicit) */
+.dark {
+  --color-bg-primary: #111111;
+  --color-bg-secondary: #1a1a1a;
+  --color-bg-tertiary: #2a2a2a;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #9ca3af;
+  --color-text-muted: #6b7280;
+  --color-border-light: rgba(255, 255, 255, 0.05);
+  --color-border-medium: rgba(255, 255, 255, 0.1);
+}
+
+/* ===== THEME UTILITY CLASSES ===== */
+@layer utilities {
+  .bg-theme-primary {
+    background-color: var(--color-bg-primary);
+  }
+
+  .bg-theme-secondary {
+    background-color: var(--color-bg-secondary);
+  }
+
+  .bg-theme-tertiary {
+    background-color: var(--color-bg-tertiary);
+  }
+
+  .text-theme-primary {
+    color: var(--color-text-primary);
+  }
+
+  .text-theme-secondary {
+    color: var(--color-text-secondary);
+  }
+
+  .text-theme-muted {
+    color: var(--color-text-muted);
+  }
+
+  .border-theme-light {
+    border-color: var(--color-border-light);
+  }
+
+  .border-theme-medium {
+    border-color: var(--color-border-medium);
+  }
+
+  /* Primary brand color */
+  .bg-brand {
+    background-color: var(--color-primary);
+  }
+
+  .text-brand {
+    color: var(--color-primary);
+  }
+
+  .border-brand {
+    border-color: var(--color-primary);
+  }
+}
+
+/* ===== SCROLLBAR THEMING ===== */
+.dark ::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 3px;
+}
+
+.light ::-webkit-scrollbar {
+  width: 6px;
+}
+
+.light ::-webkit-scrollbar-track {
+  background: #f3f4f6;
+}
+
+.light ::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
 /* Chrome Extension Side Panel Sizing */
 html,
 body {
@@ -9,6 +127,9 @@ body {
   padding: 0;
   width: 100%;
   min-height: 100vh;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Mobile app layout */
