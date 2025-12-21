@@ -52,7 +52,7 @@ export const getUSDTBalance = async (address: string): Promise<number> => {
             }
         );
 
-        // 404 = hesap henüz aktive edilmemiş
+        // 404 = hesapta USDT yok (normal durum)
         if (!response.ok) {
             return 0;
         }
@@ -63,8 +63,8 @@ export const getUSDTBalance = async (address: string): Promise<number> => {
             return (parseFloat(data.data[0].balance) || 0) / 1e6;
         }
         return 0;
-    } catch (error) {
-        // Hata durumunda sessizce 0 döndür
+    } catch {
+        // Sessizce 0 döndür
         return 0;
     }
 };
@@ -89,10 +89,10 @@ export const getWalletTransactions = async (address: string, limit = 20) => {
                 }
             }
         );
+        if (!response.ok) return [];
         const data = await response.json();
         return data.data || [];
-    } catch (error) {
-        console.error('Transactions error:', error);
+    } catch {
         return [];
     }
 };
