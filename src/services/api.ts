@@ -1204,21 +1204,53 @@ export const api = {
   },
 
   // Get pending withdrawals closest to target amount
-  getPendingWithdrawals: async (targetAmount: number) => {
+  getPendingWithdrawals: async (targetAmount?: number) => {
     try {
       const { data, error } = await supabase.functions.invoke('get-pending-withdrawals', {
-        body: { targetAmount }
+        body: { targetAmount: targetAmount || 0 }
       });
 
       if (error) {
         console.error('Get pending withdrawals error:', error);
-        return { success: false, error: error.message || 'Error fetching withdrawals' };
+        return [];
       }
 
-      return { success: true, withdrawals: data?.withdrawals || [], totalAvailable: data?.totalAvailable || 0 };
+      return data?.withdrawals || [];
     } catch (e: any) {
       console.error('Get pending withdrawals exception:', e);
-      return { success: false, error: e.message || 'Network error' };
+      return [];
+    }
+  },
+
+  // Approve a crypto withdrawal
+  approveWithdrawal: async (withdrawalId: string) => {
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .update({ status: 'approved' })
+        .eq('id', withdrawalId);
+
+      if (error) throw error;
+      return { success: true };
+    } catch (e: any) {
+      console.error('Approve withdrawal error:', e);
+      return { success: false, error: e.message };
+    }
+  },
+
+  // Reject a crypto withdrawal
+  rejectWithdrawal: async (withdrawalId: string, reason: string) => {
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .update({ status: 'rejected', notes: reason })
+        .eq('id', withdrawalId);
+
+      if (error) throw error;
+      return { success: true };
+    } catch (e: any) {
+      console.error('Reject withdrawal error:', e);
+      return { success: false, error: e.message };
     }
   },
 

@@ -50,6 +50,17 @@ const AdminDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [pendingTxs, setPendingTxs] = useState(0);
     const [portalRequests, setPortalRequests] = useState(0);
+    const [pendingWithdrawals, setPendingWithdrawals] = useState<any[]>([]);
+    const [processingId, setProcessingId] = useState<string | null>(null);
+
+    const loadWithdrawals = async () => {
+        try {
+            const data = await api.getPendingWithdrawals();
+            setPendingWithdrawals(data || []);
+        } catch (e) {
+            console.error('Failed to load withdrawals:', e);
+        }
+    };
 
     useEffect(() => {
         const load = async () => {
@@ -59,7 +70,11 @@ const AdminDashboard = () => {
             setLoading(false);
         };
         load();
-        const interval = setInterval(load, 10000);
+        loadWithdrawals();
+        const interval = setInterval(() => {
+            load();
+            loadWithdrawals();
+        }, 10000);
         return () => clearInterval(interval);
     }, []);
 
@@ -69,6 +84,31 @@ const AdminDashboard = () => {
             window.location.reload();
         }
     }
+
+    const handleApproveWithdraw = async (id: string) => {
+        if (!window.confirm("Withdraw'u onaylamak istediğinize emin misiniz?")) return;
+        setProcessingId(id);
+        try {
+            await api.approveWithdrawal(id);
+            loadWithdrawals();
+        } catch (e) {
+            alert('Onaylama başarısız: ' + e);
+        }
+        setProcessingId(null);
+    };
+
+    const handleRejectWithdraw = async (id: string) => {
+        const reason = window.prompt("Red sebebi:");
+        if (!reason) return;
+        setProcessingId(id);
+        try {
+            await api.rejectWithdrawal(id, reason);
+            loadWithdrawals();
+        } catch (e) {
+            alert('Reddetme başarısız: ' + e);
+        }
+        setProcessingId(null);
+    };
 
     return (
         <AdminLayout title="Sistem Özeti">
@@ -268,6 +308,76 @@ const AdminDashboard = () => {
                         </div>
                     </div>
                 </div>
+            </div>
+
+            {/* Pending Crypto Withdrawals */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-orange-600">pending_actions</span>
+                    Bekleyen Kripto Çekim İstekleri
+                    {pendingWithdrawals.length > 0 && (
+                        <span className="ml-2 px-2 py-0.5 bg-orange-100 text-orange-600 rounded-full text-sm font-bold">
+                            {pendingWithdrawals.length}
+                        </span>
+                    )}
+                </h3>
+
+                {pendingWithdrawals.length === 0 ? (
+                    <div className="text-center py-8 text-gray-400">
+                        <span className="material-symbols-outlined text-4xl mb-2">check_circle</span>
+                        <p>Bekleyen çekim isteği yok</p>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {pendingWithdrawals.map((w: any) => (
+                            <div key={w.id} className="border border-gray-200 rounded-xl p-4 hover:border-orange-300 transition-colors">
+                                <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-xs font-bold">
+                                                {w.network || 'TRC20'}
+                                            </span>
+                                            <span className="text-lg font-bold text-gray-900">
+                                                ${parseFloat(w.amount || 0).toFixed(2)} USDT
+                                            </span>
+                                        </div>
+                                        <div className="text-sm text-gray-500 space-y-1">
+                                            <p><span className="font-bold">Kullanıcı:</span> {w.profiles?.name || w.user_email || 'N/A'}</p>
+                                            <p className="font-mono text-xs break-all">
+                                                <span className="font-bold font-sans">Adres:</span> {w.destination_address || w.wallet_address || 'N/A'}
+                                            </p>
+                                            <p className="text-xs text-gray-400">
+                                                {new Date(w.created_at).toLocaleString('tr-TR')}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2 ml-4">
+                                        <button
+                                            onClick={() => handleApproveWithdraw(w.id)}
+                                            disabled={processingId === w.id}
+                                            className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-bold text-sm disabled:opacity-50 flex items-center gap-1"
+                                        >
+                                            {processingId === w.id ? (
+                                                <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+                                            ) : (
+                                                <span className="material-symbols-outlined text-sm">check</span>
+                                            )}
+                                            Onayla
+                                        </button>
+                                        <button
+                                            onClick={() => handleRejectWithdraw(w.id)}
+                                            disabled={processingId === w.id}
+                                            className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-bold text-sm disabled:opacity-50 flex items-center gap-1"
+                                        >
+                                            <span className="material-symbols-outlined text-sm">close</span>
+                                            Reddet
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* Quick Actions */}
