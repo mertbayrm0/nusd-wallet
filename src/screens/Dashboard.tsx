@@ -511,43 +511,48 @@ const Dashboard = () => {
           </button>
         )}
 
-        {/* Recent Activity */}
-        <div className="flex justify-between items-center mb-4">
-          <h3 className={`font-bold text-lg ${isDark ? 'text-white' : 'text-gray-900'}`}>Recent Activity</h3>
-          <button
-            onClick={() => navigate('/history')}
-            className="text-emerald-500 text-xs font-bold flex items-center hover:text-emerald-400 transition-colors"
-          >
-            View All <span className="material-symbols-outlined text-sm ml-1">arrow_forward</span>
-          </button>
-        </div>
+        {/* Transaction History */}
+        <div className="bg-white rounded-t-3xl -mx-5 px-5 pt-6 pb-24 mt-4">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-bold text-lg text-gray-900">Transaction History</h3>
+            <button
+              onClick={() => navigate('/history')}
+              className="text-emerald-500 text-xs font-bold flex items-center hover:text-emerald-400 transition-colors"
+            >
+              View All <span className="material-symbols-outlined text-sm ml-1">arrow_forward</span>
+            </button>
+          </div>
 
-        <div className="space-y-3">
-          {txs.length === 0 ? (
-            <div className={`flex flex-col items-center justify-center py-12 rounded-2xl border ${isDark ? 'bg-[#1a1a1a] border-white/5 text-gray-500' : 'bg-emerald-50/50 border-emerald-100 text-emerald-600'}`}>
-              <span className="material-symbols-outlined text-4xl mb-2 opacity-30">history</span>
-              <p className="text-sm font-medium">No recent transactions</p>
-            </div>
-          ) : (
-            txs.map((tx: any) => (
-              <div key={tx.id} className={`p-4 rounded-2xl border flex justify-between items-center transition-all ${isDark ? 'bg-[#1a1a1a] border-white/5 hover:bg-[#222] hover:border-white/10' : 'bg-white border-emerald-100 hover:bg-emerald-50 shadow-sm'}`}>
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${tx.amount > 0 ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-500'}`}>
-                    <span className="material-symbols-outlined text-xl">
-                      {tx.amount > 0 ? 'arrow_downward' : 'arrow_upward'}
-                    </span>
+          <div className="space-y-3">
+            {txs.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 rounded-2xl bg-gray-50 text-gray-400">
+                <span className="material-symbols-outlined text-4xl mb-2 opacity-30">history</span>
+                <p className="text-sm font-medium">No recent transactions</p>
+              </div>
+            ) : (
+              txs.map((tx: any) => (
+                <div key={tx.id} className="p-4 rounded-2xl bg-gray-50 flex justify-between items-center transition-all hover:bg-gray-100">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${tx.amount > 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-500'}`}>
+                      <span className="material-symbols-outlined text-xl">
+                        {tx.amount > 0 ? 'arrow_downward' : 'arrow_upward'}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-gray-900">{tx.title}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{tx.date?.split(',')[0] || tx.date?.split('T')[0]}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className={`font-bold text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>{tx.title}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{tx.date?.split(',')[0] || tx.date?.split('T')[0]} • <span className={tx.status?.toLowerCase() === 'completed' ? 'text-emerald-500' : 'text-amber-500'}>{tx.status === 'PAYMENT_REVIEW' ? 'PENDING' : tx.status}</span></p>
+                  <div className="text-right">
+                    <span className={`font-bold text-base ${tx.amount > 0 ? 'text-emerald-500' : 'text-gray-900'}`}>
+                      {tx.amount > 0 ? '+' : ''}${Math.abs(tx.amount).toFixed(2)}
+                    </span>
+                    <p className="text-xs text-gray-400">{tx.status === 'PAYMENT_REVIEW' ? 'Pending' : tx.status}</p>
                   </div>
                 </div>
-                <span className={`font-bold text-base ${tx.amount > 0 ? 'text-emerald-500' : isDark ? 'text-white' : 'text-gray-900'}`}>
-                  {tx.amount > 0 ? '+' : ''}{tx.amount.toFixed(2)}
-                </span>
-              </div>
-            ))
-          )}
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div >
