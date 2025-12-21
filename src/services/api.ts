@@ -973,7 +973,49 @@ export const api = {
 
   // ===== STUBS for unused features =====
   getAllRequests: async () => [],
-  getAdminLogs: async () => [],
+  getAdminLogs: async (filters?: { action_type?: string; limit?: number; offset?: number }) => {
+    try {
+      let query = supabase
+        .from('admin_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(filters?.limit || 100);
+
+      if (filters?.action_type) {
+        query = query.eq('action_type', filters.action_type);
+      }
+
+      if (filters?.offset) {
+        query = query.range(filters.offset, filters.offset + (filters?.limit || 100) - 1);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('getAdminLogs error:', error);
+        return [];
+      }
+
+      // Format for UI
+      return (data || []).map(log => ({
+        id: log.id,
+        formattedTime: new Date(log.created_at).toLocaleString('tr-TR'),
+        type: log.action_type?.toUpperCase() || 'SYSTEM',
+        action: log.action,
+        description: log.description || log.action,
+        user: log.user_email || 'System',
+        userName: log.user_name,
+        status: log.status,
+        metadata: log.metadata,
+        targetType: log.target_type,
+        targetId: log.target_id,
+        createdAt: log.created_at
+      }));
+    } catch (e) {
+      console.error('getAdminLogs error:', e);
+      return [];
+    }
+  },
   resetDB: async () => { },
   cryptoDeposit: async () => { },
   findMatches: async () => null,
