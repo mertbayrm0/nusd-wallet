@@ -22,6 +22,7 @@ const Dashboard = () => {
     message: ''
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [sheetExpanded, setSheetExpanded] = useState(false);
 
   useEffect(() => {
     refreshUser();
@@ -300,8 +301,6 @@ const Dashboard = () => {
       </div>
     );
   }
-
-  const [sheetExpanded, setSheetExpanded] = useState(false);
 
   return (
     <div className="h-screen bg-gradient-to-b from-emerald-800 via-emerald-900 to-emerald-950 flex flex-col font-display overflow-hidden relative">
