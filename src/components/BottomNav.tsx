@@ -14,21 +14,13 @@ const BottomNav: React.FC = () => {
     return (
         <div className="fixed bottom-4 left-4 right-4 z-50">
             {/* Floating Island Container */}
-            <div className="max-w-md mx-auto bg-white rounded-full shadow-2xl shadow-black/20 px-4 py-2 flex items-center justify-around relative">
+            <div className="max-w-md mx-auto bg-white rounded-full shadow-2xl shadow-black/20 px-6 py-2 flex items-center justify-around relative">
                 {/* Home */}
                 <button
                     onClick={() => navigate('/dashboard')}
                     className={`flex flex-col items-center p-2 rounded-2xl transition-all ${isActive('/dashboard') ? 'bg-emerald-100 text-emerald-600' : 'text-gray-400 hover:text-gray-600'}`}
                 >
                     <span className="material-symbols-outlined text-2xl">home</span>
-                </button>
-
-                {/* Wallet/History */}
-                <button
-                    onClick={() => navigate('/history')}
-                    className={`flex flex-col items-center p-2 rounded-2xl transition-all ${isActive('/history') ? 'bg-emerald-100 text-emerald-600' : 'text-gray-400 hover:text-gray-600'}`}
-                >
-                    <span className="material-symbols-outlined text-2xl">account_balance_wallet</span>
                 </button>
 
                 {/* QR Scanner - Center, Elevated */}
@@ -43,14 +35,6 @@ const BottomNav: React.FC = () => {
 
                 {/* Spacer for center button */}
                 <div className="w-14"></div>
-
-                {/* Notifications */}
-                <button
-                    onClick={() => navigate('/notifications')}
-                    className={`flex flex-col items-center p-2 rounded-2xl transition-all ${isActive('/notifications') ? 'bg-emerald-100 text-emerald-600' : 'text-gray-400 hover:text-gray-600'}`}
-                >
-                    <span className="material-symbols-outlined text-2xl">notifications</span>
-                </button>
 
                 {/* Settings/Profile */}
                 <button
