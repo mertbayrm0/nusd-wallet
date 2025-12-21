@@ -23,6 +23,7 @@ const Dashboard = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [sheetExpanded, setSheetExpanded] = useState(false);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
 
   useEffect(() => {
     refreshUser();
@@ -519,10 +520,18 @@ const Dashboard = () => {
         >
           {/* Drag Handle */}
           <div
-            className="flex justify-center py-3 cursor-pointer"
+            className="flex justify-center py-4 cursor-pointer touch-none"
             onClick={() => setSheetExpanded(!sheetExpanded)}
+            onTouchStart={(e) => setTouchStart(e.touches[0].clientY)}
+            onTouchEnd={(e) => {
+              if (touchStart === null) return;
+              const diff = touchStart - e.changedTouches[0].clientY;
+              if (diff > 50) setSheetExpanded(true);  // Swipe up
+              if (diff < -50) setSheetExpanded(false); // Swipe down
+              setTouchStart(null);
+            }}
           >
-            <div className="w-10 h-1.5 bg-gray-300 rounded-full"></div>
+            <div className="w-12 h-1.5 bg-gray-300 rounded-full"></div>
           </div>
 
           <div className="px-5">
