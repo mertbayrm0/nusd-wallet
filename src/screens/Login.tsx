@@ -48,7 +48,7 @@ const Login = () => {
 
         {/* Logo Section */}
         <div className="text-center mb-10">
-          <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-emerald-900/50 p-3">
+          <div className="w-40 h-40 bg-white rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-emerald-900/50 p-4">
             <img src="/logo.png" alt="Nubit Logo" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-4xl font-extrabold text-white tracking-tight mb-1">
