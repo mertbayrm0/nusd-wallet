@@ -74,19 +74,19 @@ const Notifications = () => {
     const unreadCount = notifications.filter(n => !n.read).length;
 
     return (
-        <div className="min-h-screen bg-[#111111] flex flex-col font-display">
+        <div className="min-h-screen bg-gradient-to-b from-emerald-800 via-emerald-900 to-emerald-950 flex flex-col font-display">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-800">
-                <button onClick={() => navigate(-1)} className="text-white">
+            <div className="flex items-center justify-between p-4">
+                <button onClick={() => navigate(-1)} className="text-white hover:bg-white/10 p-2 rounded-full transition-colors">
                     <span className="material-symbols-outlined">arrow_back</span>
                 </button>
                 <h1 className="text-white text-lg font-bold">Bildirimler</h1>
-                <div className="w-8" />
+                <div className="w-10" />
             </div>
 
             {/* Mark all as read */}
             {unreadCount > 0 && (
-                <div className="p-4 border-b border-gray-800">
+                <div className="px-4 pb-4">
                     <button
                         onClick={handleMarkAllAsRead}
                         className="text-lime-400 text-sm flex items-center gap-1"
@@ -98,30 +98,27 @@ const Notifications = () => {
             )}
 
             {/* Notifications List */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto px-4">
                 {loading ? (
                     <div className="flex items-center justify-center h-40">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-lime-400"></div>
                     </div>
                 ) : notifications.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-60 text-gray-500">
+                    <div className="flex flex-col items-center justify-center h-60 text-emerald-300">
                         <span className="material-symbols-outlined text-5xl mb-2">notifications_off</span>
                         <p>Henüz bildirim yok</p>
                     </div>
                 ) : (
-                    <div className="divide-y divide-gray-800">
+                    <div className="space-y-3">
                         {notifications.map(notification => (
                             <div
                                 key={notification.id}
                                 onClick={() => handleNotificationClick(notification)}
-                                className={`p-4 flex items-start gap-3 cursor-pointer hover:bg-white/5 transition-colors ${!notification.read ? 'bg-lime-500/5' : ''
-                                    }`}
+                                className={`p-4 rounded-2xl flex items-start gap-3 cursor-pointer transition-colors ${!notification.read ? 'bg-white shadow-lg' : 'bg-white/90 shadow'}`}
                             >
                                 {/* Icon */}
-                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${!notification.read ? 'bg-lime-500/20' : 'bg-gray-800'
-                                    }`}>
-                                    <span className={`material-symbols-outlined ${!notification.read ? 'text-lime-400' : 'text-gray-400'
-                                        }`}>
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${!notification.read ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-400'}`}>
+                                    <span className="material-symbols-outlined">
                                         {getIcon(notification.type)}
                                     </span>
                                 </div>
@@ -129,24 +126,23 @@ const Notifications = () => {
                                 {/* Content */}
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
-                                        <h3 className={`font-medium truncate ${!notification.read ? 'text-white' : 'text-gray-400'
-                                            }`}>
+                                        <h3 className={`font-bold truncate ${!notification.read ? 'text-gray-900' : 'text-gray-500'}`}>
                                             {notification.title}
                                         </h3>
                                         {!notification.read && (
-                                            <div className="w-2 h-2 bg-lime-400 rounded-full flex-shrink-0" />
+                                            <div className="w-2 h-2 bg-emerald-500 rounded-full flex-shrink-0" />
                                         )}
                                     </div>
                                     <p className="text-sm text-gray-500 mt-0.5 line-clamp-2">
                                         {notification.message}
                                     </p>
-                                    <p className="text-xs text-gray-600 mt-1">
+                                    <p className="text-xs text-gray-400 mt-1">
                                         {getTimeAgo(notification.created_at)}
                                     </p>
                                 </div>
 
                                 {/* Arrow */}
-                                <span className="material-symbols-outlined text-gray-600">
+                                <span className="material-symbols-outlined text-gray-400">
                                     chevron_right
                                 </span>
                             </div>

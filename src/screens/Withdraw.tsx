@@ -256,14 +256,14 @@ const Withdraw = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#111111] flex flex-col font-display pb-20">
+        <div className="min-h-screen bg-gradient-to-b from-emerald-800 via-emerald-900 to-emerald-950 flex flex-col font-display pb-20">
             {/* Header */}
-            <div className="bg-[#1a1a1a] px-4 py-4 flex items-center border-b border-white/5 sticky top-0 z-10">
+            <div className="px-4 py-4 flex items-center sticky top-0 z-10">
                 <button
                     onClick={() => step > 1 ? setStep(1) : navigate('/dashboard')}
                     className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors"
                 >
-                    <span className="material-symbols-outlined text-gray-400">arrow_back</span>
+                    <span className="material-symbols-outlined text-white">arrow_back</span>
                 </button>
                 <h1 className="flex-1 text-center font-bold text-lg text-white pr-8">
                     {step === 1 ? 'Çekim' : 'İşlem Durumu'}
