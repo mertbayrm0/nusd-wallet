@@ -26,10 +26,10 @@ const BottomNav: React.FC = () => {
                 {/* QR Scanner - Center, Elevated */}
                 <button
                     onClick={() => navigate('/qr-scan')}
-                    className="absolute left-1/2 -translate-x-1/2 -top-4"
+                    className="absolute left-1/2 -translate-x-1/2 -top-6"
                 >
-                    <div className="w-14 h-14 bg-emerald-600 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/40 hover:bg-emerald-500 transition-all active:scale-95 border-4 border-white">
-                        <span className="material-symbols-outlined text-2xl text-white">qr_code_scanner</span>
+                    <div className="w-16 h-16 bg-emerald-600 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/40 hover:bg-emerald-500 transition-all active:scale-95 border-4 border-white">
+                        <span className="material-symbols-outlined text-3xl text-white">qr_code_scanner</span>
                     </div>
                 </button>
 
