@@ -1393,7 +1393,18 @@ export const api = {
         return [];
       }
 
-      return data || [];
+      // Deduplicate matched order pairs
+      const seenMatches = new Set<string>();
+      const deduplicated = (data || []).filter((order: any) => {
+        if (order.matched_order_id) {
+          const pairKey = [order.id, order.matched_order_id].sort().join('|');
+          if (seenMatches.has(pairKey)) return false;
+          seenMatches.add(pairKey);
+        }
+        return true;
+      });
+
+      return deduplicated;
     } catch (e) {
       console.error('My P2P orders exception:', e);
       return [];
