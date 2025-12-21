@@ -314,7 +314,7 @@ const Deposit = () => {
     };
 
     const proceed = async () => {
-        if (match) await api.lockMatch(match.id, user?.email || '');
+        if (match) await api.lockMatch();
         // Satıcının tutarını kullan (match.amountUsd), buyer'ın girdiği tutarı değil
         navigate('/deposit/confirm', {
             state: {
