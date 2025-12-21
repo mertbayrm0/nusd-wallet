@@ -451,33 +451,33 @@ const Dashboard = () => {
               {/* Deposit */}
               <button onClick={() => navigate('/deposit')} className="flex flex-col items-center gap-2 group">
                 <div className="w-14 h-14 rounded-2xl bg-lime-400 flex items-center justify-center shadow-lg group-hover:scale-105 group-active:scale-95 transition-all">
-                  <span className="material-symbols-outlined text-emerald-900 text-2xl">arrow_forward</span>
+                  <span className="material-symbols-outlined text-emerald-900 text-2xl">arrow_downward</span>
                 </div>
-                <span className="text-emerald-100 text-[11px] font-medium">Transfer</span>
-              </button>
-
-              {/* Top-up */}
-              <button onClick={() => navigate('/deposit')} className="flex flex-col items-center gap-2 group">
-                <div className="w-14 h-14 rounded-2xl bg-lime-400 flex items-center justify-center shadow-lg group-hover:scale-105 group-active:scale-95 transition-all">
-                  <span className="material-symbols-outlined text-emerald-900 text-2xl">account_balance_wallet</span>
-                </div>
-                <span className="text-emerald-100 text-[11px] font-medium">Top-up</span>
+                <span className="text-emerald-100 text-[11px] font-medium">Deposit</span>
               </button>
 
               {/* Withdraw */}
               <button onClick={() => navigate('/withdraw')} className="flex flex-col items-center gap-2 group">
                 <div className="w-14 h-14 rounded-2xl bg-lime-400 flex items-center justify-center shadow-lg group-hover:scale-105 group-active:scale-95 transition-all">
-                  <span className="material-symbols-outlined text-emerald-900 text-2xl">receipt_long</span>
+                  <span className="material-symbols-outlined text-emerald-900 text-2xl">arrow_upward</span>
                 </div>
-                <span className="text-emerald-100 text-[11px] font-medium">Bill</span>
+                <span className="text-emerald-100 text-[11px] font-medium">Withdraw</span>
               </button>
 
-              {/* More */}
-              <button onClick={() => navigate('/profile')} className="flex flex-col items-center gap-2 group">
+              {/* Crypto Deposit */}
+              <button onClick={() => navigate('/crypto/deposit')} className="flex flex-col items-center gap-2 group">
                 <div className="w-14 h-14 rounded-2xl bg-lime-400 flex items-center justify-center shadow-lg group-hover:scale-105 group-active:scale-95 transition-all">
-                  <span className="material-symbols-outlined text-emerald-900 text-2xl">grid_view</span>
+                  <span className="material-symbols-outlined text-emerald-900 text-2xl">download</span>
                 </div>
-                <span className="text-emerald-100 text-[11px] font-medium">More</span>
+                <span className="text-emerald-100 text-[10px] font-medium text-center leading-tight">Crypto<br />Deposit</span>
+              </button>
+
+              {/* Crypto Withdraw */}
+              <button onClick={() => navigate('/crypto/withdraw')} className="flex flex-col items-center gap-2 group">
+                <div className="w-14 h-14 rounded-2xl bg-lime-400 flex items-center justify-center shadow-lg group-hover:scale-105 group-active:scale-95 transition-all">
+                  <span className="material-symbols-outlined text-emerald-900 text-2xl">upload</span>
+                </div>
+                <span className="text-emerald-100 text-[10px] font-medium text-center leading-tight">Crypto<br />Withdraw</span>
               </button>
             </div>
           </div>
