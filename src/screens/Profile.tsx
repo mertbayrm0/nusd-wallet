@@ -86,7 +86,6 @@ const Profile = () => {
                                 onClick={() => { setLanguage('tr'); setShowLangModal(false); }}
                                 className={`w-full p-4 rounded-xl flex items-center justify-between ${language === 'tr' ? 'bg-emerald-500/20 border border-emerald-500' : 'bg-gray-100 border border-transparent'}`}
                             >
-                            >
                                 <div className="flex items-center gap-3">
                                     <span className="text-2xl">🇹🇷</span>
                                     <span className="font-medium text-gray-900">Türkçe</span>
@@ -96,7 +95,6 @@ const Profile = () => {
                             <button
                                 onClick={() => { setLanguage('en'); setShowLangModal(false); }}
                                 className={`w-full p-4 rounded-xl flex items-center justify-between ${language === 'en' ? 'bg-emerald-500/20 border border-emerald-500' : 'bg-gray-100 border border-transparent'}`}
-                            >
                             >
                                 <div className="flex items-center gap-3">
                                     <span className="text-2xl">🇬🇧</span>
