@@ -64,10 +64,10 @@ const BankAccounts = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#111111] flex flex-col font-display">
+        <div className="min-h-screen bg-gradient-to-b from-emerald-800 via-emerald-900 to-emerald-950 flex flex-col font-display">
             {/* Header */}
-            <div className="bg-[#1a1a1a] px-5 py-4 flex items-center gap-3 shadow-lg sticky top-0 z-10 border-b border-white/5">
-                <button onClick={() => navigate(-1)} className="text-gray-400 hover:text-lime-400 hover:bg-lime-400/10 p-2 rounded-full transition-colors">
+            <div className="px-5 py-4 flex items-center gap-3 sticky top-0 z-10">
+                <button onClick={() => navigate(-1)} className="text-white hover:bg-white/10 p-2 rounded-full transition-colors">
                     <span className="material-symbols-outlined">arrow_back</span>
                 </button>
                 <h1 className="font-extrabold text-lg text-white">Banka Hesapları</h1>
@@ -75,20 +75,20 @@ const BankAccounts = () => {
 
             <div className="px-5 py-6 flex-1 overflow-y-auto">
                 {/* Add New Account Card */}
-                <div className="bg-[#1a1a1a]/50 backdrop-blur-sm p-6 rounded-2xl border border-white/5 mb-6">
-                    <h2 className="font-bold text-white mb-4 flex items-center gap-2">
-                        <span className="material-symbols-outlined text-lime-500">add_circle</span>
+                <div className="bg-white p-6 rounded-2xl shadow-lg mb-6">
+                    <h2 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <span className="material-symbols-outlined text-emerald-500">add_circle</span>
                         Yeni Hesap Ekle
                     </h2>
 
                     <div className="space-y-4">
                         {/* Bank Selection */}
                         <div>
-                            <label className="block text-sm font-bold text-gray-400 mb-2">Banka</label>
+                            <label className="block text-sm font-bold text-gray-600 mb-2">Banka</label>
                             <select
                                 value={bankName}
                                 onChange={e => setBankName(e.target.value)}
-                                className="w-full px-4 py-3 rounded-xl border border-white/10 bg-[#111111] text-white font-medium focus:border-lime-500 focus:ring-2 focus:ring-lime-500/20 transition-all outline-none"
+                                className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 font-medium focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all outline-none"
                             >
                                 {TURKISH_BANKS.map(bank => (
                                     <option key={bank} value={bank}>{bank}</option>
@@ -98,24 +98,24 @@ const BankAccounts = () => {
 
                         {/* Account Name Input */}
                         <div>
-                            <label className="block text-sm font-bold text-gray-400 mb-2">Hesap Sahibi Adı Soyadı</label>
+                            <label className="block text-sm font-bold text-gray-600 mb-2">Hesap Sahibi Adı Soyadı</label>
                             <input
                                 value={accountName}
                                 onChange={e => setAccountName(e.target.value)}
                                 placeholder="Örn: Ahmet Yılmaz"
-                                className="w-full px-4 py-3 rounded-xl border border-white/10 bg-[#111111] text-white font-medium focus:border-lime-500 focus:ring-2 focus:ring-lime-500/20 transition-all outline-none placeholder-gray-600"
+                                className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 font-medium focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all outline-none placeholder-gray-400"
                             />
                         </div>
 
                         {/* IBAN Input */}
                         <div>
-                            <label className="block text-sm font-bold text-gray-400 mb-2">IBAN</label>
+                            <label className="block text-sm font-bold text-gray-600 mb-2">IBAN</label>
                             <input
                                 value={iban}
                                 onChange={e => setIban(e.target.value)}
                                 placeholder="TR00 0000 0000 0000 0000 0000 00"
                                 maxLength={34}
-                                className="w-full px-4 py-3 rounded-xl border border-white/10 bg-[#111111] text-white font-mono focus:border-lime-500 focus:ring-2 focus:ring-lime-500/20 transition-all outline-none placeholder-gray-600"
+                                className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 font-mono focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all outline-none placeholder-gray-400"
                             />
                             <p className="text-xs text-gray-500 mt-2">TR ile başlamalı, 26 karakter olmalı</p>
                         </div>
@@ -123,7 +123,7 @@ const BankAccounts = () => {
                         <button
                             onClick={handleAdd}
                             disabled={loading || !iban || !accountName}
-                            className="w-full bg-lime-500 hover:bg-lime-400 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-black py-3 rounded-xl font-bold shadow-lg shadow-lime-500/20 transition-all"
+                            className="w-full bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-xl font-bold shadow-lg shadow-emerald-500/20 transition-all"
                         >
                             {loading ? 'Ekleniyor...' : 'Hesap Ekle'}
                         </button>
@@ -131,29 +131,29 @@ const BankAccounts = () => {
                 </div>
 
                 {/* Saved Accounts */}
-                <h2 className="font-bold text-white mb-3 px-1">Kayıtlı Hesaplar</h2>
+                <h2 className="font-bold text-emerald-300 mb-3 px-1">Kayıtlı Hesaplar</h2>
                 {accounts.length === 0 ? (
-                    <div className="bg-[#1a1a1a]/50 backdrop-blur-sm p-8 rounded-2xl border border-white/5 text-center">
-                        <span className="material-symbols-outlined text-5xl text-gray-600 mb-3">account_balance</span>
+                    <div className="bg-white p-8 rounded-2xl shadow-lg text-center">
+                        <span className="material-symbols-outlined text-5xl text-gray-300 mb-3">account_balance</span>
                         <p className="text-gray-500 font-medium">Henüz banka hesabı eklemediniz</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
                         {accounts.map(acc => (
-                            <div key={acc.id} className="bg-[#1a1a1a]/50 backdrop-blur-sm p-5 rounded-2xl border border-white/5 flex items-start justify-between hover:border-lime-500/30 transition-all">
+                            <div key={acc.id} className="bg-white p-5 rounded-2xl shadow-lg flex items-start justify-between hover:shadow-xl transition-all">
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2 mb-2">
-                                        <span className="material-symbols-outlined text-lime-500">account_balance</span>
-                                        <h3 className="font-bold text-white">{acc.bankName}</h3>
+                                        <span className="material-symbols-outlined text-emerald-500">account_balance</span>
+                                        <h3 className="font-bold text-gray-900">{acc.bankName}</h3>
                                     </div>
-                                    <p className="font-mono text-sm text-gray-400 bg-[#111111] px-3 py-2 rounded-lg inline-block">
+                                    <p className="font-mono text-sm text-gray-600 bg-gray-100 px-3 py-2 rounded-lg inline-block">
                                         {acc.iban.match(/.{1,4}/g)?.join(' ')}
                                     </p>
-                                    <p className="text-xs text-gray-600 mt-2">{acc.addedAt}</p>
+                                    <p className="text-xs text-gray-400 mt-2">{acc.addedAt}</p>
                                 </div>
                                 <button
                                     onClick={() => handleDelete(acc.id)}
-                                    className="text-red-400 hover:bg-red-500/10 p-2 rounded-full transition-colors ml-2"
+                                    className="text-red-500 hover:bg-red-50 p-2 rounded-full transition-colors ml-2"
                                 >
                                     <span className="material-symbols-outlined">delete</span>
                                 </button>
