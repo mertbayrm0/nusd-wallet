@@ -143,13 +143,6 @@ const KYCVerification = () => {
                             </ul>
                         </div>
 
-                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                            <p className="text-blue-700 text-sm flex items-start gap-2">
-                                <span className="material-symbols-outlined text-lg shrink-0">send</span>
-                                Belgeleriniz Telegram üzerinden admin ekibimize iletilecek ve en kısa sürede incelenecektir.
-                            </p>
-                        </div>
-
                         <button
                             onClick={() => setStep(2)}
                             className="w-full bg-emerald-500 text-white py-4 rounded-2xl font-bold text-base hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"

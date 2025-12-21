@@ -44,9 +44,11 @@ const Profile = () => {
     const { isDark, toggleTheme } = useTheme();
     const [isProfileComplete, setIsProfileComplete] = useState<boolean | null>(null);
     const [showLangModal, setShowLangModal] = useState(false);
+    const [kycStatus, setKycStatus] = useState<'none' | 'pending' | 'approved' | 'rejected'>('none');
 
     useEffect(() => {
         checkProfileCompletion();
+        checkKycStatus();
     }, []);
 
     const checkProfileCompletion = async () => {
@@ -66,6 +68,43 @@ const Profile = () => {
         } catch (error) {
             console.error('Check profile error:', error);
             setIsProfileComplete(false);
+        }
+    };
+
+    const checkKycStatus = async () => {
+        try {
+            const { data: { user: authUser } } = await supabase.auth.getUser();
+            if (!authUser) return;
+
+            // First check if kyc_verified is true in profiles
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('kyc_verified')
+                .eq('id', authUser.id)
+                .single();
+
+            if (profile?.kyc_verified) {
+                setKycStatus('approved');
+                return;
+            }
+
+            // Check verification_submissions for latest status
+            const { data: submission } = await supabase
+                .from('verification_submissions')
+                .select('status')
+                .eq('user_id', authUser.id)
+                .eq('submission_type', 'kyc')
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single();
+
+            if (submission) {
+                setKycStatus(submission.status as 'pending' | 'approved' | 'rejected');
+            } else {
+                setKycStatus('none');
+            }
+        } catch (error) {
+            console.error('Check KYC status error:', error);
         }
     };
 
@@ -144,10 +183,15 @@ const Profile = () => {
                     <div className="rounded-2xl overflow-hidden bg-white divide-y divide-gray-100 shadow-lg">
                         <SettingsItem
                             icon="verified_user"
-                            iconBg="bg-amber-500/20 text-amber-400"
+                            iconBg={kycStatus === 'approved' ? "bg-green-500/20 text-green-400" : kycStatus === 'rejected' ? "bg-red-500/20 text-red-400" : "bg-amber-500/20 text-amber-400"}
                             label="Kimlik Doğrulama (KYC)"
-                            sublabel="Limitleri artırmak için doğrulayın"
-                            badge={{ text: "Bekliyor", color: "bg-amber-500/20 text-amber-400" }}
+                            sublabel={kycStatus === 'approved' ? "Doğrulanmış hesap" : kycStatus === 'rejected' ? "Reddedildi - Tekrar deneyin" : "Limitleri artırmak için doğrulayın"}
+                            badge={
+                                kycStatus === 'approved' ? { text: "Doğrulanmış", color: "bg-green-500/20 text-green-400" } :
+                                    kycStatus === 'pending' ? { text: "Bekliyor", color: "bg-amber-500/20 text-amber-400" } :
+                                        kycStatus === 'rejected' ? { text: "Reddedildi", color: "bg-red-500/20 text-red-400" } :
+                                            { text: "Doğrulanmadı", color: "bg-gray-500/20 text-gray-400" }
+                            }
                             onClick={() => navigate('/kyc')}
                         />
                         <SettingsItem
