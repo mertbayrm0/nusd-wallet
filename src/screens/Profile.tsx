@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../App';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
+import { useI18n } from '../i18n';
 
 const SettingsItem = ({ icon, iconBg, label, sublabel, onClick, badge, toggle, toggleValue }: any) => (
     <button
@@ -35,7 +36,9 @@ const SettingsItem = ({ icon, iconBg, label, sublabel, onClick, badge, toggle, t
 const Profile = () => {
     const { user, logout } = useApp();
     const navigate = useNavigate();
+    const { language, setLanguage, t } = useI18n();
     const [isProfileComplete, setIsProfileComplete] = useState<boolean | null>(null);
+    const [showLangModal, setShowLangModal] = useState(false);
 
     useEffect(() => {
         checkProfileCompletion();
@@ -63,6 +66,41 @@ const Profile = () => {
 
     return (
         <div className="h-screen bg-[#111111] flex flex-col font-display overflow-hidden">
+            {/* Language Selection Modal */}
+            {showLangModal && (
+                <div className="fixed inset-0 bg-black/80 z-50 flex items-end sm:items-center justify-center p-4">
+                    <div className="bg-[#1a1a1a] rounded-2xl p-5 w-full max-w-sm border border-white/10">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-white font-bold text-lg">{t('profile.language')}</h3>
+                            <button onClick={() => setShowLangModal(false)} className="text-gray-400 hover:text-white">
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <div className="space-y-2">
+                            <button
+                                onClick={() => { setLanguage('tr'); setShowLangModal(false); }}
+                                className={`w-full p-4 rounded-xl flex items-center justify-between ${language === 'tr' ? 'bg-lime-500/20 border border-lime-500' : 'bg-[#2a2a2a] border border-transparent'}`}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <span className="text-2xl">🇹🇷</span>
+                                    <span className="text-white font-medium">Türkçe</span>
+                                </div>
+                                {language === 'tr' && <span className="material-symbols-outlined text-lime-400">check_circle</span>}
+                            </button>
+                            <button
+                                onClick={() => { setLanguage('en'); setShowLangModal(false); }}
+                                className={`w-full p-4 rounded-xl flex items-center justify-between ${language === 'en' ? 'bg-lime-500/20 border border-lime-500' : 'bg-[#2a2a2a] border border-transparent'}`}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <span className="text-2xl">🇬🇧</span>
+                                    <span className="text-white font-medium">English</span>
+                                </div>
+                                {language === 'en' && <span className="material-symbols-outlined text-lime-400">check_circle</span>}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             {/* Header */}
             <div className="bg-[#1a1a1a] px-4 py-4 flex items-center border-b border-white/5 shrink-0 z-10">
                 <button
@@ -210,9 +248,9 @@ const Profile = () => {
                         <SettingsItem
                             icon="language"
                             iconBg="bg-violet-500/20 text-violet-400"
-                            label="Dil"
-                            sublabel="Türkçe"
-                            onClick={() => { }}
+                            label={t('profile.language')}
+                            sublabel={language === 'tr' ? 'Türkçe' : 'English'}
+                            onClick={() => setShowLangModal(true)}
                         />
                         <SettingsItem
                             icon="currency_exchange"

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { I18nProvider } from './i18n';
 import { HashRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
 import Welcome from './screens/Welcome';
@@ -338,54 +339,56 @@ const App: React.FC = () => {
   }, [session]);
 
   return (
-    <AppContext.Provider value={{ user, session, login, logout, refreshUser, isLoading }}>
-      <HashRouter>
-        <ScrollToTop />
-        <Routes>
-          {/* Admin Routes - Full Screen */}
-          <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
-          <Route path="/admin/users" element={<ProtectedRoute adminOnly><AdminUsers /></ProtectedRoute>} />
-          <Route path="/admin/transactions" element={<ProtectedRoute adminOnly><AdminTransactions /></ProtectedRoute>} />
-          <Route path="/admin/p2p-orders" element={<ProtectedRoute adminOnly><AdminP2POrders /></ProtectedRoute>} />
-          <Route path="/admin/vaults" element={<ProtectedRoute adminOnly><AdminVaults /></ProtectedRoute>} />
-          <Route path="/admin/departments" element={<ProtectedRoute adminOnly><AdminDepartments /></ProtectedRoute>} />
-          <Route path="/admin/departments/:id" element={<ProtectedRoute adminOnly><AdminDepartmentDetail /></ProtectedRoute>} />
-          <Route path="/admin/exchange-rate" element={<ProtectedRoute adminOnly><AdminExchangeRate /></ProtectedRoute>} />
-          <Route path="/admin/logs" element={<ProtectedRoute adminOnly><AdminLogs /></ProtectedRoute>} />
+    <I18nProvider>
+      <AppContext.Provider value={{ user, session, login, logout, refreshUser, isLoading }}>
+        <HashRouter>
+          <ScrollToTop />
+          <Routes>
+            {/* Admin Routes - Full Screen */}
+            <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin/users" element={<ProtectedRoute adminOnly><AdminUsers /></ProtectedRoute>} />
+            <Route path="/admin/transactions" element={<ProtectedRoute adminOnly><AdminTransactions /></ProtectedRoute>} />
+            <Route path="/admin/p2p-orders" element={<ProtectedRoute adminOnly><AdminP2POrders /></ProtectedRoute>} />
+            <Route path="/admin/vaults" element={<ProtectedRoute adminOnly><AdminVaults /></ProtectedRoute>} />
+            <Route path="/admin/departments" element={<ProtectedRoute adminOnly><AdminDepartments /></ProtectedRoute>} />
+            <Route path="/admin/departments/:id" element={<ProtectedRoute adminOnly><AdminDepartmentDetail /></ProtectedRoute>} />
+            <Route path="/admin/exchange-rate" element={<ProtectedRoute adminOnly><AdminExchangeRate /></ProtectedRoute>} />
+            <Route path="/admin/logs" element={<ProtectedRoute adminOnly><AdminLogs /></ProtectedRoute>} />
 
-          {/* Welcome Screen */}
-          <Route path="/welcome" element={<Welcome />} />
+            {/* Welcome Screen */}
+            <Route path="/welcome" element={<Welcome />} />
 
-          {/* Mobile App Routes */}
-          <Route path="/" element={<Layout><Login /></Layout>} />
-          <Route path="/register" element={<Layout><Register /></Layout>} />
-          <Route path="/dashboard" element={<Layout showBottomNav><ProtectedRoute><Dashboard /></ProtectedRoute></Layout>} />
-          <Route path="/profile" element={<Layout showBottomNav><ProtectedRoute><Profile /></ProtectedRoute></Layout>} />
-          <Route path="/qr-scan" element={<Layout showBottomNav><ProtectedRoute><QRScanner /></ProtectedRoute></Layout>} />
-          <Route path="/history" element={<Layout showBottomNav><ProtectedRoute><History /></ProtectedRoute></Layout>} />
-          <Route path="/deposit" element={<Layout showBottomNav><ProtectedRoute><Deposit /></ProtectedRoute></Layout>} />
-          <Route path="/deposit/confirm" element={<Layout><ProtectedRoute><DepositConfirmation /></ProtectedRoute></Layout>} />
-          <Route path="/withdraw" element={<Layout showBottomNav><ProtectedRoute><Withdraw /></ProtectedRoute></Layout>} />
-          <Route path="/crypto/withdraw" element={<Layout><ProtectedRoute><CryptoWithdraw /></ProtectedRoute></Layout>} />
-          <Route path="/crypto/deposit" element={<Layout><ProtectedRoute><CryptoDeposit /></ProtectedRoute></Layout>} />
-          <Route path="/bank-accounts" element={<Layout><ProtectedRoute><BankAccounts /></ProtectedRoute></Layout>} />
-          <Route path="/kyc" element={<Layout><ProtectedRoute><KYCVerification /></ProtectedRoute></Layout>} />
-          <Route path="/profile/edit" element={<Layout><ProtectedRoute><ProfileEdit /></ProtectedRoute></Layout>} />
-          <Route path="/limits" element={<Layout><ProtectedRoute><TransactionLimits /></ProtectedRoute></Layout>} />
-          <Route path="/change-password" element={<Layout><ProtectedRoute><ChangePassword /></ProtectedRoute></Layout>} />
-          <Route path="/notifications" element={<Layout><ProtectedRoute><Notifications /></ProtectedRoute></Layout>} />
+            {/* Mobile App Routes */}
+            <Route path="/" element={<Layout><Login /></Layout>} />
+            <Route path="/register" element={<Layout><Register /></Layout>} />
+            <Route path="/dashboard" element={<Layout showBottomNav><ProtectedRoute><Dashboard /></ProtectedRoute></Layout>} />
+            <Route path="/profile" element={<Layout showBottomNav><ProtectedRoute><Profile /></ProtectedRoute></Layout>} />
+            <Route path="/qr-scan" element={<Layout showBottomNav><ProtectedRoute><QRScanner /></ProtectedRoute></Layout>} />
+            <Route path="/history" element={<Layout showBottomNav><ProtectedRoute><History /></ProtectedRoute></Layout>} />
+            <Route path="/deposit" element={<Layout showBottomNav><ProtectedRoute><Deposit /></ProtectedRoute></Layout>} />
+            <Route path="/deposit/confirm" element={<Layout><ProtectedRoute><DepositConfirmation /></ProtectedRoute></Layout>} />
+            <Route path="/withdraw" element={<Layout showBottomNav><ProtectedRoute><Withdraw /></ProtectedRoute></Layout>} />
+            <Route path="/crypto/withdraw" element={<Layout><ProtectedRoute><CryptoWithdraw /></ProtectedRoute></Layout>} />
+            <Route path="/crypto/deposit" element={<Layout><ProtectedRoute><CryptoDeposit /></ProtectedRoute></Layout>} />
+            <Route path="/bank-accounts" element={<Layout><ProtectedRoute><BankAccounts /></ProtectedRoute></Layout>} />
+            <Route path="/kyc" element={<Layout><ProtectedRoute><KYCVerification /></ProtectedRoute></Layout>} />
+            <Route path="/profile/edit" element={<Layout><ProtectedRoute><ProfileEdit /></ProtectedRoute></Layout>} />
+            <Route path="/limits" element={<Layout><ProtectedRoute><TransactionLimits /></ProtectedRoute></Layout>} />
+            <Route path="/change-password" element={<Layout><ProtectedRoute><ChangePassword /></ProtectedRoute></Layout>} />
+            <Route path="/notifications" element={<Layout><ProtectedRoute><Notifications /></ProtectedRoute></Layout>} />
 
-          {/* Public Pages */}
-          <Route path="/privacy" element={<PrivacyPolicy />} />
-          <Route path="/terms" element={<TermsOfService />} />
-          <Route path="/find-agent" element={<FindAgent />} />
-          <Route path="/autologin" element={<AutoLogin />} />
-          <Route path="/pay/:slug" element={<PaymentPanel />} />
-          <Route path="/business" element={<Layout><ProtectedRoute><BusinessDashboard /></ProtectedRoute></Layout>} />
-          <Route path="/join/:inviteCode" element={<JoinBusiness />} />
-        </Routes>
-      </HashRouter>
-    </AppContext.Provider>
+            {/* Public Pages */}
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/find-agent" element={<FindAgent />} />
+            <Route path="/autologin" element={<AutoLogin />} />
+            <Route path="/pay/:slug" element={<PaymentPanel />} />
+            <Route path="/business" element={<Layout><ProtectedRoute><BusinessDashboard /></ProtectedRoute></Layout>} />
+            <Route path="/join/:inviteCode" element={<JoinBusiness />} />
+          </Routes>
+        </HashRouter>
+      </AppContext.Provider>
+    </I18nProvider >
   );
 };
 
