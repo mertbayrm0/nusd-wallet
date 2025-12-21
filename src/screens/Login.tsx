@@ -188,7 +188,7 @@ const Login = () => {
           </div>
 
           {/* Install App Buttons */}
-          {isInstallable && !isInstalled && (
+          {!isInstalled && (
             <div className="mt-6">
               <p className="text-emerald-200/80 text-xs text-center mb-3">Uygulamayı Telefonuna Yükle</p>
               <div className="flex gap-3">
