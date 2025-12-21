@@ -65,7 +65,7 @@ export const requestNotificationPermission = async (): Promise<string | null> =>
 
         // Get FCM token
         const token = await getToken(messaging, {
-            vapidKey: 'BLBz6PiZXoxE7yFYF9HS_Xz3Ly6QqXrCOv7x3CQ4vOE_wMgWsLfGMqMgCf3LPHLzRCQfkNKi8kBWOSv8nZMJ1Jw' // You need to generate this in Firebase Console
+            vapidKey: 'BGJs5kmZohXm82p7BQL60zzyFq0NFPHVuQbQH6H-IrsnIDQt1PgYn5TIZRkBwBfTfJXmLnIWU6pIIw0HgYf_wcA' // You need to generate this in Firebase Console
         });
 
         if (token) {
