@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../App';
+import { useTheme } from '../theme';
 
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useApp();
+  const { isDark } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -34,28 +36,28 @@ const Login = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-[#111111] p-6 font-display">
+    <div className={`flex flex-col items-center justify-center min-h-screen p-6 font-display ${isDark ? 'bg-[#111111]' : 'bg-gray-50'}`}>
 
       {/* Logo and Version Tag */}
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent mb-2">
-          NUSD Wallet
+        <h1 className={`text-3xl font-bold bg-clip-text text-transparent mb-2 ${isDark ? 'bg-gradient-to-r from-white to-gray-400' : 'bg-gradient-to-r from-gray-900 to-gray-600'}`}>
+          Nubit Wallet
         </h1>
         <p className="text-gray-500 text-sm">Secure Crypto Management</p>
-        <p className="text-[10px] text-gray-700 mt-1">v2.0-web-fix</p>
+        <p className="text-[10px] text-gray-400 mt-1">v2.0-web</p>
       </div>
 
-      <h1 className="text-3xl font-extrabold text-white mb-2 tracking-tight">Welcome Back</h1>
+      <h1 className={`text-3xl font-extrabold mb-2 tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>Welcome Back</h1>
       <p className="text-gray-500 text-sm font-medium mb-8">Securely access your wallet</p>
 
       <form onSubmit={handleLogin} className="w-full space-y-5">
         {/* Email Input */}
         <div>
-          <label className="block text-sm font-bold text-gray-400 mb-2">Email</label>
+          <label className={`block text-sm font-bold mb-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Email</label>
           <input
             type="email"
             required
-            className="w-full px-4 py-4 rounded-xl border border-white/10 focus:border-lime-500 focus:ring-2 focus:ring-lime-500/20 transition-all outline-none bg-[#1a1a1a] text-white font-medium placeholder:text-gray-600"
+            className={`w-full px-4 py-4 rounded-xl border focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all outline-none font-medium ${isDark ? 'bg-[#1a1a1a] border-white/10 text-white placeholder:text-gray-600' : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'}`}
             placeholder="name@example.com"
             value={email}
             onChange={e => setEmail(e.target.value)}
@@ -64,12 +66,12 @@ const Login = () => {
 
         {/* Password Input */}
         <div>
-          <label className="block text-sm font-bold text-gray-400 mb-2">Password</label>
+          <label className={`block text-sm font-bold mb-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Password</label>
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
               required
-              className="w-full pl-4 pr-12 py-4 rounded-xl border border-white/10 focus:border-lime-500 focus:ring-2 focus:ring-lime-500/20 transition-all outline-none bg-[#1a1a1a] text-white font-bold placeholder:font-normal placeholder:text-gray-600"
+              className={`w-full pl-4 pr-12 py-4 rounded-xl border focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all outline-none font-bold placeholder:font-normal ${isDark ? 'bg-[#1a1a1a] border-white/10 text-white placeholder:text-gray-600' : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'}`}
               placeholder="Enter your password"
               value={password}
               onChange={e => setPassword(e.target.value)}
@@ -97,7 +99,7 @@ const Login = () => {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-lime-500 hover:bg-lime-400 active:scale-[0.98] text-black py-4 rounded-xl font-bold text-lg shadow-xl shadow-lime-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-white py-4 rounded-xl font-bold text-lg shadow-xl shadow-emerald-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? 'Checking...' : 'Login'}
         </button>
@@ -105,10 +107,10 @@ const Login = () => {
         {/* Divider */}
         <div className="relative py-2">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-white/10"></div>
+            <div className={`w-full border-t ${isDark ? 'border-white/10' : 'border-gray-300'}`}></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-4 bg-[#111111] text-gray-500 font-medium uppercase tracking-wider text-xs">or</span>
+            <span className={`px-4 text-gray-500 font-medium uppercase tracking-wider text-xs ${isDark ? 'bg-[#111111]' : 'bg-gray-50'}`}>or</span>
           </div>
         </div>
 
@@ -116,7 +118,7 @@ const Login = () => {
         <button
           type="button"
           onClick={() => navigate('/register')}
-          className="w-full bg-[#1a1a1a] border border-white/10 hover:border-white/20 hover:bg-[#222] text-white py-4 rounded-xl font-bold text-lg transition-all"
+          className={`w-full border py-4 rounded-xl font-bold text-lg transition-all ${isDark ? 'bg-[#1a1a1a] border-white/10 hover:border-white/20 hover:bg-[#222] text-white' : 'bg-white border-gray-300 hover:border-gray-400 hover:bg-gray-50 text-gray-900'}`}
         >
           Create Account
         </button>
