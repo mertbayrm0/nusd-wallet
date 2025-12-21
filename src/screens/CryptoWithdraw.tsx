@@ -141,8 +141,8 @@ const CryptoWithdraw = () => {
     // Loading state
     if (checkingPending) {
         return (
-            <div className="min-h-screen bg-[#111111] flex items-center justify-center">
-                <div className="text-gray-400">Yükleniyor...</div>
+            <div className="min-h-screen bg-gradient-to-b from-emerald-800 via-emerald-900 to-emerald-950 flex items-center justify-center">
+                <div className="text-emerald-300">Yükleniyor...</div>
             </div>
         );
     }
@@ -150,22 +150,22 @@ const CryptoWithdraw = () => {
     // Show pending withdrawal if exists
     if (pendingWithdrawal) {
         return (
-            <div className="min-h-screen bg-[#111111] flex flex-col font-display">
-                <div className="bg-[#1a1a1a] px-4 py-4 flex items-center border-b border-white/5 sticky top-0 z-10">
+            <div className="min-h-screen bg-gradient-to-b from-emerald-800 via-emerald-900 to-emerald-950 flex flex-col font-display">
+                <div className="px-4 py-4 flex items-center sticky top-0 z-10">
                     <button onClick={() => navigate('/dashboard')} className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors">
-                        <span className="material-symbols-outlined text-gray-400">arrow_back</span>
+                        <span className="material-symbols-outlined text-white">arrow_back</span>
                     </button>
                     <h1 className="flex-1 text-center font-bold text-lg text-white pr-8">Send USDT</h1>
                 </div>
 
                 <div className="p-4 flex-1 flex flex-col items-center justify-center">
-                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-6 max-w-sm w-full text-center">
-                        <span className="material-symbols-outlined text-amber-400 text-5xl mb-4">pending</span>
-                        <h2 className="text-xl font-bold text-white mb-2">Bekleyen Çekim Talebi</h2>
-                        <p className="text-gray-400 mb-4">Zaten bir çekim talebiniz işleniyor. Yeni talep oluşturmak için mevcut talebin tamamlanmasını bekleyin veya iptal edin.</p>
+                    <div className="bg-white rounded-2xl p-6 max-w-sm w-full text-center shadow-xl">
+                        <span className="material-symbols-outlined text-amber-500 text-5xl mb-4">pending</span>
+                        <h2 className="text-xl font-bold text-gray-900 mb-2">Bekleyen Çekim Talebi</h2>
+                        <p className="text-gray-500 mb-4">Zaten bir çekim talebiniz işleniyor. Yeni talep oluşturmak için mevcut talebin tamamlanmasını bekleyin veya iptal edin.</p>
 
-                        <div className="bg-[#0a0a0a] rounded-xl p-4 mb-4">
-                            <p className="text-2xl font-bold text-amber-400">${pendingWithdrawal.amount}</p>
+                        <div className="bg-gray-100 rounded-xl p-4 mb-4">
+                            <p className="text-2xl font-bold text-amber-500">${pendingWithdrawal.amount}</p>
                             <p className="text-xs text-gray-500 mt-1">
                                 {new Date(pendingWithdrawal.created_at).toLocaleString()}
                             </p>
@@ -175,14 +175,14 @@ const CryptoWithdraw = () => {
                         <button
                             onClick={cancelPending}
                             disabled={cancelling}
-                            className="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold disabled:opacity-50 mb-3"
+                            className="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold disabled:opacity-50 mb-3 transition-colors"
                         >
                             {cancelling ? 'İptal Ediliyor...' : 'Talebi İptal Et'}
                         </button>
 
                         <button
                             onClick={() => navigate('/dashboard')}
-                            className="w-full bg-[#1a1a1a] text-gray-400 py-3 rounded-xl font-bold border border-white/10"
+                            className="w-full bg-gray-100 text-gray-600 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors"
                         >
                             Bekle, Geri Dön
                         </button>
@@ -193,36 +193,36 @@ const CryptoWithdraw = () => {
     }
 
     return (
-        <div className="min-h-screen bg-[#111111] flex flex-col font-display">
-            <div className="bg-[#1a1a1a] px-4 py-4 flex items-center border-b border-white/5 sticky top-0 z-10">
+        <div className="min-h-screen bg-gradient-to-b from-emerald-800 via-emerald-900 to-emerald-950 flex flex-col font-display">
+            <div className="px-4 py-4 flex items-center sticky top-0 z-10">
                 <button onClick={() => navigate('/dashboard')} className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors">
-                    <span className="material-symbols-outlined text-gray-400">arrow_back</span>
+                    <span className="material-symbols-outlined text-white">arrow_back</span>
                 </button>
                 <h1 className="flex-1 text-center font-bold text-lg text-white pr-8">Send USDT</h1>
             </div>
 
             <div className="p-4 space-y-6">
                 {/* Available Balance */}
-                <div className="bg-[#1a1a1a] p-6 rounded-2xl border border-white/5">
+                <div className="bg-white p-6 rounded-2xl shadow-lg">
                     <p className="text-gray-500 font-medium text-sm mb-1">Available Balance</p>
-                    <h2 className="text-3xl font-extrabold text-white tracking-tight">
-                        {user?.balance.toLocaleString()} <span className="text-xl font-bold text-gray-500">USDT</span>
+                    <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+                        {user?.balance.toLocaleString()} <span className="text-xl font-bold text-gray-400">USDT</span>
                     </h2>
                 </div>
 
                 {/* Smart Address Input */}
                 <div>
-                    <label className="block text-sm font-bold text-gray-400 mb-2">
+                    <label className="block text-sm font-bold text-emerald-300 mb-2">
                         Recipient Address or NUSD Code
                     </label>
                     <div className="relative">
                         <input
-                            className="w-full pl-4 pr-12 py-3.5 rounded-xl border border-white/10 focus:border-lime-500 transition-all outline-none bg-[#1a1a1a] text-white font-medium placeholder:text-gray-600"
+                            className="w-full pl-4 pr-12 py-3.5 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all outline-none bg-white text-gray-900 font-medium placeholder:text-gray-400 shadow"
                             placeholder="NUSD-XXXX or TAeaxx..."
                             value={address}
                             onChange={e => setAddress(e.target.value)}
                         />
-                        <span className={`material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 ${isInternalTransfer ? 'text-lime-400' : 'text-gray-500'}`}>
+                        <span className={`material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 ${isInternalTransfer ? 'text-emerald-500' : 'text-gray-400'}`}>
                             {isInternalTransfer ? 'bolt' : 'qr_code_scanner'}
                         </span>
                     </div>
@@ -230,8 +230,8 @@ const CryptoWithdraw = () => {
                     {/* Transfer Type Indicator */}
                     {address.length > 3 && (
                         <div className={`mt-2 px-3 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1 ${isInternalTransfer
-                            ? 'bg-lime-500/20 text-lime-400'
-                            : 'bg-blue-500/20 text-blue-400'
+                            ? 'bg-emerald-100 text-emerald-600'
+                            : 'bg-blue-100 text-blue-600'
                             }`}>
                             <span className="material-symbols-outlined text-sm">
                                 {isInternalTransfer ? 'bolt' : 'language'}
@@ -244,10 +244,10 @@ const CryptoWithdraw = () => {
                 {/* Network - only show for external */}
                 {!isInternalTransfer && (
                     <div>
-                        <label className="block text-sm font-bold text-gray-400 mb-2">Network</label>
+                        <label className="block text-sm font-bold text-emerald-300 mb-2">Network</label>
                         <div className="relative">
                             <select
-                                className="w-full px-4 py-3.5 rounded-xl border border-white/10 focus:border-lime-500 transition-all outline-none bg-[#1a1a1a] text-white font-medium appearance-none"
+                                className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:border-emerald-500 transition-all outline-none bg-white text-gray-900 font-medium appearance-none shadow"
                                 value={network}
                                 onChange={e => setNetwork(e.target.value)}
                             >
@@ -255,7 +255,7 @@ const CryptoWithdraw = () => {
                                 <option>Ethereum (ERC20)</option>
                                 <option>BSC (BEP20)</option>
                             </select>
-                            <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">expand_more</span>
+                            <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
                         </div>
                     </div>
                 )}
@@ -263,32 +263,32 @@ const CryptoWithdraw = () => {
                 {/* Amount */}
                 <div>
                     <div className="flex justify-between mb-2">
-                        <label className="block text-sm font-bold text-gray-400">Amount</label>
+                        <label className="block text-sm font-bold text-emerald-300">Amount</label>
                         <button onClick={handleMax} className="text-lime-400 text-xs font-bold hover:text-lime-300">MAX</button>
                     </div>
                     <div className="relative">
                         <input
-                            className="w-full pl-4 pr-16 py-3.5 rounded-xl border border-white/10 focus:border-lime-500 transition-all outline-none bg-[#1a1a1a] text-white font-bold text-lg placeholder:text-gray-600"
+                            className="w-full pl-4 pr-16 py-3.5 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all outline-none bg-white text-gray-900 font-bold text-lg placeholder:text-gray-400 shadow"
                             type="number"
                             placeholder="Min 10.00"
                             value={amount}
                             onChange={e => setAmount(e.target.value)}
                         />
-                        <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-gray-500">USDT</span>
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">USDT</span>
                     </div>
                 </div>
 
                 {/* Summary */}
-                <div className="bg-[#1a1a1a] rounded-xl p-4 border border-white/5 space-y-2">
+                <div className="bg-white rounded-xl p-4 shadow-lg space-y-2">
                     <div className="flex justify-between text-sm">
                         <span className="text-gray-500">Fee</span>
-                        <span className={`font-bold ${isInternalTransfer ? 'text-lime-400' : 'text-white'}`}>
+                        <span className={`font-bold ${isInternalTransfer ? 'text-emerald-500' : 'text-gray-900'}`}>
                             {isInternalTransfer ? 'FREE' : `${fee.toFixed(2)} USDT`}
                         </span>
                     </div>
-                    <div className="flex justify-between text-base border-t border-white/5 pt-2 mt-2">
-                        <span className="font-bold text-white">Receive Amount</span>
-                        <span className="font-bold text-lime-400">{(isInternalTransfer ? val : receiveAmount).toFixed(2)} USDT</span>
+                    <div className="flex justify-between text-base border-t border-gray-100 pt-2 mt-2">
+                        <span className="font-bold text-gray-900">Receive Amount</span>
+                        <span className="font-bold text-emerald-500">{(isInternalTransfer ? val : receiveAmount).toFixed(2)} USDT</span>
                     </div>
                 </div>
 
@@ -296,8 +296,8 @@ const CryptoWithdraw = () => {
                     onClick={submit}
                     disabled={!isValid || loading}
                     className={`w-full py-4 rounded-xl font-bold text-lg shadow-xl transition-all ${isValid && !loading
-                        ? 'bg-lime-500 hover:bg-lime-400 active:scale-[0.98] text-black shadow-lime-500/20'
-                        : 'bg-gray-700 text-gray-500 cursor-not-allowed shadow-none'
+                        ? 'bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-white shadow-emerald-500/20'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none'
                         }`}
                 >
                     {loading ? 'Processing...' : isInternalTransfer ? '⚡ Send Instantly' : 'Confirm Withdrawal'}
@@ -308,24 +308,24 @@ const CryptoWithdraw = () => {
             {showSuccess && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                     {/* Backdrop */}
-                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
                     {/* Modal */}
-                    <div className="relative bg-[#1a1a1a] border border-lime-500/30 rounded-3xl p-8 w-full max-w-sm shadow-2xl animate-scale-in text-center">
+                    <div className="relative bg-white rounded-3xl p-8 w-full max-w-sm shadow-2xl animate-scale-in text-center">
                         {/* Success Icon */}
-                        <div className="w-20 h-20 bg-lime-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <span className="material-symbols-outlined text-5xl text-lime-400">check_circle</span>
+                        <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <span className="material-symbols-outlined text-5xl text-emerald-500">check_circle</span>
                         </div>
                         {/* Title */}
-                        <h2 className="text-2xl font-bold text-white mb-2">Transfer Başarılı!</h2>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-2">Transfer Başarılı!</h2>
                         {/* Amount */}
-                        <div className="bg-[#111111] rounded-xl p-4 mb-4">
-                            <p className="text-3xl font-extrabold text-lime-400">{successAmount.toLocaleString()} USDT</p>
+                        <div className="bg-gray-100 rounded-xl p-4 mb-4">
+                            <p className="text-3xl font-extrabold text-emerald-500">{successAmount.toLocaleString()} USDT</p>
                             <p className="text-gray-500 text-sm mt-1">gönderildi</p>
                         </div>
                         {/* Recipient */}
-                        <div className="bg-[#0a0a0a] rounded-lg px-4 py-3 mb-6">
+                        <div className="bg-emerald-50 rounded-lg px-4 py-3 mb-6">
                             <p className="text-xs text-gray-500 mb-1">Alıcı</p>
-                            <p className="font-mono text-lime-400 font-bold">{successRecipient}</p>
+                            <p className="font-mono text-emerald-600 font-bold">{successRecipient}</p>
                         </div>
                         {/* Button */}
                         <button
@@ -333,7 +333,7 @@ const CryptoWithdraw = () => {
                                 setShowSuccess(false);
                                 navigate('/dashboard');
                             }}
-                            className="w-full bg-lime-500 hover:bg-lime-400 text-black py-4 rounded-xl font-bold text-lg transition-all"
+                            className="w-full bg-emerald-500 hover:bg-emerald-400 text-white py-4 rounded-xl font-bold text-lg transition-all"
                         >
                             Tamam
                         </button>
