@@ -301,8 +301,10 @@ const Dashboard = () => {
     );
   }
 
+  const [sheetExpanded, setSheetExpanded] = useState(false);
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-800 via-emerald-900 to-emerald-950 flex flex-col font-display pb-20">
+    <div className="h-screen bg-gradient-to-b from-emerald-800 via-emerald-900 to-emerald-950 flex flex-col font-display overflow-hidden relative">
 
       <SuccessModal
         isOpen={successModal.isOpen}
@@ -357,7 +359,7 @@ const Dashboard = () => {
         )
       }
 
-      <div className="px-5 flex-1 overflow-y-auto">
+      <div className="px-5 flex-1 overflow-hidden">
         {/* Approvals Alert */}
         {approvals.length > 0 && (
           <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl mb-6 backdrop-blur-sm">
@@ -511,26 +513,39 @@ const Dashboard = () => {
           </button>
         )}
 
-        {/* Transaction History */}
-        <div className="bg-white rounded-t-3xl -mx-5 px-5 pt-6 pb-24 mt-4">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-lg text-gray-900">Transaction History</h3>
-            <button
-              onClick={() => navigate('/history')}
-              className="text-emerald-500 text-xs font-bold flex items-center hover:text-emerald-400 transition-colors"
-            >
-              View All <span className="material-symbols-outlined text-sm ml-1">arrow_forward</span>
-            </button>
+        {/* Transaction History - Bottom Sheet */}
+        <div
+          className={`fixed left-0 right-0 bg-white rounded-t-3xl shadow-2xl shadow-black/30 transition-all duration-300 ease-out z-40 ${sheetExpanded ? 'top-32' : 'bottom-20'}`}
+          style={{ height: sheetExpanded ? 'calc(100vh - 8rem)' : '180px' }}
+        >
+          {/* Drag Handle */}
+          <div
+            className="flex justify-center py-3 cursor-pointer"
+            onClick={() => setSheetExpanded(!sheetExpanded)}
+          >
+            <div className="w-10 h-1.5 bg-gray-300 rounded-full"></div>
           </div>
 
-          <div className="space-y-3">
+          <div className="px-5">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-lg text-gray-900">Transaction History</h3>
+              <button
+                onClick={() => navigate('/history')}
+                className="text-emerald-500 text-xs font-bold flex items-center hover:text-emerald-400 transition-colors"
+              >
+                View All <span className="material-symbols-outlined text-sm ml-1">arrow_forward</span>
+              </button>
+            </div>
+          </div>
+
+          <div className={`px-5 space-y-3 overflow-y-auto ${sheetExpanded ? 'pb-32' : ''}`} style={{ maxHeight: sheetExpanded ? 'calc(100vh - 14rem)' : '100px' }}>
             {txs.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 rounded-2xl bg-gray-50 text-gray-400">
-                <span className="material-symbols-outlined text-4xl mb-2 opacity-30">history</span>
+              <div className="flex flex-col items-center justify-center py-8 rounded-2xl bg-gray-50 text-gray-400">
+                <span className="material-symbols-outlined text-3xl mb-2 opacity-30">history</span>
                 <p className="text-sm font-medium">No recent transactions</p>
               </div>
             ) : (
-              txs.map((tx: any) => (
+              txs.slice(0, sheetExpanded ? txs.length : 2).map((tx: any) => (
                 <div key={tx.id} className="p-4 rounded-2xl bg-gray-50 flex justify-between items-center transition-all hover:bg-gray-100">
                   <div className="flex items-center gap-3">
                     <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${tx.amount > 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-500'}`}>
