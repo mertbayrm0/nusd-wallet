@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../App';
-import { useTheme } from '../theme';
 
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useApp();
-  const { isDark } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -25,7 +23,7 @@ const Login = () => {
       if (success) {
         navigate('/dashboard');
       } else {
-        setError("Giriş başarısız. Lütfen bilgileri kontrol edin. (Supabase Auth Hatası)");
+        setError("Giriş başarısız. Lütfen bilgileri kontrol edin.");
       }
     } catch (err: any) {
       console.error('Login exception:', err);
@@ -36,95 +34,124 @@ const Login = () => {
   };
 
   return (
-    <div className={`flex flex-col items-center justify-center min-h-screen p-6 font-display ${isDark ? 'bg-[#111111]' : 'bg-emerald-50'}`}>
+    <div className="min-h-screen bg-gradient-to-b from-emerald-800 via-emerald-900 to-emerald-950 flex flex-col font-display relative overflow-hidden">
 
-      {/* Logo and Version Tag */}
-      <div className="text-center mb-8">
-        <h1 className={`text-3xl font-bold bg-clip-text text-transparent mb-2 ${isDark ? 'bg-gradient-to-r from-white to-gray-400' : 'bg-gradient-to-r from-gray-900 to-gray-600'}`}>
-          Nubit Wallet
-        </h1>
-        <p className="text-gray-500 text-sm">Secure Crypto Management</p>
-        <p className="text-[10px] text-gray-400 mt-1">v2.0-web</p>
+      {/* Decorative Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-24 -right-24 w-96 h-96 bg-emerald-600/20 rounded-full blur-3xl" />
+        <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-teal-500/20 rounded-full blur-3xl" />
+        <div className="absolute top-1/3 left-1/4 w-64 h-64 bg-emerald-400/10 rounded-full blur-2xl" />
       </div>
 
-      <h1 className={`text-3xl font-extrabold mb-2 tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>Welcome Back</h1>
-      <p className="text-gray-500 text-sm font-medium mb-8">Securely access your wallet</p>
+      {/* Content */}
+      <div className="flex-1 flex flex-col items-center justify-center p-6 relative z-10">
 
-      <form onSubmit={handleLogin} className="w-full space-y-5">
-        {/* Email Input */}
-        <div>
-          <label className={`block text-sm font-bold mb-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Email</label>
-          <input
-            type="email"
-            required
-            className={`w-full px-4 py-4 rounded-xl border focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all outline-none font-medium ${isDark ? 'bg-[#1a1a1a] border-white/10 text-white placeholder:text-gray-600' : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'}`}
-            placeholder="name@example.com"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-          />
+        {/* Logo Section */}
+        <div className="text-center mb-10">
+          <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-emerald-900/50">
+            <span className="material-symbols-outlined text-emerald-600 text-4xl">account_balance_wallet</span>
+          </div>
+          <h1 className="text-4xl font-extrabold text-white tracking-tight mb-1">
+            Nubit Wallet
+          </h1>
+          <p className="text-emerald-300/80 text-sm font-medium">Secure Crypto Management</p>
         </div>
 
-        {/* Password Input */}
-        <div>
-          <label className={`block text-sm font-bold mb-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Password</label>
-          <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              required
-              className={`w-full pl-4 pr-12 py-4 rounded-xl border focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all outline-none font-bold placeholder:font-normal ${isDark ? 'bg-[#1a1a1a] border-white/10 text-white placeholder:text-gray-600' : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400'}`}
-              placeholder="Enter your password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-            />
+        {/* Login Card */}
+        <div className="w-full max-w-sm">
+          <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-8 shadow-2xl shadow-emerald-950/50">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">Hoş Geldiniz</h2>
+              <p className="text-gray-500 text-sm">Hesabınıza güvenle giriş yapın</p>
+            </div>
+
+            <form onSubmit={handleLogin} className="space-y-5">
+              {/* Email Input */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">E-posta</label>
+                <div className="relative">
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl">mail</span>
+                  <input
+                    type="email"
+                    required
+                    className="w-full pl-12 pr-4 py-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 font-medium focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:bg-white transition-all outline-none placeholder:text-gray-400"
+                    placeholder="ornek@email.com"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Password Input */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Şifre</label>
+                <div className="relative">
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl">lock</span>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    className="w-full pl-12 pr-12 py-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 font-bold focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:bg-white transition-all outline-none placeholder:text-gray-400 placeholder:font-normal"
+                    placeholder="Şifrenizi girin"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-xl">
+                      {showPassword ? 'visibility_off' : 'visibility'}
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Error Message */}
+              {error && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
+                  <span className="material-symbols-outlined text-red-500 text-lg shrink-0">error</span>
+                  <p className="text-red-600 text-sm">{error}</p>
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-emerald-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Giriş yapılıyor...
+                  </>
+                ) : (
+                  <>
+                    Giriş Yap
+                    <span className="material-symbols-outlined">arrow_forward</span>
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+
+          {/* Register Link */}
+          <div className="mt-6 text-center">
+            <p className="text-emerald-200/80 text-sm mb-3">Hesabınız yok mu?</p>
             <button
               type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+              onClick={() => navigate('/register')}
+              className="w-full bg-white/10 backdrop-blur border border-white/20 hover:bg-white/20 hover:border-white/30 py-4 rounded-xl font-bold text-lg text-white transition-all"
             >
-              <span className="material-symbols-outlined text-xl">
-                {showPassword ? 'visibility_off' : 'visibility'}
-              </span>
+              Yeni Hesap Oluştur
             </button>
           </div>
+
+          {/* Version Tag */}
+          <p className="text-center text-emerald-400/50 text-xs mt-8">v2.0 • Web</p>
         </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-            <p className="text-red-400 text-xs font-mono">{error}</p>
-          </div>
-        )}
-
-        {/* Submit Button */}
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-white py-4 rounded-xl font-bold text-lg shadow-xl shadow-emerald-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isLoading ? 'Checking...' : 'Login'}
-        </button>
-
-        {/* Divider */}
-        <div className="relative py-2">
-          <div className="absolute inset-0 flex items-center">
-            <div className={`w-full border-t ${isDark ? 'border-white/10' : 'border-gray-300'}`}></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className={`px-4 text-gray-500 font-medium uppercase tracking-wider text-xs ${isDark ? 'bg-[#111111]' : 'bg-emerald-50'}`}>or</span>
-          </div>
-        </div>
-
-        {/* Register Button */}
-        <button
-          type="button"
-          onClick={() => navigate('/register')}
-          className={`w-full border py-4 rounded-xl font-bold text-lg transition-all ${isDark ? 'bg-[#1a1a1a] border-white/10 hover:border-white/20 hover:bg-[#222] text-white' : 'bg-white border-emerald-200 hover:border-emerald-300 hover:bg-emerald-50 text-gray-900'}`}
-        >
-          Create Account
-        </button>
-      </form>
-
-
+      </div>
     </div>
   );
 };
