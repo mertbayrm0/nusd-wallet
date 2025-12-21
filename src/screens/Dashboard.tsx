@@ -515,7 +515,7 @@ const Dashboard = () => {
 
         {/* Transaction History - Bottom Sheet */}
         <div
-          className={`fixed left-0 right-0 bottom-0 bg-white rounded-t-3xl shadow-2xl shadow-black/30 transition-all duration-300 ease-out z-40`}
+          className={`fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white rounded-t-3xl shadow-2xl shadow-black/30 transition-all duration-300 ease-out z-40`}
           style={{ height: sheetExpanded ? 'calc(100vh - 120px)' : '200px' }}
         >
           {/* Drag Handle */}
