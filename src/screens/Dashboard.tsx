@@ -304,7 +304,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="h-screen bg-gradient-to-b from-emerald-800 via-emerald-900 to-emerald-950 flex flex-col font-display overflow-hidden relative">
+    <div className={`h-screen flex flex-col font-display overflow-hidden relative ${isDark ? 'bg-[#111111]' : 'bg-gradient-to-b from-emerald-800 via-emerald-900 to-emerald-950'}`}>
 
       <SuccessModal
         isOpen={successModal.isOpen}
@@ -316,23 +316,23 @@ const Dashboard = () => {
       {/* Premium Header */}
       <div className="px-5 pt-6 pb-4 flex justify-between items-start">
         <div>
-          <p className="text-emerald-300/80 text-sm font-medium mb-1">Welcome</p>
+          <p className={`text-sm font-medium mb-1 ${isDark ? 'text-gray-500' : 'text-emerald-300/80'}`}>Welcome</p>
           <h1 className="text-white text-2xl font-bold tracking-tight">{user.name || user.email?.split('@')[0]}</h1>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/notifications')}
-            className="w-11 h-11 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center transition-colors relative hover:bg-white/20"
+            className={`w-11 h-11 rounded-full backdrop-blur-sm flex items-center justify-center transition-colors relative ${isDark ? 'bg-[#1a1a1a] hover:bg-[#222]' : 'bg-white/10 hover:bg-white/20'}`}
           >
-            <span className="material-symbols-outlined text-white text-xl">notifications</span>
+            <span className={`material-symbols-outlined text-xl ${isDark ? 'text-gray-400' : 'text-white'}`}>notifications</span>
             {notification && (
               <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 shadow-md">
                 1
               </span>
             )}
           </button>
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-lime-400 to-emerald-500 p-0.5 shadow-lg shadow-emerald-500/40">
-            <div className="w-full h-full rounded-full bg-emerald-800 flex items-center justify-center text-white font-bold text-lg">
+          <div className={`w-12 h-12 rounded-full p-0.5 shadow-lg ${isDark ? 'bg-gradient-to-br from-lime-400 to-lime-500 shadow-lime-500/30' : 'bg-gradient-to-br from-lime-400 to-emerald-500 shadow-emerald-500/40'}`}>
+            <div className={`w-full h-full rounded-full flex items-center justify-center text-white font-bold text-lg ${isDark ? 'bg-[#111111]' : 'bg-emerald-800'}`}>
               {user.name?.charAt(0) || 'U'}
             </div>
           </div>
@@ -423,7 +423,7 @@ const Dashboard = () => {
 
         {/* Balance Card with Action Buttons */}
         <div className="mb-6">
-          <div className="bg-emerald-700/50 backdrop-blur-sm p-6 rounded-3xl border border-emerald-600/30">
+          <div className={`backdrop-blur-sm p-6 rounded-3xl border ${isDark ? 'bg-[#1a1a1a] border-white/5' : 'bg-emerald-700/50 border-emerald-600/30'}`}>
             {/* İŞLETME PANELİ BUTONU - Sadece business hesaplar için */}
             {user.account_type === 'business' && (
               <button
@@ -436,14 +436,14 @@ const Dashboard = () => {
             )}
 
             <div className="text-center">
-              <p className="text-emerald-200/70 text-sm mb-1 flex items-center justify-center gap-1">
+              <p className={`text-sm mb-1 flex items-center justify-center gap-1 ${isDark ? 'text-gray-500' : 'text-emerald-200/70'}`}>
                 Total Balance
                 <span className="material-symbols-outlined text-sm">visibility</span>
               </p>
               <h2 className="text-4xl font-extrabold text-white tracking-tight mb-3">
                 ${user.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </h2>
-              <span className="inline-flex items-center gap-1 bg-emerald-600/50 px-3 py-1 rounded-full text-xs text-emerald-100 font-medium">
+              <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${isDark ? 'bg-lime-500/20 text-lime-400' : 'bg-emerald-600/50 text-emerald-100'}`}>
                 USD <span className="material-symbols-outlined text-sm">expand_more</span>
               </span>
             </div>
@@ -452,34 +452,34 @@ const Dashboard = () => {
             <div className="grid grid-cols-4 gap-3 mt-6">
               {/* Deposit */}
               <button onClick={() => navigate('/deposit')} className="flex flex-col items-center gap-2 group">
-                <div className="w-14 h-14 rounded-2xl bg-lime-400 flex items-center justify-center shadow-lg group-hover:scale-105 group-active:scale-95 transition-all">
-                  <span className="material-symbols-outlined text-emerald-900 text-2xl">arrow_downward</span>
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-105 group-active:scale-95 transition-all ${isDark ? 'bg-lime-500 shadow-lime-500/30' : 'bg-lime-400'}`}>
+                  <span className={`material-symbols-outlined text-2xl ${isDark ? 'text-black' : 'text-emerald-900'}`}>arrow_downward</span>
                 </div>
-                <span className="text-emerald-100 text-[11px] font-medium">Deposit</span>
+                <span className={`text-[11px] font-medium ${isDark ? 'text-gray-400' : 'text-emerald-100'}`}>Deposit</span>
               </button>
 
               {/* Withdraw */}
               <button onClick={() => navigate('/withdraw')} className="flex flex-col items-center gap-2 group">
-                <div className="w-14 h-14 rounded-2xl bg-lime-400 flex items-center justify-center shadow-lg group-hover:scale-105 group-active:scale-95 transition-all">
-                  <span className="material-symbols-outlined text-emerald-900 text-2xl">arrow_upward</span>
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-105 group-active:scale-95 transition-all ${isDark ? 'bg-lime-500 shadow-lime-500/30' : 'bg-lime-400'}`}>
+                  <span className={`material-symbols-outlined text-2xl ${isDark ? 'text-black' : 'text-emerald-900'}`}>arrow_upward</span>
                 </div>
-                <span className="text-emerald-100 text-[11px] font-medium">Withdraw</span>
+                <span className={`text-[11px] font-medium ${isDark ? 'text-gray-400' : 'text-emerald-100'}`}>Withdraw</span>
               </button>
 
               {/* Crypto Deposit */}
               <button onClick={() => navigate('/crypto/deposit')} className="flex flex-col items-center gap-2 group">
-                <div className="w-14 h-14 rounded-2xl bg-lime-400 flex items-center justify-center shadow-lg group-hover:scale-105 group-active:scale-95 transition-all">
-                  <span className="material-symbols-outlined text-emerald-900 text-2xl">download</span>
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-105 group-active:scale-95 transition-all ${isDark ? 'bg-lime-500 shadow-lime-500/30' : 'bg-lime-400'}`}>
+                  <span className={`material-symbols-outlined text-2xl ${isDark ? 'text-black' : 'text-emerald-900'}`}>download</span>
                 </div>
-                <span className="text-emerald-100 text-[10px] font-medium text-center leading-tight">Crypto<br />Deposit</span>
+                <span className={`text-[10px] font-medium text-center leading-tight ${isDark ? 'text-gray-400' : 'text-emerald-100'}`}>Crypto<br />Deposit</span>
               </button>
 
               {/* Crypto Withdraw */}
               <button onClick={() => navigate('/crypto/withdraw')} className="flex flex-col items-center gap-2 group">
-                <div className="w-14 h-14 rounded-2xl bg-lime-400 flex items-center justify-center shadow-lg group-hover:scale-105 group-active:scale-95 transition-all">
-                  <span className="material-symbols-outlined text-emerald-900 text-2xl">upload</span>
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-105 group-active:scale-95 transition-all ${isDark ? 'bg-lime-500 shadow-lime-500/30' : 'bg-lime-400'}`}>
+                  <span className={`material-symbols-outlined text-2xl ${isDark ? 'text-black' : 'text-emerald-900'}`}>upload</span>
                 </div>
-                <span className="text-emerald-100 text-[10px] font-medium text-center leading-tight">Crypto<br />Withdraw</span>
+                <span className={`text-[10px] font-medium text-center leading-tight ${isDark ? 'text-gray-400' : 'text-emerald-100'}`}>Crypto<br />Withdraw</span>
               </button>
             </div>
           </div>
@@ -488,18 +488,18 @@ const Dashboard = () => {
         {/* Find Agent Button */}
         <button
           onClick={() => navigate('/find-agent')}
-          className="w-full p-4 rounded-2xl flex items-center justify-between group transition-all bg-emerald-700/30 border border-emerald-600/30 hover:bg-emerald-700/50 mb-4"
+          className={`w-full p-4 rounded-2xl flex items-center justify-between group transition-all mb-4 ${isDark ? 'bg-[#1a1a1a] border border-white/5 hover:bg-[#222]' : 'bg-emerald-700/30 border border-emerald-600/30 hover:bg-emerald-700/50'}`}
         >
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-lime-400/20 flex items-center justify-center text-lime-400 group-hover:bg-lime-400 group-hover:text-emerald-900 transition-colors">
+            <div className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${isDark ? 'bg-lime-500/10 text-lime-400 group-hover:bg-lime-500 group-hover:text-black' : 'bg-lime-400/20 text-lime-400 group-hover:bg-lime-400 group-hover:text-emerald-900'}`}>
               <span className="material-symbols-outlined">location_on</span>
             </div>
             <div className="text-left">
               <p className="font-bold text-sm text-white">Find Agent</p>
-              <p className="text-emerald-300/70 text-xs">Locate nearest exchange points</p>
+              <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-emerald-300/70'}`}>Locate nearest exchange points</p>
             </div>
           </div>
-          <span className="material-symbols-outlined text-emerald-400 group-hover:text-white">chevron_right</span>
+          <span className={`material-symbols-outlined group-hover:text-white ${isDark ? 'text-lime-400' : 'text-emerald-400'}`}>chevron_right</span>
         </button>
 
         {/* Admin Panel Button */}
