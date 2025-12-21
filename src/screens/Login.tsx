@@ -36,7 +36,7 @@ const Login = () => {
   };
 
   return (
-    <div className={`flex flex-col items-center justify-center min-h-screen p-6 font-display ${isDark ? 'bg-[#111111]' : 'bg-gray-50'}`}>
+    <div className={`flex flex-col items-center justify-center min-h-screen p-6 font-display ${isDark ? 'bg-[#111111]' : 'bg-emerald-50'}`}>
 
       {/* Logo and Version Tag */}
       <div className="text-center mb-8">
@@ -110,7 +110,7 @@ const Login = () => {
             <div className={`w-full border-t ${isDark ? 'border-white/10' : 'border-gray-300'}`}></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className={`px-4 text-gray-500 font-medium uppercase tracking-wider text-xs ${isDark ? 'bg-[#111111]' : 'bg-gray-50'}`}>or</span>
+            <span className={`px-4 text-gray-500 font-medium uppercase tracking-wider text-xs ${isDark ? 'bg-[#111111]' : 'bg-emerald-50'}`}>or</span>
           </div>
         </div>
 
@@ -118,7 +118,7 @@ const Login = () => {
         <button
           type="button"
           onClick={() => navigate('/register')}
-          className={`w-full border py-4 rounded-xl font-bold text-lg transition-all ${isDark ? 'bg-[#1a1a1a] border-white/10 hover:border-white/20 hover:bg-[#222] text-white' : 'bg-white border-gray-300 hover:border-gray-400 hover:bg-gray-50 text-gray-900'}`}
+          className={`w-full border py-4 rounded-xl font-bold text-lg transition-all ${isDark ? 'bg-[#1a1a1a] border-white/10 hover:border-white/20 hover:bg-[#222] text-white' : 'bg-white border-emerald-200 hover:border-emerald-300 hover:bg-emerald-50 text-gray-900'}`}
         >
           Create Account
         </button>

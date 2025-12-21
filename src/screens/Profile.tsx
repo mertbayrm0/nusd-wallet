@@ -10,7 +10,7 @@ const SettingsItem = ({ icon, iconBg, label, sublabel, onClick, badge, toggle, t
     return (
         <button
             onClick={onClick}
-            className={`w-full p-4 flex items-center gap-4 transition-colors text-left ${isDark ? 'hover:bg-white/5' : 'hover:bg-gray-50'}`}
+            className={`w-full p-4 flex items-center gap-4 transition-colors text-left ${isDark ? 'hover:bg-white/5' : 'hover:bg-emerald-50'}`}
         >
             <div className={`w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center`}>
                 <span className="material-symbols-outlined">{icon}</span>
@@ -70,7 +70,7 @@ const Profile = () => {
     };
 
     return (
-        <div className={`h-screen flex flex-col font-display overflow-hidden ${isDark ? 'bg-[#111111]' : 'bg-gray-50'}`}>
+        <div className={`h-screen flex flex-col font-display overflow-hidden ${isDark ? 'bg-[#111111]' : 'bg-emerald-50'}`}>
             {/* Language Selection Modal */}
             {showLangModal && (
                 <div className="fixed inset-0 bg-black/80 z-50 flex items-end sm:items-center justify-center p-4">

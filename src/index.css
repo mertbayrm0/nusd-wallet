@@ -21,16 +21,22 @@
   --color-border-medium: rgba(255, 255, 255, 0.1);
 }
 
-/* Light theme */
+/* Light theme - Soft Mint/Emerald tinted palette */
 .light {
-  --color-bg-primary: #ffffff;
-  --color-bg-secondary: #f9fafb;
-  --color-bg-tertiary: #f3f4f6;
-  --color-text-primary: #111827;
-  --color-text-secondary: #4b5563;
+  --color-bg-primary: #f0fdf4;
+  /* Very light mint green */
+  --color-bg-secondary: #ecfdf5;
+  /* Soft mint */
+  --color-bg-tertiary: #d1fae5;
+  /* Light emerald */
+  --color-text-primary: #064e3b;
+  /* Dark emerald for contrast */
+  --color-text-secondary: #047857;
+  /* Emerald green */
   --color-text-muted: #6b7280;
-  --color-border-light: rgba(0, 0, 0, 0.05);
-  --color-border-medium: rgba(0, 0, 0, 0.1);
+  --color-border-light: rgba(16, 185, 129, 0.1);
+  /* Emerald tinted border */
+  --color-border-medium: rgba(16, 185, 129, 0.2);
 }
 
 /* Dark theme (explicit) */

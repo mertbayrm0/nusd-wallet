@@ -12,7 +12,7 @@ const BottomNav: React.FC = () => {
     const isActive = (path: string) => location.pathname === path;
 
     return (
-        <div className={`fixed bottom-0 left-0 right-0 border-t px-6 pb-safe z-50 ${isDark ? 'bg-[#1a1a1a] border-white/10' : 'bg-white border-gray-200 shadow-lg'}`}>
+        <div className={`fixed bottom-0 left-0 right-0 border-t px-6 pb-safe z-50 ${isDark ? 'bg-[#1a1a1a] border-white/10' : 'bg-emerald-50 border-emerald-100 shadow-lg'}`}>
             <div className="max-w-md mx-auto flex items-end justify-around py-3">
                 {/* Home/Dashboard */}
                 <button

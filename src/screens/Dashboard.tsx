@@ -473,7 +473,7 @@ const Dashboard = () => {
             {/* Find Agent Button */}
             <button
               onClick={() => navigate('/find-agent')}
-              className={`mt-4 w-full p-3 rounded-2xl flex items-center justify-between group transition-all border ${isDark ? 'bg-[#222] border-white/10 hover:bg-[#2a2a2a]' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'}`}
+              className={`mt-4 w-full p-3 rounded-2xl flex items-center justify-between group transition-all border ${isDark ? 'bg-[#222] border-white/10 hover:bg-[#2a2a2a]' : 'bg-emerald-50 border-emerald-100 hover:bg-emerald-100'}`}
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
@@ -513,13 +513,13 @@ const Dashboard = () => {
 
         <div className="space-y-3">
           {txs.length === 0 ? (
-            <div className={`flex flex-col items-center justify-center py-12 rounded-2xl border ${isDark ? 'bg-[#1a1a1a] border-white/5 text-gray-500' : 'bg-gray-50 border-gray-200 text-gray-400'}`}>
+            <div className={`flex flex-col items-center justify-center py-12 rounded-2xl border ${isDark ? 'bg-[#1a1a1a] border-white/5 text-gray-500' : 'bg-emerald-50/50 border-emerald-100 text-emerald-600'}`}>
               <span className="material-symbols-outlined text-4xl mb-2 opacity-30">history</span>
               <p className="text-sm font-medium">No recent transactions</p>
             </div>
           ) : (
             txs.map((tx: any) => (
-              <div key={tx.id} className={`p-4 rounded-2xl border flex justify-between items-center transition-all ${isDark ? 'bg-[#1a1a1a] border-white/5 hover:bg-[#222] hover:border-white/10' : 'bg-white border-gray-200 hover:bg-gray-50 shadow-sm'}`}>
+              <div key={tx.id} className={`p-4 rounded-2xl border flex justify-between items-center transition-all ${isDark ? 'bg-[#1a1a1a] border-white/5 hover:bg-[#222] hover:border-white/10' : 'bg-white border-emerald-100 hover:bg-emerald-50 shadow-sm'}`}>
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${tx.amount > 0 ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-500'}`}>
                     <span className="material-symbols-outlined text-xl">
