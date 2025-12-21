@@ -13,16 +13,16 @@ const Welcome: React.FC = () => {
             description: 'USDT varlıklarınızı güvenle saklayın ve yönetin. Gelişmiş güvenlik altyapısıyla korunun.'
         },
         {
-            icon: 'swap_horiz',
-            iconBg: 'bg-blue-500',
-            title: 'Hızlı P2P Transferler',
-            description: 'Anında dahili transferler yapın. NUSD-XXXX kodunuzla saniyeler içinde para gönderin ve alın.'
+            icon: 'bolt',
+            iconBg: 'bg-amber-500',
+            title: 'En Hızlı USDT Alma Yöntemi',
+            description: 'P2P sistem ile USDT\'nizi saniyeler içinde alın. Banka transferi ile anında TL\'ye çevirin, en hızlı ve güvenli yol.'
         },
         {
-            icon: 'verified_user',
+            icon: 'language',
             iconBg: 'bg-purple-500',
-            title: 'Çoklu Ağ Desteği',
-            description: 'TRC20, ERC20 ve BEP20 ağlarında USDT yatırın ve çekin. Tek cüzdan, tüm ağlar.'
+            title: 'Çoklu Ağ & Ücretsiz Transfer',
+            description: 'TRC20, ERC20, BEP20 ağ desteği. NUSD kodu ile platform içi transferlerde sıfır komisyon, anında gönderim.'
         }
     ];
 
@@ -101,8 +101,8 @@ const Welcome: React.FC = () => {
                             key={index}
                             onClick={() => setCurrentSlide(index)}
                             className={`h-2 rounded-full transition-all duration-300 ${index === currentSlide
-                                    ? 'w-8 bg-emerald-500'
-                                    : 'w-2 bg-gray-200 hover:bg-gray-300'
+                                ? 'w-8 bg-emerald-500'
+                                : 'w-2 bg-gray-200 hover:bg-gray-300'
                                 }`}
                         />
                     ))}
