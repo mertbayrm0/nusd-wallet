@@ -12,9 +12,9 @@ const BottomNav: React.FC = () => {
     const isActive = (path: string) => location.pathname === path;
 
     return (
-        <div className="fixed bottom-4 left-4 right-4 z-50">
-            {/* Floating Island Container */}
-            <div className="max-w-md mx-auto bg-white rounded-full shadow-2xl shadow-black/20 px-6 py-2 flex items-center justify-around relative">
+        <div className="fixed bottom-4 left-0 right-0 z-50 flex justify-center">
+            {/* Floating Island Container - Compact */}
+            <div className="bg-white rounded-full shadow-2xl shadow-black/20 px-4 py-2 flex items-center gap-8 relative">
                 {/* Home */}
                 <button
                     onClick={() => navigate('/dashboard')}
@@ -34,7 +34,7 @@ const BottomNav: React.FC = () => {
                 </button>
 
                 {/* Spacer for center button */}
-                <div className="w-14"></div>
+                <div className="w-10"></div>
 
                 {/* Settings/Profile */}
                 <button
