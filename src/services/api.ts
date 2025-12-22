@@ -2396,5 +2396,30 @@ export const api = {
       console.error('checkTransactionLimit error:', e);
       return { allowed: false, error: 'Beklenmeyen hata' };
     }
+  },
+
+  // ===== EMAIL NOTIFICATIONS =====
+
+  // Send email notification
+  sendEmail: async (
+    to: string,
+    template: 'deposit_success' | 'withdrawal_success' | 'kyc_approved' | 'kyc_rejected' | 'security_alert' | 'welcome' | 'p2p_completed',
+    data?: Record<string, any>
+  ) => {
+    try {
+      const { data: result, error } = await supabase.functions.invoke('send-email', {
+        body: { to, template, data }
+      });
+
+      if (error) {
+        console.error('sendEmail error:', error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, id: result?.id };
+    } catch (e) {
+      console.error('sendEmail error:', e);
+      return { success: false, error: 'Email gönderilemedi' };
+    }
   }
 };
