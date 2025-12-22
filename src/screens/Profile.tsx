@@ -265,12 +265,29 @@ const Profile = () => {
                     <div className="rounded-2xl overflow-hidden bg-white divide-y divide-gray-100 shadow-lg">
                         <SettingsItem
                             icon="notifications"
-                            iconBg="bg-yellow-500/20 text-yellow-400"
+                            iconBg={hasToken ? "bg-green-500/20 text-green-500" : "bg-yellow-500/20 text-yellow-400"}
                             label="Push Bildirimleri"
-                            sublabel="İşlem ve güvenlik uyarıları"
+                            sublabel={
+                                permission === 'denied'
+                                    ? 'Tarayıcıdan engellendi'
+                                    : hasToken
+                                        ? 'İşlem ve güvenlik uyarıları'
+                                        : 'Etkinleştirmek için tıklayın'
+                            }
                             toggle={true}
-                            toggleValue={true}
-                            onClick={() => { }}
+                            toggleValue={hasToken}
+                            onClick={async () => {
+                                if (permission === 'denied') {
+                                    alert('Bildirimler tarayıcı ayarlarından engellenmiş. Lütfen tarayıcı ayarlarından izin verin.');
+                                    return;
+                                }
+                                if (!hasToken) {
+                                    const success = await requestPermission();
+                                    if (success) {
+                                        alert('Push bildirimleri başarıyla etkinleştirildi!');
+                                    }
+                                }
+                            }}
                         />
                         <SettingsItem
                             icon="email"
@@ -310,37 +327,6 @@ const Profile = () => {
                             toggle={true}
                             toggleValue={isDark}
                             onClick={toggleTheme}
-                        />
-                        <SettingsItem
-                            icon="notifications"
-                            iconBg={hasToken ? "bg-green-500/20 text-green-500" : "bg-gray-500/20 text-gray-400"}
-                            label="Push Bildirimleri"
-                            sublabel={
-                                permission === 'granted' && hasToken
-                                    ? 'Aktif'
-                                    : permission === 'denied'
-                                        ? 'Engellendi'
-                                        : 'Kapalı'
-                            }
-                            badge={
-                                hasToken
-                                    ? { text: 'Açık', color: 'bg-green-100 text-green-600' }
-                                    : permission === 'denied'
-                                        ? { text: 'Engelli', color: 'bg-red-100 text-red-600' }
-                                        : undefined
-                            }
-                            onClick={async () => {
-                                if (permission === 'denied') {
-                                    alert('Bildirimler tarayıcı ayarlarından engellenmiş. Lütfen tarayıcı ayarlarından izin verin.');
-                                    return;
-                                }
-                                if (!hasToken) {
-                                    const success = await requestPermission();
-                                    if (success) {
-                                        alert('Bildirimler başarıyla etkinleştirildi!');
-                                    }
-                                }
-                            }}
                         />
                     </div>
                 </div>
