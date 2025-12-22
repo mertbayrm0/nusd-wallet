@@ -39,6 +39,7 @@ import ChangePassword from './screens/ChangePassword';
 import Notifications from './screens/Notifications';
 import LiveChat from './screens/LiveChat';
 import AdminSupport from './screens/AdminSupport';
+import AdminReports from './screens/AdminReports';
 import BottomNav from './components/BottomNav';
 import { UserState } from './types';
 import { supabase } from './services/supabase';
@@ -359,6 +360,7 @@ const App: React.FC = () => {
               <Route path="/admin/exchange-rate" element={<ProtectedRoute adminOnly><AdminExchangeRate /></ProtectedRoute>} />
               <Route path="/admin/logs" element={<ProtectedRoute adminOnly><AdminLogs /></ProtectedRoute>} />
               <Route path="/admin/support" element={<ProtectedRoute adminOnly><AdminSupport /></ProtectedRoute>} />
+              <Route path="/admin/reports" element={<ProtectedRoute adminOnly><AdminReports /></ProtectedRoute>} />
 
               {/* Welcome Screen */}
               <Route path="/welcome" element={<Welcome />} />

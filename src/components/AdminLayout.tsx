@@ -16,6 +16,7 @@ const AdminLayout = ({ children, title }: { children: React.ReactNode, title: st
         { icon: 'business', label: 'Departmanlar', path: '/admin/departments' },
         { icon: 'terminal', label: 'System Logs', path: '/admin/logs' },
         { icon: 'support_agent', label: 'Canlı Destek', path: '/admin/support' },
+        { icon: 'analytics', label: 'Raporlar', path: '/admin/reports' },
     ];
 
     return (
