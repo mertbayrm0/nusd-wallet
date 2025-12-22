@@ -28,6 +28,13 @@ const Register = () => {
         setLoading(true);
         const result = await api.register(name, email, password, accountType, businessName);
         if (result && result.user?.email) {
+            // Send welcome email
+            try {
+                await api.sendEmail(result.user.email, 'welcome', { userName: name });
+            } catch (e) {
+                console.error('Welcome email error:', e);
+            }
+
             await login(result.user.email, password);
             navigate('/dashboard');
         }

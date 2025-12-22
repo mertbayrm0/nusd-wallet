@@ -89,7 +89,27 @@ const AdminDashboard = () => {
         if (!window.confirm("Withdraw'u onaylamak istediğinize emin misiniz?")) return;
         setProcessingId(id);
         try {
+            // Find withdrawal to get user info
+            const withdrawal = pendingWithdrawals.find(w => w.id === id);
+
             await api.approveWithdrawal(id);
+
+            // Send success email
+            if (withdrawal?.user_email || withdrawal?.profiles?.email) {
+                const email = withdrawal.user_email || withdrawal.profiles?.email;
+                const name = withdrawal.profiles?.name || email?.split('@')[0];
+                try {
+                    await api.sendEmail(email, 'withdrawal_success', {
+                        userName: name,
+                        amount: withdrawal.amount,
+                        network: withdrawal.network || 'TRC20',
+                        address: withdrawal.destination_address || withdrawal.wallet_address
+                    });
+                } catch (e) {
+                    console.error('Withdrawal email error:', e);
+                }
+            }
+
             loadWithdrawals();
         } catch (e) {
             alert('Onaylama başarısız: ' + e);
