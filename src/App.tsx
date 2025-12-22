@@ -37,6 +37,7 @@ import ProfileEdit from './screens/ProfileEdit';
 import TransactionLimits from './screens/TransactionLimits';
 import ChangePassword from './screens/ChangePassword';
 import Notifications from './screens/Notifications';
+import LiveChat from './screens/LiveChat';
 import BottomNav from './components/BottomNav';
 import { UserState } from './types';
 import { supabase } from './services/supabase';
@@ -378,6 +379,7 @@ const App: React.FC = () => {
               <Route path="/limits" element={<Layout><ProtectedRoute><TransactionLimits /></ProtectedRoute></Layout>} />
               <Route path="/change-password" element={<Layout><ProtectedRoute><ChangePassword /></ProtectedRoute></Layout>} />
               <Route path="/notifications" element={<Layout><ProtectedRoute><Notifications /></ProtectedRoute></Layout>} />
+              <Route path="/support" element={<ProtectedRoute><LiveChat /></ProtectedRoute>} />
 
               {/* Public Pages */}
               <Route path="/privacy" element={<PrivacyPolicy />} />

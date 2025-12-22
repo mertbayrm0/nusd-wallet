@@ -320,8 +320,8 @@ const Profile = () => {
                             icon="support_agent"
                             iconBg="bg-green-500/20 text-green-400"
                             label="Canlı Destek"
-                            sublabel="WhatsApp ile iletişime geç"
-                            onClick={() => window.open('https://wa.me/905551234567', '_blank')}
+                            sublabel="7/24 destek ekibimizle sohbet et"
+                            onClick={() => navigate('/support')}
                         />
                     </div>
                 </div>
