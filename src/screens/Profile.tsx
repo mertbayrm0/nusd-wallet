@@ -207,22 +207,6 @@ const Profile = () => {
                     </div>
                 </div>
 
-                {/* Hesap Bilgileri */}
-                <div className="space-y-2">
-                    <p className="text-emerald-300 text-xs font-bold uppercase tracking-wider pl-2">Hesap Bilgileri</p>
-                    <div className="rounded-2xl overflow-hidden bg-white divide-y divide-gray-100 shadow-lg">
-                        <SettingsItem
-                            icon="person"
-                            iconBg="bg-emerald-500/20 text-emerald-500"
-                            label="Profil Bilgileri"
-                            sublabel={isProfileComplete === null ? 'Kontrol ediliyor...' : isProfileComplete ? 'Tamamlandı' : 'Eksik - Tamamlayın'}
-                            badge={isProfileComplete ? { text: "Tamam", color: "bg-green-500/20 text-green-400" } : isProfileComplete === false ? { text: "Eksik", color: "bg-red-500/20 text-red-400" } : undefined}
-                            onClick={() => navigate('/profile/edit')}
-                        />
-
-                    </div>
-                </div>
-
                 {/* Finans */}
                 <div className="space-y-2">
                     <p className="text-emerald-300 text-xs font-bold uppercase tracking-wider pl-2">Finans</p>
