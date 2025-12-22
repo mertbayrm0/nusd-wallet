@@ -317,25 +317,11 @@ const Profile = () => {
                     <p className="text-emerald-300 text-xs font-bold uppercase tracking-wider pl-2">Yardım & Destek</p>
                     <div className="rounded-2xl overflow-hidden bg-white divide-y divide-gray-100 shadow-lg">
                         <SettingsItem
-                            icon="help"
-                            iconBg="bg-blue-500/20 text-blue-400"
-                            label="SSS"
-                            sublabel="Sıkça sorulan sorular"
-                            onClick={() => { }}
-                        />
-                        <SettingsItem
                             icon="support_agent"
                             iconBg="bg-green-500/20 text-green-400"
                             label="Canlı Destek"
-                            sublabel="7/24 müşteri hizmetleri"
-                            onClick={() => { }}
-                        />
-                        <SettingsItem
-                            icon="bug_report"
-                            iconBg="bg-red-500/20 text-red-400"
-                            label="Hata Bildir"
-                            sublabel="Uygulama sorunlarını raporla"
-                            onClick={() => { }}
+                            sublabel="WhatsApp ile iletişime geç"
+                            onClick={() => window.open('https://wa.me/905551234567', '_blank')}
                         />
                     </div>
                 </div>
@@ -356,12 +342,6 @@ const Profile = () => {
                             label="Gizlilik Politikası"
                             onClick={() => navigate('/privacy')}
                         />
-                        <SettingsItem
-                            icon="cookie"
-                            iconBg="bg-gray-500/20 text-gray-400"
-                            label="Çerez Tercihleri"
-                            onClick={() => { }}
-                        />
                     </div>
                 </div>
 
@@ -373,14 +353,7 @@ const Profile = () => {
                             icon="info"
                             iconBg="bg-gray-500/20 text-gray-400"
                             label="Uygulama Hakkında"
-                            sublabel="NUSD Wallet v1.0.0"
-                            onClick={() => { }}
-                        />
-                        <SettingsItem
-                            icon="star"
-                            iconBg="bg-yellow-500/20 text-yellow-400"
-                            label="Uygulamayı Değerlendir"
-                            sublabel="App Store'da puan ver"
+                            sublabel="NUSD Wallet v2.0"
                             onClick={() => { }}
                         />
                     </div>
