@@ -195,14 +195,6 @@ const Profile = () => {
                             onClick={() => navigate('/kyc')}
                         />
                         <SettingsItem
-                            icon="phone_android"
-                            iconBg="bg-green-500/20 text-green-400"
-                            label="Telefon Doğrulama"
-                            sublabel="+90 *** *** 45 67"
-                            badge={{ text: "Doğrulandı", color: "bg-green-500/20 text-green-400" }}
-                            onClick={() => { }}
-                        />
-                        <SettingsItem
                             icon="mail"
                             iconBg="bg-blue-500/20 text-blue-400"
                             label="E-posta Doğrulama"

@@ -14,7 +14,6 @@ interface LimitsData {
 interface VerificationStatus {
     profileComplete: boolean;
     kycVerified: boolean;
-    phoneVerified: boolean;
     emailVerified: boolean;
 }
 
@@ -24,7 +23,6 @@ const TransactionLimits = () => {
     const [verification, setVerification] = useState<VerificationStatus>({
         profileComplete: false,
         kycVerified: false,
-        phoneVerified: false,
         emailVerified: false
     });
     const [isLoading, setIsLoading] = useState(true);
@@ -57,7 +55,6 @@ const TransactionLimits = () => {
                 setVerification({
                     profileComplete: profile.profile_completed || (profile.first_name && profile.last_name && profile.birth_date),
                     kycVerified: profile.kyc_verified || false,
-                    phoneVerified: profile.phone_verified || false,
                     emailVerified: true // Email verified via Supabase auth
                 });
             }
@@ -91,14 +88,7 @@ const TransactionLimits = () => {
             completed: verification.kycVerified,
             action: () => navigate('/kyc')
         },
-        {
-            key: 'phoneVerified',
-            icon: 'phone_android',
-            label: 'Telefon Doğrulama',
-            sublabel: 'SMS ile doğrulama',
-            completed: verification.phoneVerified,
-            action: () => { }
-        },
+
         {
             key: 'emailVerified',
             icon: 'mail',
