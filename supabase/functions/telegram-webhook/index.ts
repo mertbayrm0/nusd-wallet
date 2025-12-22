@@ -94,6 +94,29 @@ serve(async (req) => {
                     data: { submission_id: submissionId }
                 })
 
+                // 📧 Send email notification
+                try {
+                    await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${supabaseServiceKey}`
+                        },
+                        body: JSON.stringify({
+                            to: submission.user_email,
+                            template: submission.submission_type === 'kyc' ? 'kyc_approved' : 'deposit_success',
+                            data: {
+                                userName: submission.user_name || submission.user_email?.split('@')[0],
+                                amount: submission.amount,
+                                transactionId: submissionId
+                            }
+                        })
+                    })
+                    console.log('Email sent to:', submission.user_email)
+                } catch (emailError) {
+                    console.error('Email send error:', emailError)
+                }
+
             } else if (action === 'reject') {
                 // Reject the submission
                 const { error: updateError } = await supabase
@@ -136,6 +159,30 @@ serve(async (req) => {
                         : `$${submission.amount} tutarındaki para yatırma işleminiz reddedildi.`,
                     data: { submission_id: submissionId }
                 })
+
+                // 📧 Send rejection email
+                try {
+                    if (submission.submission_type === 'kyc') {
+                        await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${supabaseServiceKey}`
+                            },
+                            body: JSON.stringify({
+                                to: submission.user_email,
+                                template: 'kyc_rejected',
+                                data: {
+                                    userName: submission.user_name || submission.user_email?.split('@')[0],
+                                    reason: 'Belgeler okunamıyor veya geçersiz.'
+                                }
+                            })
+                        })
+                        console.log('Rejection email sent to:', submission.user_email)
+                    }
+                } catch (emailError) {
+                    console.error('Email send error:', emailError)
+                }
             }
         }
 
