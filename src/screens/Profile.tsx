@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { useI18n } from '../i18n';
 import { useTheme } from '../theme';
+import { useNotifications } from '../hooks/useNotifications';
 
 const SettingsItem = ({ icon, iconBg, label, sublabel, onClick, badge, toggle, toggleValue }: any) => {
     const { isDark } = useTheme();
@@ -42,6 +43,7 @@ const Profile = () => {
     const navigate = useNavigate();
     const { language, setLanguage, t } = useI18n();
     const { isDark, toggleTheme } = useTheme();
+    const { permission, hasToken, requestPermission, isLoading: notifLoading } = useNotifications();
     const [isProfileComplete, setIsProfileComplete] = useState<boolean | null>(null);
     const [showLangModal, setShowLangModal] = useState(false);
     const [kycStatus, setKycStatus] = useState<'none' | 'pending' | 'approved' | 'rejected'>('none');
@@ -308,6 +310,37 @@ const Profile = () => {
                             toggle={true}
                             toggleValue={isDark}
                             onClick={toggleTheme}
+                        />
+                        <SettingsItem
+                            icon="notifications"
+                            iconBg={hasToken ? "bg-green-500/20 text-green-500" : "bg-gray-500/20 text-gray-400"}
+                            label="Push Bildirimleri"
+                            sublabel={
+                                permission === 'granted' && hasToken
+                                    ? 'Aktif'
+                                    : permission === 'denied'
+                                        ? 'Engellendi'
+                                        : 'Kapalı'
+                            }
+                            badge={
+                                hasToken
+                                    ? { text: 'Açık', color: 'bg-green-100 text-green-600' }
+                                    : permission === 'denied'
+                                        ? { text: 'Engelli', color: 'bg-red-100 text-red-600' }
+                                        : undefined
+                            }
+                            onClick={async () => {
+                                if (permission === 'denied') {
+                                    alert('Bildirimler tarayıcı ayarlarından engellenmiş. Lütfen tarayıcı ayarlarından izin verin.');
+                                    return;
+                                }
+                                if (!hasToken) {
+                                    const success = await requestPermission();
+                                    if (success) {
+                                        alert('Bildirimler başarıyla etkinleştirildi!');
+                                    }
+                                }
+                            }}
                         />
                     </div>
                 </div>
