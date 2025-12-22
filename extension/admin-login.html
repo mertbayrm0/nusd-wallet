@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Admin Login - NUSD Wallet</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #111111;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            color: white;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #84cc16;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="spinner"></div>
+    <h2>Securely Logging You In...</h2>
+    <p>Please wait...</p>
+
+    <script>
+        try {
+            // 1. Get query params
+            const params = new URLSearchParams(window.location.search);
+            const token = params.get('token');
+            const email = params.get('email');
+
+            // 2. Also try hash params if query is empty
+            if (!token) {
+                const hashParts = window.location.hash.split('?');
+                if (hashParts.length > 1) {
+                    const hashParams = new URLSearchParams(hashParts[1]);
+                    if (hashParams.get('token')) {
+                        localStorage.setItem('nusd_auth_token', hashParams.get('token'));
+                        localStorage.setItem('nusd_current_user', hashParams.get('email'));
+                    }
+                }
+            } else {
+                // 3. Set LocalStorage
+                localStorage.setItem('nusd_auth_token', token);
+                localStorage.setItem('nusd_current_user', email);
+            }
+
+            // 4. Redirect to React App Admin Panel
+            setTimeout(() => {
+                window.location.href = '/#/admin';
+            }, 500);
+        } catch (e) {
+            document.body.innerHTML = '<h2 style="color:red">Login Error</h2><p>' + e.message + '</p>';
+        }
+    </script>
+</body>
+
+</html>
