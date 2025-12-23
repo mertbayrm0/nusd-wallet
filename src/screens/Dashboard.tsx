@@ -16,21 +16,33 @@ const onboardingSteps = [
     buttonText: 'Başlayalım'
   },
   {
-    icon: 'account_balance_wallet',
-    title: 'Bakiyen Burada',
-    message: 'Ana ekranın üst kısmında toplam bakiyeni görebilirsin. Yatırma ve çekme işlemleri için butonları kullan.',
+    icon: 'arrow_downward',
+    title: 'P2P Yatırım (Yatır)',
+    message: 'TL ile bakiye yüklemek için kullan! Banka hesabından NUSD satıcılarına transfer yaparak anında bakiye yükle.',
     buttonText: 'Devam'
   },
   {
-    icon: 'swap_horiz',
-    title: 'Hızlı İşlemler',
-    message: 'Yatır, Çek, Kripto Yatır ve Kripto Çek butonlarıyla tüm işlemlerini saniyeler içinde yapabilirsin.',
+    icon: 'arrow_upward',
+    title: 'P2P Çekim (Çek)',
+    message: 'Bakiyeni TL\'ye çevirmek için kullan! NUSD bakiyeni alıcılara satarak banka hesabına para al.',
     buttonText: 'Devam'
   },
   {
-    icon: 'history',
+    icon: 'download',
+    title: 'Kripto Yatırım',
+    message: 'USDT ile bakiye yüklemek için kullan! TRC20 ağı üzerinden USDT göndererek anında NUSD bakiyesi kazan.',
+    buttonText: 'Devam'
+  },
+  {
+    icon: 'upload',
+    title: 'Kripto Çekim',
+    message: 'NUSD bakiyeni USDT\'ye çevirmek için kullan! Bakiyeni TRC20 ağı üzerinden kendi kripto cüzdanına çek.',
+    buttonText: 'Devam'
+  },
+  {
+    icon: 'swipe_up',
     title: 'İşlem Geçmişi',
-    message: 'Tüm işlemlerini ekranın alt kısmından takip edebilirsin. Yukarı kaydırarak daha fazlasını gör!',
+    message: 'Ekranın altında son işlemlerini görürsün. Yukarı kaydırarak tüm işlem geçmişini görebilirsin!',
     buttonText: 'Anladım!'
   }
 ];

@@ -19,6 +19,22 @@ interface AlertState {
     message: string;
 }
 
+// Withdraw page onboarding steps
+const withdrawOnboardingSteps = [
+    {
+        icon: 'account_balance',
+        title: 'Banka Hesabı Seçin',
+        message: 'Çekim tutarının yatırılacağı banka hesabınızı seçin. Paranız bu hesaba gönderilecek.',
+        buttonText: 'Anladım'
+    },
+    {
+        icon: 'timer',
+        title: 'Eşleşme & Ödeme',
+        message: 'Çekim tutarınız alıcıyla eşleştiğinde, alıcı size ödeme yapacak. Ödeme hesabınıza ulaştığında "Onaylıyorum" butonuna basın.',
+        buttonText: 'Başlayalım!'
+    }
+];
+
 const Withdraw = () => {
     const navigate = useNavigate();
     const { user, refreshUser } = useApp();
@@ -35,6 +51,33 @@ const Withdraw = () => {
     const [activeOrder, setActiveOrder] = useState<any>(null);
     const [sellRate, setSellRate] = useState<number>(32); // Dynamic sell rate from database
     const [alertModal, setAlertModal] = useState<AlertState>({ isOpen: false, type: 'info', title: '', message: '' });
+
+    // Onboarding state
+    const [showOnboarding, setShowOnboarding] = useState(false);
+    const [onboardingStep, setOnboardingStep] = useState(0);
+
+    // Check onboarding for withdraw page
+    useEffect(() => {
+        const withdrawOnboardingComplete = localStorage.getItem('withdrawOnboardingComplete');
+        if (!withdrawOnboardingComplete) {
+            const timer = setTimeout(() => setShowOnboarding(true), 500);
+            return () => clearTimeout(timer);
+        }
+    }, []);
+
+    const handleOnboardingNext = () => {
+        if (onboardingStep < withdrawOnboardingSteps.length - 1) {
+            setOnboardingStep(onboardingStep + 1);
+        } else {
+            localStorage.setItem('withdrawOnboardingComplete', 'true');
+            setShowOnboarding(false);
+        }
+    };
+
+    const handleSkipOnboarding = () => {
+        localStorage.setItem('withdrawOnboardingComplete', 'true');
+        setShowOnboarding(false);
+    };
 
     // Check for active P2P order on page load
     useEffect(() => {
@@ -257,6 +300,57 @@ const Withdraw = () => {
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-emerald-800 via-emerald-900 to-emerald-950 flex flex-col font-display pb-20">
+            {/* Onboarding Popup */}
+            {showOnboarding && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                    <div className="bg-gradient-to-b from-emerald-800 to-emerald-900 rounded-3xl p-6 max-w-sm w-full border border-emerald-600/50 shadow-2xl">
+                        {/* Progress dots */}
+                        <div className="flex justify-center gap-2 mb-6">
+                            {withdrawOnboardingSteps.map((_, idx) => (
+                                <div
+                                    key={idx}
+                                    className={`w-2 h-2 rounded-full transition-all ${idx === onboardingStep ? 'bg-lime-400 w-6' : 'bg-emerald-600'
+                                        }`}
+                                />
+                            ))}
+                        </div>
+
+                        {/* Icon */}
+                        <div className="flex justify-center mb-4">
+                            <div className="w-20 h-20 rounded-full bg-lime-400/20 flex items-center justify-center">
+                                <span className="material-symbols-outlined text-lime-400 text-4xl">
+                                    {withdrawOnboardingSteps[onboardingStep].icon}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Content */}
+                        <h2 className="text-white text-xl font-bold text-center mb-3">
+                            {withdrawOnboardingSteps[onboardingStep].title}
+                        </h2>
+                        <p className="text-emerald-200/80 text-sm text-center mb-6 leading-relaxed">
+                            {withdrawOnboardingSteps[onboardingStep].message}
+                        </p>
+
+                        {/* Buttons */}
+                        <div className="flex gap-3">
+                            <button
+                                onClick={handleSkipOnboarding}
+                                className="flex-1 py-3 rounded-xl text-emerald-300 text-sm font-medium hover:bg-emerald-700/50 transition-colors"
+                            >
+                                Atla
+                            </button>
+                            <button
+                                onClick={handleOnboardingNext}
+                                className="flex-1 py-3 rounded-xl bg-lime-400 text-emerald-900 font-bold text-sm hover:bg-lime-300 transition-colors"
+                            >
+                                {withdrawOnboardingSteps[onboardingStep].buttonText}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Header */}
             <div className="px-4 py-4 flex items-center sticky top-0 z-10">
                 <button

@@ -19,6 +19,28 @@ interface AlertState {
     message: string;
 }
 
+// Deposit page onboarding steps
+const depositOnboardingSteps = [
+    {
+        icon: 'account_balance',
+        title: 'Banka Hesabı Seçin',
+        message: 'İlk olarak para göndereceğiniz banka hesabınızı seçin. Henüz hesap yoksa "Yeni Ekle" butonuyla ekleyebilirsiniz.',
+        buttonText: 'Anladım'
+    },
+    {
+        icon: 'currency_exchange',
+        title: 'Tutar Girin',
+        message: 'Yatırmak istediğiniz USDT tutarını girin. Sistem size en yakın bekleyen satıcıları bulacak ve size önerecek.',
+        buttonText: 'Devam'
+    },
+    {
+        icon: 'schedule',
+        title: 'Eşleşme & Ödeme',
+        message: 'Eşleşme bulunduğunda satıcının banka bilgileri gösterilir. Ödeme yaptıktan sonra "Ödedim" butonuna basın. İşlem 20 dakika içinde onaylanır.',
+        buttonText: 'Başlayalım!'
+    }
+];
+
 const Deposit = () => {
     const navigate = useNavigate();
     const { user } = useApp();
@@ -37,6 +59,33 @@ const Deposit = () => {
     // Havuz öneri popup state'leri
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [pendingWithdrawals, setPendingWithdrawals] = useState<{ id: string, amount_usd: number }[]>([]);
+
+    // Onboarding state
+    const [showOnboarding, setShowOnboarding] = useState(false);
+    const [onboardingStep, setOnboardingStep] = useState(0);
+
+    // Check onboarding for deposit page
+    useEffect(() => {
+        const depositOnboardingComplete = localStorage.getItem('depositOnboardingComplete');
+        if (!depositOnboardingComplete) {
+            const timer = setTimeout(() => setShowOnboarding(true), 500);
+            return () => clearTimeout(timer);
+        }
+    }, []);
+
+    const handleOnboardingNext = () => {
+        if (onboardingStep < depositOnboardingSteps.length - 1) {
+            setOnboardingStep(onboardingStep + 1);
+        } else {
+            localStorage.setItem('depositOnboardingComplete', 'true');
+            setShowOnboarding(false);
+        }
+    };
+
+    const handleSkipOnboarding = () => {
+        localStorage.setItem('depositOnboardingComplete', 'true');
+        setShowOnboarding(false);
+    };
 
     // Check for active P2P order and fetch exchange rate on page load
     useEffect(() => {
@@ -330,6 +379,57 @@ const Deposit = () => {
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-emerald-800 via-emerald-900 to-emerald-950 flex flex-col font-display pb-20">
+            {/* Onboarding Popup */}
+            {showOnboarding && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                    <div className="bg-gradient-to-b from-emerald-800 to-emerald-900 rounded-3xl p-6 max-w-sm w-full border border-emerald-600/50 shadow-2xl">
+                        {/* Progress dots */}
+                        <div className="flex justify-center gap-2 mb-6">
+                            {depositOnboardingSteps.map((_, idx) => (
+                                <div
+                                    key={idx}
+                                    className={`w-2 h-2 rounded-full transition-all ${idx === onboardingStep ? 'bg-lime-400 w-6' : 'bg-emerald-600'
+                                        }`}
+                                />
+                            ))}
+                        </div>
+
+                        {/* Icon */}
+                        <div className="flex justify-center mb-4">
+                            <div className="w-20 h-20 rounded-full bg-lime-400/20 flex items-center justify-center">
+                                <span className="material-symbols-outlined text-lime-400 text-4xl">
+                                    {depositOnboardingSteps[onboardingStep].icon}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Content */}
+                        <h2 className="text-white text-xl font-bold text-center mb-3">
+                            {depositOnboardingSteps[onboardingStep].title}
+                        </h2>
+                        <p className="text-emerald-200/80 text-sm text-center mb-6 leading-relaxed">
+                            {depositOnboardingSteps[onboardingStep].message}
+                        </p>
+
+                        {/* Buttons */}
+                        <div className="flex gap-3">
+                            <button
+                                onClick={handleSkipOnboarding}
+                                className="flex-1 py-3 rounded-xl text-emerald-300 text-sm font-medium hover:bg-emerald-700/50 transition-colors"
+                            >
+                                Atla
+                            </button>
+                            <button
+                                onClick={handleOnboardingNext}
+                                className="flex-1 py-3 rounded-xl bg-lime-400 text-emerald-900 font-bold text-sm hover:bg-lime-300 transition-colors"
+                            >
+                                {depositOnboardingSteps[onboardingStep].buttonText}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Header */}
             <div className="px-4 py-4 flex items-center sticky top-0 z-10">
                 <button
