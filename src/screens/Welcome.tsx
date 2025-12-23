@@ -135,15 +135,6 @@ const Welcome: React.FC = () => {
                 </div>
             </div>
 
-            {/* Risk Warning */}
-            <div className="relative z-10 px-8 pb-4">
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-center">
-                    <p className="text-amber-700 text-[10px] leading-relaxed">
-                        ⚠️ Kripto yatırımları risk içerir. Bu platform 18+ kullanıcılar içindir ve yatırım tavsiyesi vermez.
-                    </p>
-                </div>
-            </div>
-
             {/* Trust indicators at bottom */}
             <div className="relative z-10 px-8 pb-8">
                 <div className="flex items-center justify-center gap-6 text-gray-400">
