@@ -86,6 +86,9 @@ export const usePWA = (): UsePWAReturn => {
                 setIsInstalled(true);
             }
             setInstallPrompt(null);
+        } else {
+            // No install prompt available - show instructions
+            alert('Uygulamayı yüklemek için:\n\n1. Chrome tarayıcısını kullanın\n2. Tarayıcı menüsünden (⋮) "Ana ekrana ekle" seçeneğine tıklayın\n\nNot: Uygulama zaten yüklü olabilir.');
         }
     }, [installPrompt, isIOS]);
 
