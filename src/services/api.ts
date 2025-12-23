@@ -855,6 +855,35 @@ export const api = {
     }
   },
 
+  // Assign a user as owner of a department
+  assignDepartmentOwner: async (departmentId: string, ownerId: string) => {
+    try {
+      // 1. Update department with owner_id
+      const { error: deptError } = await supabase
+        .from('departments')
+        .update({ owner_id: ownerId })
+        .eq('id', departmentId);
+
+      if (deptError) throw deptError;
+
+      // 2. Update owner's profile with business_department_id
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          business_department_id: departmentId,
+          account_type: 'business'
+        })
+        .eq('id', ownerId);
+
+      if (profileError) throw profileError;
+
+      return { success: true };
+    } catch (e: any) {
+      console.error('assignDepartmentOwner error:', e);
+      return { success: false, error: e.message };
+    }
+  },
+
   getDepartment: async (id: string) => {
     try {
       const { data, error } = await supabase

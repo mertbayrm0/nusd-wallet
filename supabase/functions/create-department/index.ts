@@ -41,9 +41,7 @@ serve(async (req) => {
         }
 
         // 2. Parse Body
-        // Kullanıcı isteği: Departman açılışında komisyon sorma, panele bırak.
-        // O yüzden commission_mode ve value'yu opsiyonel/default yapıyoruz.
-        const { name, category, color, is_active } = await req.json()
+        const { name, category, color, is_active, owner_id } = await req.json()
 
         if (!name) throw new Error('Name is required')
 
@@ -53,21 +51,33 @@ serve(async (req) => {
             .insert({
                 name,
                 category,
-                color: color || '#10B981', // Yeni kolon
-                is_active: is_active ?? true
+                color: color || '#10B981',
+                is_active: is_active ?? true,
+                owner_id: owner_id || null
             })
             .select()
             .single()
 
         if (error) throw error
 
-        // 4. Audit Log (Opsiyonel ama iyi olur)
+        // 4. If owner_id provided, update owner's profile with business_department_id
+        if (owner_id) {
+            await supabase
+                .from('profiles')
+                .update({
+                    business_department_id: data.id,
+                    account_type: 'business'
+                })
+                .eq('id', owner_id)
+        }
+
+        // 5. Audit Log
         await supabase.from('transaction_audit_logs').insert({
-            transaction_id: '00000000-0000-0000-0000-000000000000', // System Action
+            transaction_id: '00000000-0000-0000-0000-000000000000',
             action: 'CREATE_DEPARTMENT',
             actor_role: 'admin',
             actor_id: user.id,
-            metadata: { department_id: data.id, name: data.name }
+            metadata: { department_id: data.id, name: data.name, owner_id }
         })
 
         return new Response(
@@ -82,3 +92,4 @@ serve(async (req) => {
         )
     }
 })
+
