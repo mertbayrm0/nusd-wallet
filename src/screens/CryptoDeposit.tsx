@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../App';
 import { supabase } from '../services/supabase';
+import { QRCodeSVG } from 'qrcode.react';
 
 const CryptoDeposit = () => {
     const navigate = useNavigate();
@@ -131,12 +132,27 @@ const CryptoDeposit = () => {
                     </div>
                 </div>
 
-                {/* MEMO Code */}
+                {/* MEMO Code with QR */}
                 <div className="bg-gradient-to-r from-emerald-500/20 to-teal-500/20 rounded-2xl p-4 border border-emerald-500/30">
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-2 mb-3">
                         <span className="material-symbols-outlined text-emerald-400 text-lg">tag</span>
-                        <p className="text-xs text-emerald-300 font-bold uppercase tracking-wide">Your MEMO Code (Important!)</p>
+                        <p className="text-xs text-emerald-300 font-bold uppercase tracking-wide">Your NUSD Address (Important!)</p>
                     </div>
+
+                    {/* QR Code */}
+                    <div className="flex justify-center mb-4">
+                        <div className="bg-white p-3 rounded-xl shadow">
+                            <QRCodeSVG
+                                value={memoCode}
+                                size={140}
+                                bgColor="#ffffff"
+                                fgColor="#065f46"
+                                level="H"
+                            />
+                        </div>
+                    </div>
+
+                    {/* NUSD Code */}
                     <div
                         className="bg-white rounded-xl p-3 flex items-center justify-between cursor-pointer hover:bg-gray-50 border border-emerald-200 shadow"
                         onClick={() => copyToClipboard(memoCode, 'memo')}
@@ -146,7 +162,7 @@ const CryptoDeposit = () => {
                             {copied === 'memo' ? 'check' : 'content_copy'}
                         </span>
                     </div>
-                    <p className="text-xs text-emerald-300/80 mt-2">Add this code to the MEMO/Note field when sending funds.</p>
+                    <p className="text-xs text-emerald-300/80 mt-2 text-center">Bu QR'ı veya NUSD kodunu paylaşarak ödeme alabilirsiniz.</p>
                 </div>
 
                 {/* Deposit Notification Form */}
