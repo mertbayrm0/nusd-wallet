@@ -10,6 +10,11 @@ const QRScanner: React.FC = () => {
 
     // Start QR scanning
     const startScanning = async () => {
+        setScanning(true);
+
+        // Wait for DOM to update
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         try {
             const html5QrCode = new Html5Qrcode("qr-reader");
             scannerRef.current = html5QrCode;
@@ -18,7 +23,8 @@ const QRScanner: React.FC = () => {
                 { facingMode: "environment" },
                 {
                     fps: 10,
-                    qrbox: { width: 250, height: 250 }
+                    qrbox: { width: 250, height: 250 },
+                    aspectRatio: 1.0
                 },
                 (decodedText) => {
                     stopScanning();
@@ -28,9 +34,9 @@ const QRScanner: React.FC = () => {
                     // Ignore scan errors
                 }
             );
-            setScanning(true);
         } catch (err) {
             console.error('Camera error:', err);
+            setScanning(false);
             alert('Kamera erişimi sağlanamadı. Lütfen kamera izni verin.');
         }
     };
@@ -99,13 +105,21 @@ const QRScanner: React.FC = () => {
             <div className="px-5 pb-32">
                 {/* Scanner Area */}
                 <div className="bg-white rounded-3xl p-6 shadow-xl">
-                    <div
-                        id="qr-reader"
-                        className={`rounded-2xl overflow-hidden ${scanning ? 'block' : 'hidden'}`}
-                        style={{ minHeight: 300 }}
-                    />
-
-                    {!scanning && (
+                    {scanning ? (
+                        <div>
+                            <div
+                                id="qr-reader"
+                                style={{ width: '100%', minHeight: 280 }}
+                            />
+                            <p className="text-gray-500 text-sm text-center mt-4">QR kodu çerçeveye hizalayın</p>
+                            <button
+                                onClick={stopScanning}
+                                className="w-full mt-3 text-red-500 font-semibold hover:text-red-600 py-2"
+                            >
+                                Taramayı Durdur
+                            </button>
+                        </div>
+                    ) : (
                         <div className="flex flex-col items-center justify-center py-12">
                             <div className="w-48 h-48 border-4 border-dashed border-emerald-300 rounded-3xl flex items-center justify-center mb-6 bg-emerald-50">
                                 <span className="material-symbols-outlined text-7xl text-emerald-400">
@@ -121,18 +135,6 @@ const QRScanner: React.FC = () => {
                             >
                                 <span className="material-symbols-outlined">photo_camera</span>
                                 Kamerayı Başlat
-                            </button>
-                        </div>
-                    )}
-
-                    {scanning && (
-                        <div className="mt-4 text-center">
-                            <p className="text-gray-500 text-sm mb-3">QR kodu çerçeveye hizalayın</p>
-                            <button
-                                onClick={stopScanning}
-                                className="text-red-500 font-semibold hover:text-red-600"
-                            >
-                                Taramayı Durdur
                             </button>
                         </div>
                     )}
