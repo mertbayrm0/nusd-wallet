@@ -7,6 +7,34 @@ import SuccessModal from '../components/SuccessModal';
 import { DashboardSkeleton } from '../components/Skeleton';
 import { useTheme } from '../theme';
 
+// Onboarding popup içerikleri
+const onboardingSteps = [
+  {
+    icon: 'waving_hand',
+    title: 'NUSD Cüzdanına Hoş Geldin!',
+    message: 'Dijital para transferlerini hızlı ve güvenli bir şekilde yapabileceğin NUSD Wallet\'a hoş geldin. Hadi sana kısa bir tur atalım!',
+    buttonText: 'Başlayalım'
+  },
+  {
+    icon: 'account_balance_wallet',
+    title: 'Bakiyen Burada',
+    message: 'Ana ekranın üst kısmında toplam bakiyeni görebilirsin. Yatırma ve çekme işlemleri için butonları kullan.',
+    buttonText: 'Devam'
+  },
+  {
+    icon: 'swap_horiz',
+    title: 'Hızlı İşlemler',
+    message: 'Yatır, Çek, Kripto Yatır ve Kripto Çek butonlarıyla tüm işlemlerini saniyeler içinde yapabilirsin.',
+    buttonText: 'Devam'
+  },
+  {
+    icon: 'history',
+    title: 'İşlem Geçmişi',
+    message: 'Tüm işlemlerini ekranın alt kısmından takip edebilirsin. Yukarı kaydırarak daha fazlasını gör!',
+    buttonText: 'Anladım!'
+  }
+];
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, refreshUser } = useApp();
@@ -24,6 +52,35 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
+
+  // Onboarding state
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState(0);
+
+  // Check if user is new (show onboarding)
+  useEffect(() => {
+    const onboardingComplete = localStorage.getItem('onboardingComplete');
+    if (!onboardingComplete && user) {
+      // Small delay to let dashboard load first
+      const timer = setTimeout(() => setShowOnboarding(true), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [user]);
+
+  const handleOnboardingNext = () => {
+    if (onboardingStep < onboardingSteps.length - 1) {
+      setOnboardingStep(onboardingStep + 1);
+    } else {
+      // Complete onboarding
+      localStorage.setItem('onboardingComplete', 'true');
+      setShowOnboarding(false);
+    }
+  };
+
+  const handleSkipOnboarding = () => {
+    localStorage.setItem('onboardingComplete', 'true');
+    setShowOnboarding(false);
+  };
 
   useEffect(() => {
     refreshUser();
@@ -145,7 +202,7 @@ const Dashboard = () => {
           const isSeller = order.seller_id === authUserId;
           return {
             id: order.id,
-            title: isSeller ? 'P2P SELL Order' : 'P2P BUY Order',
+            title: isSeller ? 'P2P Satış' : 'P2P Alış',
             amount: isSeller ? -order.amount_usd : order.amount_usd,
             status: order.status === 'OPEN' ? 'PENDING' : order.status,
             date: order.created_at,
@@ -276,8 +333,8 @@ const Dashboard = () => {
     refreshUser();
     setSuccessModal({
       isOpen: true,
-      title: 'Approved!',
-      message: 'Transaction has been approved successfully.'
+      title: 'Onaylandı!',
+      message: 'İşlem başarıyla onaylandı.'
     });
   };
 
@@ -313,10 +370,61 @@ const Dashboard = () => {
         message={successModal.message}
       />
 
+      {/* Onboarding Popup */}
+      {showOnboarding && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-gradient-to-b from-emerald-800 to-emerald-900 rounded-3xl p-6 max-w-sm w-full border border-emerald-600/50 shadow-2xl">
+            {/* Progress dots */}
+            <div className="flex justify-center gap-2 mb-6">
+              {onboardingSteps.map((_, idx) => (
+                <div
+                  key={idx}
+                  className={`w-2 h-2 rounded-full transition-all ${idx === onboardingStep ? 'bg-lime-400 w-6' : 'bg-emerald-600'
+                    }`}
+                />
+              ))}
+            </div>
+
+            {/* Icon */}
+            <div className="flex justify-center mb-4">
+              <div className="w-20 h-20 rounded-full bg-lime-400/20 flex items-center justify-center">
+                <span className="material-symbols-outlined text-lime-400 text-4xl">
+                  {onboardingSteps[onboardingStep].icon}
+                </span>
+              </div>
+            </div>
+
+            {/* Content */}
+            <h2 className="text-white text-xl font-bold text-center mb-3">
+              {onboardingSteps[onboardingStep].title}
+            </h2>
+            <p className="text-emerald-200/80 text-sm text-center mb-6 leading-relaxed">
+              {onboardingSteps[onboardingStep].message}
+            </p>
+
+            {/* Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={handleSkipOnboarding}
+                className="flex-1 py-3 rounded-xl text-emerald-300 text-sm font-medium hover:bg-emerald-700/50 transition-colors"
+              >
+                Atla
+              </button>
+              <button
+                onClick={handleOnboardingNext}
+                className="flex-1 py-3 rounded-xl bg-lime-400 text-emerald-900 font-bold text-sm hover:bg-lime-300 transition-colors"
+              >
+                {onboardingSteps[onboardingStep].buttonText}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Premium Header */}
       <div className="px-5 pt-6 pb-4 flex justify-between items-start">
         <div>
-          <p className="text-emerald-300/80 text-sm font-medium mb-1">Welcome</p>
+          <p className="text-emerald-300/80 text-sm font-medium mb-1">Hoş Geldin</p>
           <h1 className="text-white text-2xl font-bold tracking-tight">{user.name || user.email?.split('@')[0]}</h1>
         </div>
         <div className="flex items-center gap-3">
@@ -365,15 +473,15 @@ const Dashboard = () => {
           <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl mb-6 backdrop-blur-sm">
             <h3 className="font-bold text-amber-400 flex items-center gap-2 mb-3 text-sm">
               <span className="material-symbols-outlined text-lg">notifications_active</span>
-              Pending Approvals
+              Bekleyen Onaylar
             </h3>
             {approvals.map((a: any) => (
               <div key={a.id} className="flex justify-between items-center bg-[#1a1a1a] p-3 rounded-xl mb-2 last:mb-0">
                 <div className="flex flex-col">
-                  <span className="text-xs text-gray-500 font-medium">REQUEST</span>
-                  <span className="text-sm font-bold text-white">From: {a.lockedBy} <span className="text-lime-400">(${a.amount})</span></span>
+                  <span className="text-xs text-gray-500 font-medium">TALEP</span>
+                  <span className="text-sm font-bold text-white">Gönderen: {a.lockedBy} <span className="text-lime-400">(${a.amount})</span></span>
                 </div>
-                <button onClick={() => handleApprove(a.id)} className="bg-lime-500 text-black px-4 py-2 rounded-lg text-xs font-bold hover:bg-lime-400 transition-colors">Approve</button>
+                <button onClick={() => handleApprove(a.id)} className="bg-lime-500 text-black px-4 py-2 rounded-lg text-xs font-bold hover:bg-lime-400 transition-colors">Onayla</button>
               </div>
             ))}
           </div>
@@ -437,7 +545,7 @@ const Dashboard = () => {
 
             <div className="text-center">
               <p className="text-emerald-200/70 text-sm mb-1 flex items-center justify-center gap-1">
-                Total Balance
+                Toplam Bakiye
                 <span className="material-symbols-outlined text-sm">visibility</span>
               </p>
               <h2 className="text-4xl font-extrabold text-white tracking-tight mb-3">
@@ -455,7 +563,7 @@ const Dashboard = () => {
                 <div className="w-14 h-14 rounded-2xl bg-lime-400 flex items-center justify-center shadow-lg group-hover:scale-105 group-active:scale-95 transition-all">
                   <span className="material-symbols-outlined text-emerald-900 text-2xl">arrow_downward</span>
                 </div>
-                <span className="text-emerald-100 text-[11px] font-medium">Deposit</span>
+                <span className="text-emerald-100 text-[11px] font-medium">Yatır</span>
               </button>
 
               {/* Withdraw */}
@@ -463,7 +571,7 @@ const Dashboard = () => {
                 <div className="w-14 h-14 rounded-2xl bg-lime-400 flex items-center justify-center shadow-lg group-hover:scale-105 group-active:scale-95 transition-all">
                   <span className="material-symbols-outlined text-emerald-900 text-2xl">arrow_upward</span>
                 </div>
-                <span className="text-emerald-100 text-[11px] font-medium">Withdraw</span>
+                <span className="text-emerald-100 text-[11px] font-medium">Çek</span>
               </button>
 
               {/* Crypto Deposit */}
@@ -471,7 +579,7 @@ const Dashboard = () => {
                 <div className="w-14 h-14 rounded-2xl bg-lime-400 flex items-center justify-center shadow-lg group-hover:scale-105 group-active:scale-95 transition-all">
                   <span className="material-symbols-outlined text-emerald-900 text-2xl">download</span>
                 </div>
-                <span className="text-emerald-100 text-[10px] font-medium text-center leading-tight">Crypto<br />Deposit</span>
+                <span className="text-emerald-100 text-[10px] font-medium text-center leading-tight">Kripto<br />Yatır</span>
               </button>
 
               {/* Crypto Withdraw */}
@@ -479,7 +587,7 @@ const Dashboard = () => {
                 <div className="w-14 h-14 rounded-2xl bg-lime-400 flex items-center justify-center shadow-lg group-hover:scale-105 group-active:scale-95 transition-all">
                   <span className="material-symbols-outlined text-emerald-900 text-2xl">upload</span>
                 </div>
-                <span className="text-emerald-100 text-[10px] font-medium text-center leading-tight">Crypto<br />Withdraw</span>
+                <span className="text-emerald-100 text-[10px] font-medium text-center leading-tight">Kripto<br />Çek</span>
               </button>
             </div>
           </div>
@@ -495,8 +603,8 @@ const Dashboard = () => {
               <span className="material-symbols-outlined">location_on</span>
             </div>
             <div className="text-left">
-              <p className="font-bold text-sm text-white">Find Agent</p>
-              <p className="text-emerald-300/70 text-xs">Locate nearest exchange points</p>
+              <p className="font-bold text-sm text-white">Acente Bul</p>
+              <p className="text-emerald-300/70 text-xs">En yakın döviz noktasını bul</p>
             </div>
           </div>
           <span className="material-symbols-outlined text-emerald-400 group-hover:text-white">chevron_right</span>
@@ -509,7 +617,7 @@ const Dashboard = () => {
             className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 active:scale-[0.98] transition-all text-white py-4 rounded-2xl font-bold text-sm shadow-xl shadow-purple-500/30 mb-3"
           >
             <span className="material-symbols-outlined text-lg">admin_panel_settings</span>
-            Admin Panel
+            Yönetim Paneli
           </button>
         )}
 
@@ -540,12 +648,12 @@ const Dashboard = () => {
 
           <div className="px-5">
             <div className="flex justify-between items-center mb-3">
-              <h3 className="font-bold text-lg text-gray-900">Transaction History</h3>
+              <h3 className="font-bold text-lg text-gray-900">İşlem Geçmişi</h3>
               <button
                 onClick={() => navigate('/history')}
                 className="text-emerald-500 text-xs font-bold flex items-center hover:text-emerald-400 transition-colors"
               >
-                View All <span className="material-symbols-outlined text-sm ml-1">arrow_forward</span>
+                Tümü <span className="material-symbols-outlined text-sm ml-1">arrow_forward</span>
               </button>
             </div>
           </div>
@@ -557,7 +665,7 @@ const Dashboard = () => {
             {txs.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 rounded-2xl bg-gray-50 text-gray-400">
                 <span className="material-symbols-outlined text-3xl mb-2 opacity-30">history</span>
-                <p className="text-sm font-medium">No recent transactions</p>
+                <p className="text-sm font-medium">Henüz işlem yok</p>
               </div>
             ) : (
               txs.slice(0, sheetExpanded ? txs.length : 1).map((tx: any) => (
@@ -577,7 +685,7 @@ const Dashboard = () => {
                     <span className={`font-bold text-base ${tx.amount > 0 ? 'text-emerald-500' : 'text-gray-900'}`}>
                       {tx.amount > 0 ? '+' : ''}${Math.abs(tx.amount).toFixed(2)}
                     </span>
-                    <p className="text-xs text-gray-400">{tx.status === 'PAYMENT_REVIEW' ? 'Pending' : tx.status}</p>
+                    <p className="text-xs text-gray-400">{tx.status === 'PAYMENT_REVIEW' ? 'Bekliyor' : tx.status}</p>
                   </div>
                 </div>
               ))
