@@ -58,24 +58,30 @@ const Withdraw = () => {
 
     // Check onboarding for withdraw page
     useEffect(() => {
-        const withdrawOnboardingComplete = localStorage.getItem('withdrawOnboardingComplete');
-        if (!withdrawOnboardingComplete) {
-            const timer = setTimeout(() => setShowOnboarding(true), 500);
-            return () => clearTimeout(timer);
+        if (user?.id) {
+            const withdrawOnboardingComplete = localStorage.getItem(`withdrawOnboardingComplete_${user.id}`);
+            if (!withdrawOnboardingComplete) {
+                const timer = setTimeout(() => setShowOnboarding(true), 500);
+                return () => clearTimeout(timer);
+            }
         }
-    }, []);
+    }, [user]);
 
     const handleOnboardingNext = () => {
         if (onboardingStep < withdrawOnboardingSteps.length - 1) {
             setOnboardingStep(onboardingStep + 1);
         } else {
-            localStorage.setItem('withdrawOnboardingComplete', 'true');
+            if (user?.id) {
+                localStorage.setItem(`withdrawOnboardingComplete_${user.id}`, 'true');
+            }
             setShowOnboarding(false);
         }
     };
 
     const handleSkipOnboarding = () => {
-        localStorage.setItem('withdrawOnboardingComplete', 'true');
+        if (user?.id) {
+            localStorage.setItem(`withdrawOnboardingComplete_${user.id}`, 'true');
+        }
         setShowOnboarding(false);
     };
 

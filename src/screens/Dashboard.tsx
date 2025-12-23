@@ -71,11 +71,13 @@ const Dashboard = () => {
 
   // Check if user is new (show onboarding)
   useEffect(() => {
-    const onboardingComplete = localStorage.getItem('onboardingComplete');
-    if (!onboardingComplete && user) {
-      // Small delay to let dashboard load first
-      const timer = setTimeout(() => setShowOnboarding(true), 1000);
-      return () => clearTimeout(timer);
+    if (user?.id) {
+      const onboardingComplete = localStorage.getItem(`onboardingComplete_${user.id}`);
+      if (!onboardingComplete) {
+        // Small delay to let dashboard load first
+        const timer = setTimeout(() => setShowOnboarding(true), 1000);
+        return () => clearTimeout(timer);
+      }
     }
   }, [user]);
 
@@ -84,13 +86,17 @@ const Dashboard = () => {
       setOnboardingStep(onboardingStep + 1);
     } else {
       // Complete onboarding
-      localStorage.setItem('onboardingComplete', 'true');
+      if (user?.id) {
+        localStorage.setItem(`onboardingComplete_${user.id}`, 'true');
+      }
       setShowOnboarding(false);
     }
   };
 
   const handleSkipOnboarding = () => {
-    localStorage.setItem('onboardingComplete', 'true');
+    if (user?.id) {
+      localStorage.setItem(`onboardingComplete_${user.id}`, 'true');
+    }
     setShowOnboarding(false);
   };
 

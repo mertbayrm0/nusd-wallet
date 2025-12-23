@@ -66,24 +66,30 @@ const Deposit = () => {
 
     // Check onboarding for deposit page
     useEffect(() => {
-        const depositOnboardingComplete = localStorage.getItem('depositOnboardingComplete');
-        if (!depositOnboardingComplete) {
-            const timer = setTimeout(() => setShowOnboarding(true), 500);
-            return () => clearTimeout(timer);
+        if (user?.id) {
+            const depositOnboardingComplete = localStorage.getItem(`depositOnboardingComplete_${user.id}`);
+            if (!depositOnboardingComplete) {
+                const timer = setTimeout(() => setShowOnboarding(true), 500);
+                return () => clearTimeout(timer);
+            }
         }
-    }, []);
+    }, [user]);
 
     const handleOnboardingNext = () => {
         if (onboardingStep < depositOnboardingSteps.length - 1) {
             setOnboardingStep(onboardingStep + 1);
         } else {
-            localStorage.setItem('depositOnboardingComplete', 'true');
+            if (user?.id) {
+                localStorage.setItem(`depositOnboardingComplete_${user.id}`, 'true');
+            }
             setShowOnboarding(false);
         }
     };
 
     const handleSkipOnboarding = () => {
-        localStorage.setItem('depositOnboardingComplete', 'true');
+        if (user?.id) {
+            localStorage.setItem(`depositOnboardingComplete_${user.id}`, 'true');
+        }
         setShowOnboarding(false);
     };
 
