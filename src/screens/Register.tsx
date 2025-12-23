@@ -35,8 +35,11 @@ const Register = () => {
                 console.error('Welcome email error:', e);
             }
 
-            await login(result.user.email, password);
-            navigate('/dashboard');
+            setLoading(false);
+            // Show email confirmation alert
+            alert(`Hesabınız oluşturuldu! ${email} adresine bir onay e-postası gönderdik. Lütfen gelen kutunuzu kontrol edin ve hesabınızı doğrulayın.`);
+            navigate('/login');
+            return;
         }
         setLoading(false);
     };
