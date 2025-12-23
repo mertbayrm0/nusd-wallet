@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { I18nProvider } from './i18n';
 import { ThemeProvider } from './theme';
 import { HashRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
@@ -186,10 +186,26 @@ const Layout = ({ children, showBottomNav = false }: { children?: React.ReactNod
 
 // ===== PROTECTED ROUTE COMPONENT =====
 const ProtectedRoute = ({ children, adminOnly = false }: { children: React.ReactNode, adminOnly?: boolean }) => {
-  const { user, session, isLoading } = useApp();
+  const { user, session, isLoading, refreshUser } = useApp();
+  const [retrying, setRetrying] = useState(false);
+  const retryAttempted = useRef(false);
+
+  // If no session on admin route, try to refresh once before redirecting
+  useEffect(() => {
+    if (!isLoading && !session && adminOnly && !retryAttempted.current) {
+      retryAttempted.current = true;
+      setRetrying(true);
+      // Give Supabase a moment to restore session from storage
+      const timer = setTimeout(() => {
+        refreshUser?.();
+        setRetrying(false);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, session, adminOnly, refreshUser]);
 
   // Wait for session to be restored before redirecting
-  if (isLoading) {
+  if (isLoading || retrying) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="text-center">
