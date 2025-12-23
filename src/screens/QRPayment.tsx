@@ -68,8 +68,8 @@ const QRScanner: React.FC = () => {
             }
         }
 
-        // Navigate to withdraw page with the address
-        navigate(`/withdraw?address=${encodeURIComponent(address)}`);
+        // Navigate to crypto withdraw page with the address
+        navigate(`/crypto/withdraw?address=${encodeURIComponent(address)}`);
     };
 
     // Handle manual input

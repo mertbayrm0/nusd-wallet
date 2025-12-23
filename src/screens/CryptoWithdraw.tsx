@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useApp } from '../App';
 import { supabase } from '../services/supabase';
 
 const CryptoWithdraw = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const { user, refreshUser } = useApp();
     const [amount, setAmount] = useState('');
     const [address, setAddress] = useState('');
@@ -20,6 +21,14 @@ const CryptoWithdraw = () => {
     const [showSuccess, setShowSuccess] = useState(false);
     const [successAmount, setSuccessAmount] = useState(0);
     const [successRecipient, setSuccessRecipient] = useState('');
+
+    // Read address from URL params (from QR scanner)
+    useEffect(() => {
+        const urlAddress = searchParams.get('address');
+        if (urlAddress) {
+            setAddress(urlAddress);
+        }
+    }, [searchParams]);
 
     // Check for pending withdrawal on mount
     useEffect(() => {
