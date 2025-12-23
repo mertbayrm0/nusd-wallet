@@ -72,12 +72,23 @@ const Dashboard = () => {
   // Check if user is new (show onboarding)
   useEffect(() => {
     if (user?.id) {
-      const onboardingComplete = localStorage.getItem(`onboardingComplete_${user.id}`);
+      const key = `onboardingComplete_${user.id}`;
+      const onboardingComplete = localStorage.getItem(key);
+      console.log('[Dashboard] Checking onboarding:', { userId: user.id, key, status: onboardingComplete });
+
       if (!onboardingComplete) {
+        console.log('[Dashboard] User is new, showing onboarding in 1s...');
         // Small delay to let dashboard load first
-        const timer = setTimeout(() => setShowOnboarding(true), 1000);
+        const timer = setTimeout(() => {
+          console.log('[Dashboard] Showing onboarding NOW');
+          setShowOnboarding(true);
+        }, 1000);
         return () => clearTimeout(timer);
+      } else {
+        console.log('[Dashboard] Onboarding already complete');
       }
+    } else {
+      console.log('[Dashboard] User not loaded yet');
     }
   }, [user]);
 
