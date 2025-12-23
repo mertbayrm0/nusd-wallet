@@ -28,7 +28,7 @@ const Welcome: React.FC = () => {
 
     const handleStart = () => {
         localStorage.setItem('welcomeShown', 'true');
-        navigate('/');
+        navigate('/login');
     };
 
     const handleNext = () => {
