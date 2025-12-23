@@ -15,7 +15,7 @@ import CryptoDeposit from './screens/CryptoDeposit';
 import History from './screens/History';
 import BankAccounts from './screens/BankAccounts';
 import Profile from './screens/Profile';
-import QRScanner from './screens/QRScanner';
+import QRPayment from './screens/QRPayment';
 import PrivacyPolicy from './screens/PrivacyPolicy';
 import TermsOfService from './screens/TermsOfService';
 import AdminDashboard from './screens/AdminDashboard';
@@ -370,7 +370,7 @@ const App: React.FC = () => {
               <Route path="/register" element={<Layout><Register /></Layout>} />
               <Route path="/dashboard" element={<Layout showBottomNav><ProtectedRoute><Dashboard /></ProtectedRoute></Layout>} />
               <Route path="/profile" element={<Layout showBottomNav><ProtectedRoute><Profile /></ProtectedRoute></Layout>} />
-              <Route path="/qr-scan" element={<Layout showBottomNav><ProtectedRoute><QRScanner /></ProtectedRoute></Layout>} />
+              <Route path="/qr-scan" element={<Layout showBottomNav><ProtectedRoute><QRPayment /></ProtectedRoute></Layout>} />
               <Route path="/history" element={<Layout showBottomNav><ProtectedRoute><History /></ProtectedRoute></Layout>} />
               <Route path="/deposit" element={<Layout showBottomNav><ProtectedRoute><Deposit /></ProtectedRoute></Layout>} />
               <Route path="/deposit/confirm" element={<Layout><ProtectedRoute><DepositConfirmation /></ProtectedRoute></Layout>} />
