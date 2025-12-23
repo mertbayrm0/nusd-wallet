@@ -364,9 +364,18 @@ const App: React.FC = () => {
 
               {/* Welcome Screen */}
               <Route path="/welcome" element={<Welcome />} />
+              <Route path="/login" element={<Layout><Login /></Layout>} />
 
-              {/* Mobile App Routes */}
-              <Route path="/" element={<Layout><Login /></Layout>} />
+              {/* Smart Entry - Check if welcome was shown */}
+              <Route path="/" element={
+                (() => {
+                  const welcomeShown = localStorage.getItem('welcomeShown');
+                  if (!welcomeShown) {
+                    return <Navigate to="/welcome" replace />;
+                  }
+                  return <Layout><Login /></Layout>;
+                })()
+              } />
               <Route path="/register" element={<Layout><Register /></Layout>} />
               <Route path="/dashboard" element={<Layout showBottomNav><ProtectedRoute><Dashboard /></ProtectedRoute></Layout>} />
               <Route path="/profile" element={<Layout showBottomNav><ProtectedRoute><Profile /></ProtectedRoute></Layout>} />
