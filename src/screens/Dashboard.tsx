@@ -515,12 +515,16 @@ const Dashboard = () => {
 
         {/* Transaction History - Bottom Sheet */}
         <div
-          className={`fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white rounded-t-3xl shadow-2xl shadow-black/30 transition-all duration-300 ease-out z-40`}
-          style={{ height: sheetExpanded ? 'calc(100vh - 120px)' : '280px' }}
+          className={`fixed left-1/2 -translate-x-1/2 w-full max-w-md bg-white rounded-t-3xl shadow-2xl shadow-black/30 transition-all duration-300 ease-out z-40`}
+          style={{
+            bottom: '80px', // Above navigation bar
+            height: sheetExpanded ? '50vh' : '180px',
+            maxHeight: '50vh'
+          }}
         >
           {/* Drag Handle */}
           <div
-            className="flex justify-center py-4 cursor-pointer touch-none"
+            className="flex justify-center py-3 cursor-pointer touch-none"
             onClick={() => setSheetExpanded(!sheetExpanded)}
             onTouchStart={(e) => setTouchStart(e.touches[0].clientY)}
             onTouchEnd={(e) => {
@@ -535,7 +539,7 @@ const Dashboard = () => {
           </div>
 
           <div className="px-5">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex justify-between items-center mb-3">
               <h3 className="font-bold text-lg text-gray-900">Transaction History</h3>
               <button
                 onClick={() => navigate('/history')}
@@ -547,8 +551,8 @@ const Dashboard = () => {
           </div>
 
           <div
-            className="px-5 space-y-3 overflow-y-auto pb-24"
-            style={{ height: sheetExpanded ? 'calc(100% - 80px)' : '100px' }}
+            className="px-5 space-y-3 overflow-y-auto"
+            style={{ height: 'calc(100% - 70px)' }}
           >
             {txs.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 rounded-2xl bg-gray-50 text-gray-400">
