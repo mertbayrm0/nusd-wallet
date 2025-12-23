@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../App';
 import { QRCodeSVG } from 'qrcode.react';
 import { Html5Qrcode } from 'html5-qrcode';
+import { supabase } from '../services/supabase';
 
 type Tab = 'receive' | 'pay';
 
 const QRPayment: React.FC = () => {
     const navigate = useNavigate();
-    const { user } = useApp();
+    const { user, session } = useApp();
     const [activeTab, setActiveTab] = useState<Tab>('receive');
     const [amount, setAmount] = useState('');
     const [note, setNote] = useState('');
@@ -16,14 +17,28 @@ const QRPayment: React.FC = () => {
     const [scanning, setScanning] = useState(false);
     const [scannedData, setScannedData] = useState<string | null>(null);
     const scannerRef = useRef<Html5Qrcode | null>(null);
+    const [nusdAddress, setNusdAddress] = useState('NUSD-LOADING');
 
-    // Generate NUSD address from email
-    const generateNusdAddress = () => {
-        if (!user?.email) return 'NUSD-000000';
-        const hash = user.email.split('@')[0].slice(0, 6).toUpperCase();
-        return `NUSD-${hash.padEnd(6, '0')}`;
-    };
-    const nusdAddress = generateNusdAddress();
+    // Fetch real NUSD address from database
+    useEffect(() => {
+        const fetchNusdAddress = async () => {
+            if (!session?.user?.id) return;
+
+            const { data } = await supabase
+                .from('profiles')
+                .select('nusd_address')
+                .eq('id', session.user.id)
+                .single();
+
+            if (data?.nusd_address) {
+                setNusdAddress(data.nusd_address);
+            } else {
+                setNusdAddress('NUSD-000000');
+            }
+        };
+
+        fetchNusdAddress();
+    }, [session]);
 
     // Generate QR data
     const generateQRData = () => {
