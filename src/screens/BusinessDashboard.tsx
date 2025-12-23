@@ -53,10 +53,23 @@ const BusinessDashboard = () => {
                 const dept = await api.getDepartment(profile.business_department_id);
                 setDepartment(dept);
 
-                // Get panel for this department
+                // Get panel for this department - check both department panels and direct lookup
+                let foundPanel = null;
+
+                // First try from department.panels
                 if (dept?.panels?.length > 0) {
-                    setPanel(dept.panels[0]);
+                    foundPanel = dept.panels[0];
                 }
+
+                // If no panel found, try to fetch directly by department_id
+                if (!foundPanel && dept?.id) {
+                    const directPanels = await api.getPanelsByDepartment(dept.id);
+                    if (directPanels && directPanels.length > 0) {
+                        foundPanel = directPanels[0];
+                    }
+                }
+
+                setPanel(foundPanel);
 
                 // Get incoming transactions for this department
                 const txs = await api.getDepartmentTransactions(profile.business_department_id);

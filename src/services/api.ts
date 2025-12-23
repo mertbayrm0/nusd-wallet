@@ -907,6 +907,21 @@ export const api = {
     }
   },
 
+  // Get panels by department ID
+  getPanelsByDepartment: async (departmentId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('payment_panels')
+        .select('*')
+        .eq('department_id', departmentId);
+      if (error) throw error;
+      return data || [];
+    } catch (e) {
+      console.error('getPanelsByDepartment error:', e);
+      return [];
+    }
+  },
+
   payViaPanel: async (slug: string, amount: number) => {
     try {
       const { data, error } = await supabase.functions.invoke('create-transaction-from-panel', {
