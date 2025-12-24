@@ -7,43 +7,49 @@ import SuccessModal from '../components/SuccessModal';
 import { DashboardSkeleton } from '../components/Skeleton';
 import { useTheme } from '../theme';
 
-// Onboarding popup içerikleri
+// Onboarding popup içerikleri - targetId ile hangi butonun vurgulanacağını belirliyoruz
 const onboardingSteps = [
   {
     icon: 'waving_hand',
     title: 'NUSD Cüzdanına Hoş Geldin!',
     message: 'Dijital para transferlerini hızlı ve güvenli bir şekilde yapabileceğin NUSD Wallet\'a hoş geldin. Hadi sana kısa bir tur atalım!',
-    buttonText: 'Başlayalım'
+    buttonText: 'Başlayalım',
+    targetId: null // Genel hoşgeldin - spotlight yok
   },
   {
     icon: 'arrow_downward',
     title: 'P2P Yatırım (Yatır)',
     message: 'TL ile bakiye yüklemek için kullan! Banka hesabından NUSD satıcılarına transfer yaparak anında bakiye yükle.',
-    buttonText: 'Devam'
+    buttonText: 'Devam',
+    targetId: 'btn-deposit'
   },
   {
     icon: 'arrow_upward',
     title: 'P2P Çekim (Çek)',
     message: 'Bakiyeni TL\'ye çevirmek için kullan! NUSD bakiyeni alıcılara satarak banka hesabına para al.',
-    buttonText: 'Devam'
+    buttonText: 'Devam',
+    targetId: 'btn-withdraw'
   },
   {
     icon: 'download',
     title: 'Kripto Yatırım',
     message: 'USDT ile bakiye yüklemek için kullan! TRC20 ağı üzerinden USDT göndererek anında NUSD bakiyesi kazan.',
-    buttonText: 'Devam'
+    buttonText: 'Devam',
+    targetId: 'btn-crypto-deposit'
   },
   {
     icon: 'upload',
     title: 'Kripto Çekim',
     message: 'NUSD bakiyeni USDT\'ye çevirmek için kullan! Bakiyeni TRC20 ağı üzerinden kendi kripto cüzdanına çek.',
-    buttonText: 'Devam'
+    buttonText: 'Devam',
+    targetId: 'btn-crypto-withdraw'
   },
   {
     icon: 'swipe_up',
     title: 'İşlem Geçmişi',
     message: 'Ekranın altında son işlemlerini görürsün. Yukarı kaydırarak tüm işlem geçmişini görebilirsin!',
-    buttonText: 'Anladım!'
+    buttonText: 'Anladım!',
+    targetId: 'transaction-history' // İşlem geçmişi alanını vurgula
   }
 ];
 
@@ -74,21 +80,14 @@ const Dashboard = () => {
     if (user?.id) {
       const key = `onboardingComplete_${user.id}`;
       const onboardingComplete = localStorage.getItem(key);
-      console.log('[Dashboard] Checking onboarding:', { userId: user.id, key, status: onboardingComplete });
 
       if (!onboardingComplete) {
-        console.log('[Dashboard] User is new, showing onboarding in 1s...');
         // Small delay to let dashboard load first
         const timer = setTimeout(() => {
-          console.log('[Dashboard] Showing onboarding NOW');
           setShowOnboarding(true);
         }, 1000);
         return () => clearTimeout(timer);
-      } else {
-        console.log('[Dashboard] Onboarding already complete');
       }
-    } else {
-      console.log('[Dashboard] User not loaded yet');
     }
   }, [user]);
 
@@ -399,55 +398,79 @@ const Dashboard = () => {
         message={successModal.message}
       />
 
-      {/* Onboarding Popup */}
+      {/* Onboarding Spotlight Overlay */}
       {showOnboarding && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-gradient-to-b from-emerald-800 to-emerald-900 rounded-3xl p-6 max-w-sm w-full border border-emerald-600/50 shadow-2xl">
-            {/* Progress dots */}
-            <div className="flex justify-center gap-2 mb-6">
-              {onboardingSteps.map((_, idx) => (
-                <div
-                  key={idx}
-                  className={`w-2 h-2 rounded-full transition-all ${idx === onboardingStep ? 'bg-lime-400 w-6' : 'bg-emerald-600'
-                    }`}
-                />
-              ))}
-            </div>
+        <>
+          {/* Semi-transparent overlay - no blur, click to skip */}
+          <div
+            className="fixed inset-0 bg-black/60 z-[99]"
+            onClick={handleSkipOnboarding}
+          />
 
-            {/* Icon */}
-            <div className="flex justify-center mb-4">
-              <div className="w-20 h-20 rounded-full bg-lime-400/20 flex items-center justify-center">
-                <span className="material-symbols-outlined text-lime-400 text-4xl">
-                  {onboardingSteps[onboardingStep].icon}
-                </span>
+          {/* Tooltip Popup - positioned based on step */}
+          <div
+            className={`fixed z-[102] max-w-xs w-[90%] transition-all duration-300 ${onboardingSteps[onboardingStep]?.targetId === null
+              ? 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2' // Centered for welcome
+              : onboardingSteps[onboardingStep]?.targetId === 'transaction-history'
+                ? 'bottom-32 left-1/2 -translate-x-1/2' // Above transaction history
+                : 'top-[340px] left-1/2 -translate-x-1/2' // Above action buttons
+              }`}
+          >
+            <div className="bg-gradient-to-b from-emerald-800 to-emerald-900 rounded-2xl p-5 border border-emerald-500/50 shadow-2xl">
+              {/* Arrow pointing to button */}
+              {onboardingSteps[onboardingStep]?.targetId && onboardingSteps[onboardingStep]?.targetId !== 'transaction-history' && (
+                <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-emerald-800 rotate-45 border-l border-t border-emerald-500/50" />
+              )}
+              {onboardingSteps[onboardingStep]?.targetId === 'transaction-history' && (
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-emerald-900 rotate-45 border-r border-b border-emerald-500/50" />
+              )}
+
+              {/* Progress dots */}
+              <div className="flex justify-center gap-1.5 mb-4">
+                {onboardingSteps.map((_, idx) => (
+                  <div
+                    key={idx}
+                    className={`h-1.5 rounded-full transition-all ${idx === onboardingStep ? 'bg-lime-400 w-4' : 'bg-emerald-600 w-1.5'
+                      }`}
+                  />
+                ))}
+              </div>
+
+              {/* Icon + Title Row */}
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-xl bg-lime-400/20 flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-lime-400 text-xl">
+                    {onboardingSteps[onboardingStep].icon}
+                  </span>
+                </div>
+                <h3 className="text-white text-base font-bold">
+                  {onboardingSteps[onboardingStep].title}
+                </h3>
+              </div>
+
+              {/* Message */}
+              <p className="text-emerald-200/80 text-sm leading-relaxed mb-4 pl-[52px]">
+                {onboardingSteps[onboardingStep].message}
+              </p>
+
+              {/* Buttons */}
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSkipOnboarding}
+                  className="flex-1 py-2.5 rounded-xl text-emerald-300 text-xs font-medium hover:bg-emerald-700/50 transition-colors"
+                >
+                  Atla
+                </button>
+                <button
+                  onClick={handleOnboardingNext}
+                  className="flex-1 py-2.5 rounded-xl bg-lime-400 text-emerald-900 font-bold text-xs hover:bg-lime-300 transition-colors"
+                >
+                  {onboardingSteps[onboardingStep].buttonText}
+                </button>
               </div>
             </div>
-
-            {/* Content */}
-            <h2 className="text-white text-xl font-bold text-center mb-3">
-              {onboardingSteps[onboardingStep].title}
-            </h2>
-            <p className="text-emerald-200/80 text-sm text-center mb-6 leading-relaxed">
-              {onboardingSteps[onboardingStep].message}
-            </p>
-
-            {/* Buttons */}
-            <div className="flex gap-3">
-              <button
-                onClick={handleSkipOnboarding}
-                className="flex-1 py-3 rounded-xl text-emerald-300 text-sm font-medium hover:bg-emerald-700/50 transition-colors"
-              >
-                Atla
-              </button>
-              <button
-                onClick={handleOnboardingNext}
-                className="flex-1 py-3 rounded-xl bg-lime-400 text-emerald-900 font-bold text-sm hover:bg-lime-300 transition-colors"
-              >
-                {onboardingSteps[onboardingStep].buttonText}
-              </button>
-            </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Premium Header */}
@@ -588,32 +611,48 @@ const Dashboard = () => {
             {/* Action Buttons - Grid Style */}
             <div className="grid grid-cols-4 gap-3 mt-6">
               {/* Deposit */}
-              <button onClick={() => navigate('/deposit')} className="flex flex-col items-center gap-2 group">
-                <div className="w-14 h-14 rounded-2xl bg-lime-400 flex items-center justify-center shadow-lg group-hover:scale-105 group-active:scale-95 transition-all">
+              <button
+                id="btn-deposit"
+                onClick={() => navigate('/deposit')}
+                className={`flex flex-col items-center gap-2 group relative ${showOnboarding && onboardingSteps[onboardingStep]?.targetId === 'btn-deposit' ? 'z-[101]' : ''}`}
+              >
+                <div className={`w-14 h-14 rounded-2xl bg-lime-400 flex items-center justify-center shadow-lg group-hover:scale-105 group-active:scale-95 transition-all ${showOnboarding && onboardingSteps[onboardingStep]?.targetId === 'btn-deposit' ? 'ring-4 ring-white animate-pulse' : ''}`}>
                   <span className="material-symbols-outlined text-emerald-900 text-2xl">arrow_downward</span>
                 </div>
                 <span className="text-emerald-100 text-[11px] font-medium">Yatır</span>
               </button>
 
               {/* Withdraw */}
-              <button onClick={() => navigate('/withdraw')} className="flex flex-col items-center gap-2 group">
-                <div className="w-14 h-14 rounded-2xl bg-lime-400 flex items-center justify-center shadow-lg group-hover:scale-105 group-active:scale-95 transition-all">
+              <button
+                id="btn-withdraw"
+                onClick={() => navigate('/withdraw')}
+                className={`flex flex-col items-center gap-2 group relative ${showOnboarding && onboardingSteps[onboardingStep]?.targetId === 'btn-withdraw' ? 'z-[101]' : ''}`}
+              >
+                <div className={`w-14 h-14 rounded-2xl bg-lime-400 flex items-center justify-center shadow-lg group-hover:scale-105 group-active:scale-95 transition-all ${showOnboarding && onboardingSteps[onboardingStep]?.targetId === 'btn-withdraw' ? 'ring-4 ring-white animate-pulse' : ''}`}>
                   <span className="material-symbols-outlined text-emerald-900 text-2xl">arrow_upward</span>
                 </div>
                 <span className="text-emerald-100 text-[11px] font-medium">Çek</span>
               </button>
 
               {/* Crypto Deposit */}
-              <button onClick={() => navigate('/crypto/deposit')} className="flex flex-col items-center gap-2 group">
-                <div className="w-14 h-14 rounded-2xl bg-lime-400 flex items-center justify-center shadow-lg group-hover:scale-105 group-active:scale-95 transition-all">
+              <button
+                id="btn-crypto-deposit"
+                onClick={() => navigate('/crypto/deposit')}
+                className={`flex flex-col items-center gap-2 group relative ${showOnboarding && onboardingSteps[onboardingStep]?.targetId === 'btn-crypto-deposit' ? 'z-[101]' : ''}`}
+              >
+                <div className={`w-14 h-14 rounded-2xl bg-lime-400 flex items-center justify-center shadow-lg group-hover:scale-105 group-active:scale-95 transition-all ${showOnboarding && onboardingSteps[onboardingStep]?.targetId === 'btn-crypto-deposit' ? 'ring-4 ring-white animate-pulse' : ''}`}>
                   <span className="material-symbols-outlined text-emerald-900 text-2xl">download</span>
                 </div>
                 <span className="text-emerald-100 text-[10px] font-medium text-center leading-tight">Kripto<br />Yatır</span>
               </button>
 
               {/* Crypto Withdraw */}
-              <button onClick={() => navigate('/crypto/withdraw')} className="flex flex-col items-center gap-2 group">
-                <div className="w-14 h-14 rounded-2xl bg-lime-400 flex items-center justify-center shadow-lg group-hover:scale-105 group-active:scale-95 transition-all">
+              <button
+                id="btn-crypto-withdraw"
+                onClick={() => navigate('/crypto/withdraw')}
+                className={`flex flex-col items-center gap-2 group relative ${showOnboarding && onboardingSteps[onboardingStep]?.targetId === 'btn-crypto-withdraw' ? 'z-[101]' : ''}`}
+              >
+                <div className={`w-14 h-14 rounded-2xl bg-lime-400 flex items-center justify-center shadow-lg group-hover:scale-105 group-active:scale-95 transition-all ${showOnboarding && onboardingSteps[onboardingStep]?.targetId === 'btn-crypto-withdraw' ? 'ring-4 ring-white animate-pulse' : ''}`}>
                   <span className="material-symbols-outlined text-emerald-900 text-2xl">upload</span>
                 </div>
                 <span className="text-emerald-100 text-[10px] font-medium text-center leading-tight">Kripto<br />Çek</span>
