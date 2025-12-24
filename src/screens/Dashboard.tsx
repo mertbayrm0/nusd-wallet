@@ -706,10 +706,9 @@ const Dashboard = () => {
         <div
           className={`fixed left-1/2 -translate-x-1/2 w-full max-w-md bg-white rounded-t-3xl shadow-2xl shadow-black/30 transition-all duration-300 ease-out z-30`}
           style={{
-            bottom: '0', // Start from very bottom of page
-            height: sheetExpanded ? '350px' : '220px',
-            maxHeight: '50vh',
-            paddingBottom: '100px' // Space for navigation bar
+            bottom: '0',
+            height: sheetExpanded ? 'calc(100vh - 60px)' : '200px', // Full screen when expanded
+            maxHeight: 'calc(100vh - 60px)'
           }}
         >
           {/* Drag Handle */}
@@ -741,8 +740,8 @@ const Dashboard = () => {
           </div>
 
           <div
-            className="px-5 space-y-3 overflow-y-auto"
-            style={{ height: 'calc(100% - 170px)' }}
+            className="px-5 pb-24 space-y-3 overflow-y-auto"
+            style={{ height: 'calc(100% - 60px)' }}
           >
             {txs.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 rounded-2xl bg-gray-50 text-gray-400">
@@ -750,7 +749,7 @@ const Dashboard = () => {
                 <p className="text-sm font-medium">Henüz işlem yok</p>
               </div>
             ) : (
-              txs.slice(0, sheetExpanded ? txs.length : 1).map((tx: any) => (
+              txs.map((tx: any) => (
                 <div key={tx.id} className="p-4 rounded-2xl bg-gray-50 flex justify-between items-center transition-all hover:bg-gray-100">
                   <div className="flex items-center gap-3">
                     <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${tx.amount > 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-500'}`}>
