@@ -706,9 +706,9 @@ const Dashboard = () => {
         <div
           className={`fixed left-1/2 -translate-x-1/2 w-full max-w-md bg-white rounded-t-3xl shadow-2xl shadow-black/30 transition-all duration-300 ease-out z-40`}
           style={{
-            bottom: '80px', // Above navigation bar
-            height: sheetExpanded ? '50vh' : '180px',
-            maxHeight: '50vh'
+            bottom: '90px', // Above navigation bar
+            height: sheetExpanded ? '45vh' : '160px',
+            maxHeight: '45vh'
           }}
         >
           {/* Drag Handle */}
