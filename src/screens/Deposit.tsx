@@ -647,32 +647,32 @@ const Deposit = () => {
                                 </button>
                             )
                         ) : (
-                            <div className="bg-[#1a1a1a] p-6 rounded-2xl border border-lime-500/30 text-center animate-fade-in mt-4">
-                                <div className="w-16 h-16 rounded-full bg-lime-500/20 flex items-center justify-center mx-auto mb-4 relative">
-                                    <span className="material-symbols-outlined text-lime-400 text-3xl">task_alt</span>
-                                    <div className="absolute inset-0 rounded-full border border-lime-500/30 animate-ping"></div>
+                            <div className="bg-white p-6 rounded-2xl border border-emerald-200 text-center animate-fade-in mt-4 shadow-xl">
+                                <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4 relative">
+                                    <span className="material-symbols-outlined text-emerald-600 text-3xl">task_alt</span>
+                                    <div className="absolute inset-0 rounded-full border border-emerald-300 animate-ping"></div>
                                 </div>
-                                <h3 className="text-xl font-bold text-white mb-2">Uygun Eşleşme Bulundu!</h3>
-                                <p className="text-gray-400 text-sm mb-6">Yatırım tutarınız için uygun bir satıcı bulundu.</p>
+                                <h3 className="text-xl font-bold text-gray-900 mb-2">Uygun Eşleşme Bulundu!</h3>
+                                <p className="text-gray-500 text-sm mb-6">Yatırım tutarınız için uygun bir satıcı bulundu.</p>
 
-                                <div className="bg-black/30 p-4 rounded-2xl mb-6 border border-white/5">
+                                <div className="bg-gray-50 p-4 rounded-2xl mb-6 border border-gray-200">
                                     <div className="flex justify-between items-center mb-2">
                                         <span className="text-gray-500 text-xs">Ağ</span>
-                                        <span className="text-white text-xs font-bold">P2P Secure</span>
+                                        <span className="text-gray-900 text-xs font-bold">P2P Secure</span>
                                     </div>
-                                    <div className="border-t border-white/5 my-2"></div>
+                                    <div className="border-t border-gray-200 my-2"></div>
                                     <p className="text-xs text-gray-500 mb-1 mt-2">İşlem Tutarı</p>
-                                    <p className="text-3xl font-bold text-white tracking-tight">₺{match.amount?.toLocaleString()}</p>
-                                    <p className="text-xs text-lime-500 mt-1 font-mono">≈ {match.amountUsd?.toLocaleString() || parseFloat(amount).toLocaleString()} USDT</p>
+                                    <p className="text-3xl font-bold text-gray-900 tracking-tight">₺{match.amount?.toLocaleString()}</p>
+                                    <p className="text-xs text-emerald-600 mt-1 font-mono">≈ {match.amountUsd?.toLocaleString() || parseFloat(amount).toLocaleString()} USDT</p>
                                 </div>
 
                                 <button
                                     onClick={proceed}
-                                    className="w-full bg-lime-500 hover:bg-lime-400 text-black font-bold py-4 rounded-xl text-lg transition-all shadow-lg shadow-lime-500/20 active:scale-95"
+                                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl text-lg transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
                                 >
                                     İşlemi Onayla & Bilgileri Gör
                                 </button>
-                                <p className="text-[10px] text-gray-500 mt-3">İşlemi onayladığınızda ödeme bilgileri gösterilecek ve 30 dakika süre başlayacaktır.</p>
+                                <p className="text-[10px] text-gray-400 mt-3">İşlemi onayladığınızda ödeme bilgileri gösterilecek ve 30 dakika süre başlayacaktır.</p>
                             </div>
                         )}
                     </>
