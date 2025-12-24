@@ -672,21 +672,24 @@ const Dashboard = () => {
         </div>
 
         {/* Find Agent Button */}
-        <button
-          onClick={() => navigate('/find-agent')}
-          className="w-full p-4 rounded-2xl flex items-center justify-between group transition-all bg-emerald-700/30 border border-emerald-600/30 hover:bg-emerald-700/50 mb-4"
+        <div
+          className="w-full p-4 rounded-2xl flex items-center justify-between bg-gray-700/30 border border-gray-600/30 opacity-50 cursor-not-allowed mb-4 relative"
         >
+          {/* Çok Yakında Badge */}
+          <div className="absolute -top-2 -right-2 bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full z-10">
+            Çok Yakında
+          </div>
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-lime-400/20 flex items-center justify-center text-lime-400 group-hover:bg-lime-400 group-hover:text-emerald-900 transition-colors">
+            <div className="w-11 h-11 rounded-xl bg-gray-500/20 flex items-center justify-center text-gray-400">
               <span className="material-symbols-outlined">location_on</span>
             </div>
             <div className="text-left">
-              <p className="font-bold text-sm text-white">Acente Bul</p>
-              <p className="text-emerald-300/70 text-xs">En yakın döviz noktasını bul</p>
+              <p className="font-bold text-sm text-gray-400">Acente Bul</p>
+              <p className="text-gray-500 text-xs">En yakın döviz noktasını bul</p>
             </div>
           </div>
-          <span className="material-symbols-outlined text-emerald-400 group-hover:text-white">chevron_right</span>
-        </button>
+          <span className="material-symbols-outlined text-gray-500">chevron_right</span>
+        </div>
 
         {/* Admin Panel Button */}
         {user.role === 'admin' && (

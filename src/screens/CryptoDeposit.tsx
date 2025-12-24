@@ -229,15 +229,33 @@ const CryptoDeposit = () => {
                 <div>
                     <h3 className="font-bold text-emerald-300 mb-2 text-sm">Select Network</h3>
                     <div className="grid grid-cols-3 gap-2 bg-white p-1 rounded-xl shadow">
-                        {['TRC20', 'ERC20', 'BEP20'].map(net => (
-                            <button
-                                key={net}
-                                onClick={() => setNetwork(net)}
-                                className={`py-2 rounded-lg text-sm font-bold transition-all ${network === net ? 'bg-emerald-500 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
-                            >
-                                {net}
-                            </button>
-                        ))}
+                        {/* TRC20 - Active */}
+                        <button
+                            onClick={() => setNetwork('TRC20')}
+                            className={`py-2 rounded-lg text-sm font-bold transition-all ${network === 'TRC20' ? 'bg-emerald-500 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+                        >
+                            TRC20
+                        </button>
+
+                        {/* ERC20 - Coming Soon */}
+                        <div className="relative">
+                            <div className="py-2 rounded-lg text-sm font-bold text-gray-300 text-center cursor-not-allowed">
+                                ERC20
+                            </div>
+                            <div className="absolute -top-1 -right-1 bg-amber-500 text-white text-[8px] font-bold px-1 py-0.5 rounded-full">
+                                Yakında
+                            </div>
+                        </div>
+
+                        {/* BEP20 - Coming Soon */}
+                        <div className="relative">
+                            <div className="py-2 rounded-lg text-sm font-bold text-gray-300 text-center cursor-not-allowed">
+                                BEP20
+                            </div>
+                            <div className="absolute -top-1 -right-1 bg-amber-500 text-white text-[8px] font-bold px-1 py-0.5 rounded-full">
+                                Yakında
+                            </div>
+                        </div>
                     </div>
                 </div>
 

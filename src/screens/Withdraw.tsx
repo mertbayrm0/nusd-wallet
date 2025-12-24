@@ -554,17 +554,19 @@ const Withdraw = () => {
                                 <p className="text-xs text-emerald-500 font-bold mt-1">%0 Komisyon</p>
                             </button>
 
-                            <button
-                                onClick={() => setInstant(true)}
-                                className={`p-4 rounded-2xl border-2 text-left transition-all shadow ${instant ? 'bg-emerald-50 border-emerald-500' : 'bg-white border-gray-200 hover:border-emerald-300'}`}
+                            <div
+                                className="p-4 rounded-2xl border-2 text-left relative bg-gray-100 border-gray-300 opacity-60 cursor-not-allowed"
                             >
-                                <div className="flex justify-between items-start mb-2">
-                                    <h3 className={`font-bold text-lg ${instant ? 'text-emerald-600' : 'text-gray-900'}`}>Hızlı</h3>
-                                    {instant && <span className="material-symbols-outlined text-emerald-500">check_circle</span>}
+                                {/* Çok Yakında Badge */}
+                                <div className="absolute -top-2 -right-2 bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                    Çok Yakında
                                 </div>
-                                <p className="text-xs text-gray-500 font-medium">Sistem Ödeme</p>
-                                <p className="text-xs text-red-500 font-bold mt-1">%2 Komisyon</p>
-                            </button>
+                                <div className="flex justify-between items-start mb-2">
+                                    <h3 className="font-bold text-lg text-gray-400">Hızlı</h3>
+                                </div>
+                                <p className="text-xs text-gray-400 font-medium">Sistem Ödeme</p>
+                                <p className="text-xs text-gray-400 font-bold mt-1">%2 Komisyon</p>
+                            </div>
                         </div>
 
                         <button
