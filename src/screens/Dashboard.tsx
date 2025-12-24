@@ -706,9 +706,10 @@ const Dashboard = () => {
         <div
           className={`fixed left-1/2 -translate-x-1/2 w-full max-w-md bg-white rounded-t-3xl shadow-2xl shadow-black/30 transition-all duration-300 ease-out z-30`}
           style={{
-            bottom: '100px', // Right above floating nav bar with QR button
-            height: sheetExpanded ? '250px' : '140px',
-            maxHeight: '40vh'
+            bottom: '0', // Start from very bottom of page
+            height: sheetExpanded ? '350px' : '220px',
+            maxHeight: '50vh',
+            paddingBottom: '100px' // Space for navigation bar
           }}
         >
           {/* Drag Handle */}
@@ -741,7 +742,7 @@ const Dashboard = () => {
 
           <div
             className="px-5 space-y-3 overflow-y-auto"
-            style={{ height: 'calc(100% - 70px)' }}
+            style={{ height: 'calc(100% - 170px)' }}
           >
             {txs.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 rounded-2xl bg-gray-50 text-gray-400">
