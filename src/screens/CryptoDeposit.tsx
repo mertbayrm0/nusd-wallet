@@ -4,6 +4,24 @@ import { useApp } from '../App';
 import { supabase } from '../services/supabase';
 import { QRCodeSVG } from 'qrcode.react';
 
+// Crypto Deposit onboarding steps - targetId ile hangi alanın vurgulanacağını belirliyoruz
+const cryptoDepositOnboardingSteps = [
+    {
+        icon: 'wallet',
+        title: 'NUSD Cüzdan Adresi',
+        message: 'Cüzdanlar arası Nubit Wallet token\'dır. 1 NUSD = 1 USDT\'dir. İstediğiniz ağ üzerinden transfer gerçekleştirebilirsiniz.',
+        buttonText: 'Anladım',
+        targetId: 'nusd-address-section'
+    },
+    {
+        icon: 'tag',
+        title: 'Hash Kodu Onayı',
+        message: 'Cüzdanınıza yaptığınız transferin hash kodunu yapıştırıp onaylamanız gerekmektedir. Bu sayede işleminiz hızlıca onaylanır.',
+        buttonText: 'Başlayalım!',
+        targetId: 'hash-section'
+    }
+];
+
 const CryptoDeposit = () => {
     const navigate = useNavigate();
     const { user, refreshUser } = useApp();
@@ -13,6 +31,10 @@ const CryptoDeposit = () => {
     const [txHash, setTxHash] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
+
+    // Onboarding state
+    const [showOnboarding, setShowOnboarding] = useState(false);
+    const [onboardingStep, setOnboardingStep] = useState(0);
 
     const VAULT_ADDRESS = 'TAeaxxAUqqpdKJmvg9JPHajTNQLRfwdJ3F';
 
@@ -30,6 +52,35 @@ const CryptoDeposit = () => {
     useEffect(() => {
         refreshUser?.();
     }, []);
+
+    // Check onboarding for crypto deposit page
+    useEffect(() => {
+        if (user?.id) {
+            const cryptoDepositOnboardingComplete = localStorage.getItem(`cryptoDepositOnboardingComplete_${user.id}`);
+            if (!cryptoDepositOnboardingComplete) {
+                const timer = setTimeout(() => setShowOnboarding(true), 500);
+                return () => clearTimeout(timer);
+            }
+        }
+    }, [user]);
+
+    const handleOnboardingNext = () => {
+        if (onboardingStep < cryptoDepositOnboardingSteps.length - 1) {
+            setOnboardingStep(onboardingStep + 1);
+        } else {
+            if (user?.id) {
+                localStorage.setItem(`cryptoDepositOnboardingComplete_${user.id}`, 'true');
+            }
+            setShowOnboarding(false);
+        }
+    };
+
+    const handleSkipOnboarding = () => {
+        if (user?.id) {
+            localStorage.setItem(`cryptoDepositOnboardingComplete_${user.id}`, 'true');
+        }
+        setShowOnboarding(false);
+    };
 
     const copyToClipboard = (text: string, type: 'address' | 'memo') => {
         navigator.clipboard.writeText(text);
@@ -94,6 +145,78 @@ const CryptoDeposit = () => {
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-emerald-800 via-emerald-900 to-emerald-950 flex flex-col font-display">
+            {/* Onboarding Spotlight Overlay */}
+            {showOnboarding && (
+                <>
+                    {/* Semi-transparent overlay - click to skip */}
+                    <div
+                        className="fixed inset-0 bg-black/60 z-[99]"
+                        onClick={handleSkipOnboarding}
+                    />
+
+                    {/* Tooltip Popup - positioned based on step */}
+                    <div
+                        className={`fixed z-[102] max-w-xs w-[90%] transition-all duration-300 ${cryptoDepositOnboardingSteps[onboardingStep]?.targetId === 'nusd-address-section'
+                            ? 'top-[200px] left-1/2 -translate-x-1/2' // Near NUSD address
+                            : cryptoDepositOnboardingSteps[onboardingStep]?.targetId === 'hash-section'
+                                ? 'top-[420px] left-1/2 -translate-x-1/2' // Near hash section
+                                : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2' // Centered
+                            }`}
+                    >
+                        <div className="bg-gradient-to-b from-emerald-800 to-emerald-900 rounded-2xl p-5 border border-emerald-500/50 shadow-2xl">
+                            {/* Arrow pointing down to target */}
+                            {cryptoDepositOnboardingSteps[onboardingStep]?.targetId && (
+                                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-emerald-900 rotate-45 border-r border-b border-emerald-500/50" />
+                            )}
+
+                            {/* Progress dots */}
+                            <div className="flex justify-center gap-1.5 mb-4">
+                                {cryptoDepositOnboardingSteps.map((_, idx) => (
+                                    <div
+                                        key={idx}
+                                        className={`h-1.5 rounded-full transition-all ${idx === onboardingStep ? 'bg-lime-400 w-4' : 'bg-emerald-600 w-1.5'
+                                            }`}
+                                    />
+                                ))}
+                            </div>
+
+                            {/* Icon + Title Row */}
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="w-10 h-10 rounded-xl bg-lime-400/20 flex items-center justify-center shrink-0">
+                                    <span className="material-symbols-outlined text-lime-400 text-xl">
+                                        {cryptoDepositOnboardingSteps[onboardingStep].icon}
+                                    </span>
+                                </div>
+                                <h3 className="text-white text-base font-bold">
+                                    {cryptoDepositOnboardingSteps[onboardingStep].title}
+                                </h3>
+                            </div>
+
+                            {/* Message */}
+                            <p className="text-emerald-200/80 text-sm leading-relaxed mb-4 pl-[52px]">
+                                {cryptoDepositOnboardingSteps[onboardingStep].message}
+                            </p>
+
+                            {/* Buttons */}
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={handleSkipOnboarding}
+                                    className="flex-1 py-2.5 rounded-xl text-emerald-300 text-xs font-medium hover:bg-emerald-700/50 transition-colors"
+                                >
+                                    Atla
+                                </button>
+                                <button
+                                    onClick={handleOnboardingNext}
+                                    className="flex-1 py-2.5 rounded-xl bg-lime-400 text-emerald-900 font-bold text-xs hover:bg-lime-300 transition-colors"
+                                >
+                                    {cryptoDepositOnboardingSteps[onboardingStep].buttonText}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
+
             <div className="px-4 py-4 flex items-center sticky top-0 z-10">
                 <button onClick={() => navigate('/dashboard')} className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors">
                     <span className="material-symbols-outlined text-white">arrow_back</span>
@@ -133,7 +256,10 @@ const CryptoDeposit = () => {
                 </div>
 
                 {/* MEMO Code with QR */}
-                <div className="bg-gradient-to-r from-emerald-500/20 to-teal-500/20 rounded-2xl p-4 border border-emerald-500/30">
+                <div
+                    id="nusd-address-section"
+                    className={`bg-gradient-to-r from-emerald-500/20 to-teal-500/20 rounded-2xl p-4 border border-emerald-500/30 relative ${showOnboarding && cryptoDepositOnboardingSteps[onboardingStep]?.targetId === 'nusd-address-section' ? 'z-[101] ring-2 ring-lime-400 ring-offset-2 ring-offset-emerald-900' : ''}`}
+                >
                     <div className="flex items-center gap-2 mb-3">
                         <span className="material-symbols-outlined text-emerald-400 text-lg">tag</span>
                         <p className="text-xs text-emerald-300 font-bold uppercase tracking-wide">Your NUSD Address (Important!)</p>
@@ -186,7 +312,10 @@ const CryptoDeposit = () => {
                         />
                     </div>
 
-                    <div>
+                    <div
+                        id="hash-section"
+                        className={`relative ${showOnboarding && cryptoDepositOnboardingSteps[onboardingStep]?.targetId === 'hash-section' ? 'z-[101] ring-2 ring-lime-400 ring-offset-2 ring-offset-white rounded-xl' : ''}`}
+                    >
                         <label className="block text-xs text-gray-500 font-bold mb-1">Transaction Hash (Optional)</label>
                         <input
                             type="text"
