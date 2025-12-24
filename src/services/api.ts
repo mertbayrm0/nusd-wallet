@@ -1298,13 +1298,13 @@ export const api = {
 
       if (error) {
         console.error('Get pending withdrawals error:', error);
-        return [];
+        return { success: false, withdrawals: [] };
       }
 
-      return data?.withdrawals || [];
+      return { success: true, withdrawals: data?.withdrawals || [] };
     } catch (e: any) {
       console.error('Get pending withdrawals exception:', e);
-      return [];
+      return { success: false, withdrawals: [] };
     }
   },
 
