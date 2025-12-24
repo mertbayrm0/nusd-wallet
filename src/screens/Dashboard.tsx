@@ -704,11 +704,11 @@ const Dashboard = () => {
 
         {/* Transaction History - Bottom Sheet */}
         <div
-          className={`fixed left-1/2 -translate-x-1/2 w-full max-w-md bg-white rounded-t-3xl shadow-2xl shadow-black/30 transition-all duration-300 ease-out z-40`}
+          className={`fixed left-1/2 -translate-x-1/2 w-full max-w-md bg-white rounded-t-3xl shadow-2xl shadow-black/30 transition-all duration-300 ease-out z-30`}
           style={{
-            bottom: '0', // Start from very bottom of page
-            height: sheetExpanded ? '280px' : '160px',
-            maxHeight: '50vh'
+            bottom: '100px', // Right above floating nav bar with QR button
+            height: sheetExpanded ? '250px' : '140px',
+            maxHeight: '40vh'
           }}
         >
           {/* Drag Handle */}
