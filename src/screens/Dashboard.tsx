@@ -706,7 +706,7 @@ const Dashboard = () => {
         <div
           className={`fixed left-1/2 -translate-x-1/2 w-full max-w-md bg-white rounded-t-3xl shadow-2xl shadow-black/30 transition-all duration-300 ease-out z-40`}
           style={{
-            bottom: '72px', // Right above navigation bar (nav is ~70px)
+            bottom: '0', // Start from very bottom of page
             height: sheetExpanded ? '280px' : '160px',
             maxHeight: '50vh'
           }}
