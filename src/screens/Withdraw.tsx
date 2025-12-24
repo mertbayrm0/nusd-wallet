@@ -19,19 +19,21 @@ interface AlertState {
     message: string;
 }
 
-// Withdraw page onboarding steps
+// Withdraw page onboarding steps - targetId ile hangi alanın vurgulanacağını belirliyoruz
 const withdrawOnboardingSteps = [
     {
         icon: 'account_balance',
         title: 'Banka Hesabı Seçin',
         message: 'Çekim tutarının yatırılacağı banka hesabınızı seçin. Paranız bu hesaba gönderilecek.',
-        buttonText: 'Anladım'
+        buttonText: 'Anladım',
+        targetId: 'bank-section'
     },
     {
-        icon: 'timer',
-        title: 'Eşleşme & Ödeme',
-        message: 'Çekim tutarınız alıcıyla eşleştiğinde, alıcı size ödeme yapacak. Ödeme hesabınıza ulaştığında "Onaylıyorum" butonuna basın.',
-        buttonText: 'Başlayalım!'
+        icon: 'currency_exchange',
+        title: 'Çekim Tutarı',
+        message: 'Çekim yapmak istediğiniz tutarı girin. Eşleşme olduğunda ana sayfaya onay bildirimi gelecektir. İşlem süresi yoğunluğa göre değişiklik gösterebilir.',
+        buttonText: 'Başlayalım!',
+        targetId: 'amount-section'
     }
 ];
 
@@ -306,55 +308,76 @@ const Withdraw = () => {
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-emerald-800 via-emerald-900 to-emerald-950 flex flex-col font-display pb-20">
-            {/* Onboarding Popup */}
+            {/* Onboarding Spotlight Overlay */}
             {showOnboarding && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-                    <div className="bg-gradient-to-b from-emerald-800 to-emerald-900 rounded-3xl p-6 max-w-sm w-full border border-emerald-600/50 shadow-2xl">
-                        {/* Progress dots */}
-                        <div className="flex justify-center gap-2 mb-6">
-                            {withdrawOnboardingSteps.map((_, idx) => (
-                                <div
-                                    key={idx}
-                                    className={`w-2 h-2 rounded-full transition-all ${idx === onboardingStep ? 'bg-lime-400 w-6' : 'bg-emerald-600'
-                                        }`}
-                                />
-                            ))}
-                        </div>
+                <>
+                    {/* Semi-transparent overlay - click to skip */}
+                    <div
+                        className="fixed inset-0 bg-black/60 z-[99]"
+                        onClick={handleSkipOnboarding}
+                    />
 
-                        {/* Icon */}
-                        <div className="flex justify-center mb-4">
-                            <div className="w-20 h-20 rounded-full bg-lime-400/20 flex items-center justify-center">
-                                <span className="material-symbols-outlined text-lime-400 text-4xl">
-                                    {withdrawOnboardingSteps[onboardingStep].icon}
-                                </span>
+                    {/* Tooltip Popup - positioned based on step */}
+                    <div
+                        className={`fixed z-[102] max-w-xs w-[90%] transition-all duration-300 ${withdrawOnboardingSteps[onboardingStep]?.targetId === 'bank-section'
+                            ? 'top-[180px] left-1/2 -translate-x-1/2' // Near bank section
+                            : withdrawOnboardingSteps[onboardingStep]?.targetId === 'amount-section'
+                                ? 'top-[380px] left-1/2 -translate-x-1/2' // Near amount section
+                                : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2' // Centered
+                            }`}
+                    >
+                        <div className="bg-gradient-to-b from-emerald-800 to-emerald-900 rounded-2xl p-5 border border-emerald-500/50 shadow-2xl">
+                            {/* Arrow pointing down to target */}
+                            {withdrawOnboardingSteps[onboardingStep]?.targetId && (
+                                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-emerald-900 rotate-45 border-r border-b border-emerald-500/50" />
+                            )}
+
+                            {/* Progress dots */}
+                            <div className="flex justify-center gap-1.5 mb-4">
+                                {withdrawOnboardingSteps.map((_, idx) => (
+                                    <div
+                                        key={idx}
+                                        className={`h-1.5 rounded-full transition-all ${idx === onboardingStep ? 'bg-lime-400 w-4' : 'bg-emerald-600 w-1.5'
+                                            }`}
+                                    />
+                                ))}
+                            </div>
+
+                            {/* Icon + Title Row */}
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="w-10 h-10 rounded-xl bg-lime-400/20 flex items-center justify-center shrink-0">
+                                    <span className="material-symbols-outlined text-lime-400 text-xl">
+                                        {withdrawOnboardingSteps[onboardingStep].icon}
+                                    </span>
+                                </div>
+                                <h3 className="text-white text-base font-bold">
+                                    {withdrawOnboardingSteps[onboardingStep].title}
+                                </h3>
+                            </div>
+
+                            {/* Message */}
+                            <p className="text-emerald-200/80 text-sm leading-relaxed mb-4 pl-[52px]">
+                                {withdrawOnboardingSteps[onboardingStep].message}
+                            </p>
+
+                            {/* Buttons */}
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={handleSkipOnboarding}
+                                    className="flex-1 py-2.5 rounded-xl text-emerald-300 text-xs font-medium hover:bg-emerald-700/50 transition-colors"
+                                >
+                                    Atla
+                                </button>
+                                <button
+                                    onClick={handleOnboardingNext}
+                                    className="flex-1 py-2.5 rounded-xl bg-lime-400 text-emerald-900 font-bold text-xs hover:bg-lime-300 transition-colors"
+                                >
+                                    {withdrawOnboardingSteps[onboardingStep].buttonText}
+                                </button>
                             </div>
                         </div>
-
-                        {/* Content */}
-                        <h2 className="text-white text-xl font-bold text-center mb-3">
-                            {withdrawOnboardingSteps[onboardingStep].title}
-                        </h2>
-                        <p className="text-emerald-200/80 text-sm text-center mb-6 leading-relaxed">
-                            {withdrawOnboardingSteps[onboardingStep].message}
-                        </p>
-
-                        {/* Buttons */}
-                        <div className="flex gap-3">
-                            <button
-                                onClick={handleSkipOnboarding}
-                                className="flex-1 py-3 rounded-xl text-emerald-300 text-sm font-medium hover:bg-emerald-700/50 transition-colors"
-                            >
-                                Atla
-                            </button>
-                            <button
-                                onClick={handleOnboardingNext}
-                                className="flex-1 py-3 rounded-xl bg-lime-400 text-emerald-900 font-bold text-sm hover:bg-lime-300 transition-colors"
-                            >
-                                {withdrawOnboardingSteps[onboardingStep].buttonText}
-                            </button>
-                        </div>
                     </div>
-                </div>
+                </>
             )}
 
             {/* Header */}
@@ -427,7 +450,10 @@ const Withdraw = () => {
                         </div>
 
                         {/* Bank Account Selection */}
-                        <div>
+                        <div
+                            id="bank-section"
+                            className={`relative ${showOnboarding && withdrawOnboardingSteps[onboardingStep]?.targetId === 'bank-section' ? 'z-[101] ring-2 ring-lime-400 ring-offset-2 ring-offset-emerald-900 rounded-xl' : ''}`}
+                        >
                             <div className="flex items-center justify-between mb-2">
                                 <label className="block text-sm font-bold text-emerald-300">Ödeme Alacağınız Hesap</label>
                                 <button
@@ -483,7 +509,10 @@ const Withdraw = () => {
                         </div>
 
                         {/* Amount Input */}
-                        <div>
+                        <div
+                            id="amount-section"
+                            className={`relative ${showOnboarding && withdrawOnboardingSteps[onboardingStep]?.targetId === 'amount-section' ? 'z-[101] ring-2 ring-lime-400 ring-offset-2 ring-offset-emerald-900 rounded-xl p-2 -m-2' : ''}`}
+                        >
                             <label className="block text-sm font-bold text-emerald-300 mb-2">Çekim Tutarı (USDT)</label>
                             <div className="relative">
                                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-400">$</span>
