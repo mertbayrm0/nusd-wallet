@@ -63,6 +63,7 @@ export const useApp = () => useContext(AppContext);
 async function fetchOrCreateProfileWithTimeout(authUser: User, timeoutMs: number = 15000): Promise<UserState> {
   // Fallback user data from auth
   const fallbackUser: UserState = {
+    id: authUser.id,
     email: authUser.email || '',
     name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'User',
     balance: 0,
