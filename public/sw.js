@@ -1,27 +1,12 @@
-const CACHE_NAME = 'nusd-wallet-v1';
-const urlsToCache = [
-    '/',
-    '/index.html',
-    '/manifest.json'
-];
+const CACHE_NAME = 'nusd-wallet-v2';
 
-// Install event - cache assets
+// Install event - aktivasyon hemen yapılsın
 self.addEventListener('install', (event) => {
     console.log('[ServiceWorker] Install');
-    event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then((cache) => {
-                console.log('[ServiceWorker] Caching app shell');
-                return cache.addAll(urlsToCache);
-            })
-            .catch((error) => {
-                console.error('[ServiceWorker] Cache error:', error);
-            })
-    );
     self.skipWaiting();
 });
 
-// Activate event - cleanup old caches
+// Activate event - hemen control al
 self.addEventListener('activate', (event) => {
     console.log('[ServiceWorker] Activate');
     event.waitUntil(
@@ -39,42 +24,45 @@ self.addEventListener('activate', (event) => {
     self.clients.claim();
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - Network First stratejisi (SPA için daha uygun)
 self.addEventListener('fetch', (event) => {
     // Skip non-GET requests
     if (event.request.method !== 'GET') return;
 
     // Skip API calls and external requests
+    const url = new URL(event.request.url);
+    if (url.origin !== location.origin) return;
     if (event.request.url.includes('/rest/') ||
         event.request.url.includes('/auth/') ||
-        event.request.url.includes('supabase.co') ||
-        event.request.url.includes('googleapis.com')) {
+        event.request.url.includes('supabase.co')) {
         return;
     }
 
+    // Network first, fallback to cache, then to index.html for navigation
     event.respondWith(
-        caches.match(event.request)
+        fetch(event.request)
             .then((response) => {
-                // Return cached version or fetch from network
-                if (response) {
-                    return response;
-                }
-                return fetch(event.request).then((response) => {
-                    // Don't cache non-successful responses
-                    if (!response || response.status !== 200 || response.type !== 'basic') {
-                        return response;
-                    }
-                    // Clone and cache
+                // Clone and cache successful responses
+                if (response.ok) {
                     const responseToCache = response.clone();
                     caches.open(CACHE_NAME).then((cache) => {
                         cache.put(event.request, responseToCache);
                     });
-                    return response;
-                });
+                }
+                return response;
             })
             .catch(() => {
-                // Return offline page if available
-                return caches.match('/');
+                // Network failed, try cache
+                return caches.match(event.request).then((cachedResponse) => {
+                    if (cachedResponse) {
+                        return cachedResponse;
+                    }
+                    // For navigation requests, return index.html (SPA fallback)
+                    if (event.request.mode === 'navigate') {
+                        return caches.match('/index.html') || fetch('/index.html');
+                    }
+                    return new Response('Offline', { status: 503 });
+                });
             })
     );
 });
